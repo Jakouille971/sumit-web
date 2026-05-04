@@ -8,15 +8,15 @@
   <style>
     body { padding-top: 64px; }
 
-    .page-hero { position:relative; overflow:hidden; height:200px; display:flex; align-items:flex-end; }
-    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(160deg,#1B3D5E 0%,#0D2A40 40%,#091820 100%); }
+    .page-hero { position:relative; overflow:hidden; height:240px; display:flex; align-items:flex-end; }
+    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(180deg,#9DBDD4 0%,#7AA5C0 35%,#3F6383 70%,#0D2A40 100%); }
     .page-hero-bg::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 75% 40%,rgba(0,200,224,0.07) 0%,transparent 60%); }
     .page-hero-mountain { position:absolute; bottom:0; left:0; right:0; }
     .page-hero-content { position:relative; z-index:2; padding:0 80px 28px; width:100%; }
     .page-hero h1 { font-family:var(--font-display); font-size:36px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:4px; }
     .page-hero p { font-size:14px; font-weight:300; color:var(--mist); }
 
-    .profil-layout { display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 64px - 200px); }
+    .profil-layout { display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 64px - 240px); }
     .col-left { border-right:0.5px solid var(--border); padding:48px; }
     .col-right { padding:48px; background:var(--navy3); }
 
@@ -81,10 +81,51 @@
     .score-terrain-icon { width:28px; height:28px; border:0.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,0.03); }
     .score-terrain-icon svg { width:14px; height:14px; fill:none; stroke-width:1.8; }
     .score-label { font-family:var(--font-display); font-size:12px; color:var(--slate); width:130px; flex-shrink:0; }
-    .score-track { flex:1; height:3px; background:rgba(255,255,255,0.06); }
-    .score-fill { height:100%; background:var(--cyan); transition:width 1s ease; }
-    .score-fill.low { background:var(--slate); }
-    .score-val { font-family:var(--font-display); font-size:12px; color:var(--white); width:44px; text-align:right; }
+    .score-track { flex:1; height:3px; background:rgba(255,255,255,0.06); position:relative; }
+    .score-track::before { content:''; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:rgba(180,210,220,0.25); }
+    .score-fill { position:absolute; top:0; bottom:0; transition:width 1s ease, left 1s ease; }
+    .score-fill.positive { background:var(--green); left:50%; }
+    .score-fill.negative { background:var(--red); right:50%; left:auto; }
+    .score-val { font-family:var(--font-display); font-size:13px; width:60px; text-align:right; font-weight:500; }
+    .score-val.positive { color:var(--green); }
+    .score-val.negative { color:var(--red); }
+    .score-val.neutral  { color:var(--slate); }
+
+    /* ── Tooltip (i) ── */
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 0.5px solid var(--slate); color: var(--slate);
+      font-size: 10px; font-weight: 600; font-family: serif;
+      cursor: help; margin-left: 6px;
+      vertical-align: middle; transition: all 0.2s;
+      position: relative;
+    }
+    .info-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+    .info-icon::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      width: 280px; padding: 10px 12px;
+      background: var(--navy3); color: var(--white);
+      border: 0.5px solid var(--cyan); border-radius: 0;
+      font-size: 11px; font-weight: 300; line-height: 1.5;
+      letter-spacing: 0.02em;
+      white-space: normal; text-align: left;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .info-icon:hover::after { opacity: 1; visibility: visible; }
+    .info-icon::before {
+      content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: var(--cyan);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s;
+    }
+    .info-icon:hover::before { opacity: 1; visibility: visible; }
 
     @media (max-width:900px) {
       .page-hero-content { padding:0 24px 24px; }
@@ -116,20 +157,130 @@
 <!-- Bandeau hero -->
 <div class="page-hero">
   <div class="page-hero-bg"></div>
-  <svg class="page-hero-mountain" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:160px;">
+  <svg class="page-hero-mountain" viewBox="0 0 1440 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:200px;">
     <defs>
-      <linearGradient id="phg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A3A5C" stop-opacity="0.55"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F2A40" stop-opacity="0.9"/><stop offset="100%" stop-color="#091820" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#091820" stop-opacity="0.95"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phsnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D8ECF0" stop-opacity="0.55"/><stop offset="100%" stop-color="#1A3A5C" stop-opacity="0"/></linearGradient>
-      <linearGradient id="phfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <!-- Couches de plus en plus sombres vers l'avant -->
+      <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#A8C2D6" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#7C9BB5" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7C9BB5" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#5878A0" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5878A0" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#3F5C82" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3F5C82" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#2A4366" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m5" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1F3252" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E8F0F5" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#A8C2D6" stop-opacity="0"/>
+      </linearGradient>
     </defs>
-    <polygon points="0,160 0,95 100,78 200,88 300,65 400,75 500,52 600,64 700,44 800,56 900,38 1000,50 1100,32 1200,46 1300,28 1440,40 1440,160" fill="url(#phg1)"/>
-    <polygon points="580,160 585,140 590,128 594,120 598,128 601,118 605,126 609,112 613,122 617,106 620,116 623,96 626,110 629,88 632,102 635,72 638,90 641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 672,86 678,100 686,112 696,122 708,130 722,137 738,143 756,148 776,152 800,155 830,158 860,160" fill="url(#phg2)"/>
-    <polygon points="641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 660,18 653,25 646,42" fill="url(#phsnow)"/>
-    <polygon points="0,160 0,130 80,115 160,125 230,108 300,120 360,102 410,160" fill="url(#phg3)" opacity="0.9"/>
-    <polygon points="900,160 940,128 990,142 1040,118 1100,132 1160,112 1220,126 1300,108 1370,120 1440,105 1440,160" fill="url(#phg3)" opacity="0.85"/>
-    <rect x="0" y="115" width="1440" height="45" fill="url(#phfade)"/>
+
+    <!-- Couche 1 : massifs très lointains avec petits sommets enneigés -->
+    <path d="M0,200 L0,90
+      C50,80 100,72 140,75 C175,77 195,55 220,48
+      C245,42 265,55 290,60 C320,65 340,72 370,68
+      C410,62 440,70 480,62 C520,55 550,68 590,65
+      C620,62 650,72 680,68 C720,62 760,72 800,65
+      C840,58 870,65 910,60 C950,55 990,68 1030,62
+      C1070,55 1110,72 1150,65 C1200,55 1250,72 1300,65
+      C1350,58 1400,65 1440,60 L1440,200 Z" fill="url(#m1)"/>
+    <!-- Neige sommets couche 1 -->
+    <ellipse cx="220" cy="50" rx="30" ry="10" fill="url(#snow)" opacity="0.6"/>
+    <ellipse cx="700" cy="135" rx="60" ry="20" fill="url(#snow)" opacity="0.4"/>
+
+    <!-- Couche 2 : massifs intermédiaires lointains -->
+    <path d="M0,200 L0,118
+      C40,108 80,115 120,108 C170,98 220,108 260,100
+      C310,90 360,75 400,68 C440,62 480,72 520,65
+      C560,58 600,40 640,30 C680,20 700,15 720,12
+      C740,15 760,25 780,40 C810,58 850,72 890,65
+      C935,58 980,72 1025,65 C1070,58 1115,75 1160,68
+      C1210,62 1260,72 1310,65 C1360,58 1410,72 1440,68
+      L1440,200 Z" fill="url(#m2)"/>
+    <!-- Sommet principal central avec neige -->
+    <path d="M620,40 L720,12 L820,52 L800,55 L780,40 L760,30 L740,22 L720,15 L700,18 L680,28 L660,38 L640,45 Z" fill="url(#snow)" opacity="0.55"/>
+
+    <!-- Couche 3 : massifs proches plus sombres -->
+    <path d="M0,200 L0,140
+      C40,135 80,128 120,132 C170,138 220,128 270,135
+      C320,142 370,128 420,135 C480,142 540,125 600,118
+      C660,110 720,135 780,128 C840,120 900,138 960,130
+      C1020,122 1080,140 1140,132 C1200,124 1260,142 1320,135
+      C1380,128 1430,140 1440,138 L1440,200 Z" fill="url(#m3)"/>
+
+    <!-- Couche 4 : collines avant-plan -->
+    <path d="M0,200 L0,158
+      C60,152 120,162 180,155 C240,148 300,162 360,158
+      C420,153 480,165 540,160 C600,155 660,168 720,162
+      C780,155 840,170 900,162 C960,155 1020,168 1080,162
+      C1140,155 1200,168 1260,160 C1320,152 1380,165 1440,158
+      L1440,200 Z" fill="url(#m4)"/>
+
+    <!-- Sapins silhouette sur la couche 4 -->
+    <g fill="#0D1B2A" opacity="0.9">
+      <polygon points="20,158  28,140 36,158"/>
+      <polygon points="32,160  42,138 52,160"/>
+      <polygon points="48,156  60,135 72,156"/>
+      <polygon points="68,158  82,134 96,158"/>
+      <polygon points="92,154  108,130 124,154"/>
+      <polygon points="120,156 138,128 156,156"/>
+      <polygon points="152,152 172,124 192,152"/>
+      <polygon points="190,154 212,126 234,154"/>
+      <polygon points="232,150 256,122 280,150"/>
+      <polygon points="280,154 306,124 332,154"/>
+      <polygon points="334,152 362,122 390,152"/>
+      <polygon points="394,154 424,124 454,154"/>
+      <polygon points="460,150 492,118 524,150"/>
+      <polygon points="530,152 564,122 598,152"/>
+      <polygon points="606,148 642,116 678,148"/>
+      <polygon points="688,150 726,118 764,150"/>
+      <polygon points="774,146 814,114 854,146"/>
+      <polygon points="864,148 906,116 948,148"/>
+      <polygon points="958,144 1002,112 1046,144"/>
+      <polygon points="1056,146 1102,114 1148,146"/>
+      <polygon points="1158,142 1206,110 1254,142"/>
+      <polygon points="1264,144 1314,112 1364,144"/>
+      <polygon points="1374,140 1410,112 1440,140"/>
+    </g>
+
+    <!-- Couche 5 : avant-plan très sombre -->
+    <path d="M0,200 L0,180
+      C100,175 200,182 300,178 C400,174 500,184 600,180
+      C700,176 800,186 900,182 C1000,178 1100,188 1200,184
+      C1300,180 1400,188 1440,186 L1440,200 Z" fill="url(#m5)"/>
+
+    <!-- Sapins avant-plan plus grands et plus sombres -->
+    <g fill="#060F18">
+      <polygon points="0,180   12,158 24,180"/>
+      <polygon points="20,182  35,156 50,182"/>
+      <polygon points="46,178  65,152 84,178"/>
+      <polygon points="78,180  100,150 122,180"/>
+      <polygon points="118,176 144,146 170,176"/>
+      <polygon points="166,178 196,148 226,178"/>
+      <polygon points="222,174 256,142 290,174"/>
+      <polygon points="286,176 324,144 362,176"/>
+      <polygon points="358,172 400,140 442,172"/>
+      <polygon points="438,174 484,142 530,174"/>
+      <polygon points="526,170 576,138 626,170"/>
+      <polygon points="622,172 676,140 730,172"/>
+      <polygon points="726,168 784,136 842,168"/>
+      <polygon points="838,170 900,138 962,170"/>
+      <polygon points="958,166 1024,134 1090,166"/>
+      <polygon points="1086,168 1156,136 1226,168"/>
+      <polygon points="1222,164 1296,132 1370,164"/>
+      <polygon points="1366,166 1402,138 1440,166"/>
+    </g>
   </svg>
   <div class="page-hero-content">
     <div class="section-tag" style="margin-bottom:10px;">Étape 1 sur 2</div>
@@ -231,14 +382,30 @@
       </div>
       <!-- KPIs -->
       <div class="profil-kpis">
-        <div class="profil-kpi"><div class="profil-kpi-label">VEP globale</div><div class="profil-kpi-val" id="vepGlobale">—</div><div class="profil-kpi-sub">km/h éq. plat</div></div>
-        <div class="profil-kpi"><div class="profil-kpi-label">Drain énergie</div><div class="profil-kpi-val" id="drainEnergie">—</div><div class="profil-kpi-sub">% batterie / heure</div></div>
-        <div class="profil-kpi"><div class="profil-kpi-label">Traces analysées</div><div class="profil-kpi-val" id="nbTraces">—</div><div class="profil-kpi-sub">fichiers GPX</div></div>
-        <div class="profil-kpi"><div class="profil-kpi-label">Coeff. course</div><div class="profil-kpi-val" id="coeffCourse">—</div><div class="profil-kpi-sub">vs entraînement</div></div>
+        <div class="profil-kpi">
+          <div class="profil-kpi-label">VEP globale<span class="info-icon" data-tooltip="Vitesse Équivalente Plat — la vitesse que tu aurais sur du plat à effort comparable. Calculée via les coefficients de Minetti qui pondèrent ta vitesse réelle selon la pente. Plus elle est élevée, plus tu es performant en équivalent plat.">i</span></div>
+          <div class="profil-kpi-val" id="vepGlobale">—</div>
+          <div class="profil-kpi-sub">km/h éq. plat</div>
+        </div>
+        <div class="profil-kpi">
+          <div class="profil-kpi-label">Drain énergie<span class="info-icon" data-tooltip="Pourcentage de batterie énergétique consommé par heure d'effort. Calculé depuis ta FC moyenne et les zones cardiaques (Karvonen). Plus tu cours en zone haute, plus tu drainés vite ta batterie.">i</span></div>
+          <div class="profil-kpi-val" id="drainEnergie">—</div>
+          <div class="profil-kpi-sub">% batterie / heure</div>
+        </div>
+        <div class="profil-kpi">
+          <div class="profil-kpi-label">Traces analysées</div>
+          <div class="profil-kpi-val" id="nbTraces">—</div>
+          <div class="profil-kpi-sub">fichiers GPX</div>
+        </div>
+        <div class="profil-kpi">
+          <div class="profil-kpi-label">Coeff. course<span class="info-icon" data-tooltip="Coefficient de performance entre tes entraînements et tes courses. Calculé via le ratio de FC moyenne : en course tu pousses plus (≈87% FCmax) qu'à l'entraînement (≈75%). Le coefficient ajuste la prédiction pour refléter ton effort réel en compétition.">i</span></div>
+          <div class="profil-kpi-val" id="coeffCourse">—</div>
+          <div class="profil-kpi-sub">vs entraînement</div>
+        </div>
       </div>
       <!-- Scores -->
       <div class="profil-card">
-        <div class="profil-card-header">Scores par terrain</div>
+        <div class="profil-card-header">Score de pente<span class="info-icon" data-tooltip="Écart de performance par rapport à ton plat. Pour chaque type de pente, on compare ta VEP réelle à celle attendue (théorie de Minetti basée sur ton plat). Un + vert = tu surperformes sur ce terrain. Un - rouge = tu sous-performes. Le plat est ta référence à 0%.">i</span></div>
         <div class="profil-card-body" id="scoresBars"></div>
       </div>
       <button class="btn-primary" style="width:100%;padding:16px;" onclick="window.location.href='simulateur.html'">
@@ -385,22 +552,34 @@ function afficherProfil(data) {
     arch.conseil?`<div class="archetype-tip"><div class="tip-dot" style="background:var(--cyan);"></div><span style="font-size:12px;color:var(--cyan);">💡 ${arch.conseil}</span></div>`:''
   ].join('');
 
-  // Barres scores
+  // Barres scores - écart % vs plat
   const container = document.getElementById('scoresBars');
   container.innerHTML = '';
   ORDRE_T.forEach(t => {
     const p = data.profil[t];
     if (!p) return;
-    const high = t.startsWith('montee') || t==='plat';
-    const bar  = document.createElement('div');
+    const ecart = p.ecart_plat_pct || 0;
+    const isPlat = (t === 'plat');
+    const isPositive = ecart >= 0;
+    const valClass = isPlat ? 'neutral' : (isPositive ? 'positive' : 'negative');
+    const fillClass = isPositive ? 'positive' : 'negative';
+
+    // Largeur de la barre : proportionnelle à |ecart|, max 50% (la moitié de la track)
+    // ecart de ±50% rempli toute la moitié, ±100% dépasserait
+    const widthPct = Math.min(50, Math.abs(ecart));
+
+    const sign = ecart > 0 ? '+' : '';
+    const display = isPlat ? '0% (réf)' : `${sign}${ecart.toFixed(1)}%`;
+
+    const bar = document.createElement('div');
     bar.className = 'score-bar';
     bar.innerHTML = `
       <div class="score-terrain-icon">${TERRAIN_ICONS[t]||''}</div>
       <div class="score-label">${TERRAIN_LABELS[t]}</div>
       <div class="score-track">
-        <div class="score-fill ${high?'':'low'}" style="width:0%;transition:width 1s ease" data-target="${p.score}"></div>
+        ${isPlat ? '' : `<div class="score-fill ${fillClass}" style="width:0%" data-target="${widthPct}"></div>`}
       </div>
-      <div class="score-val">${p.score}/100</div>`;
+      <div class="score-val ${valClass}">${display}</div>`;
     container.appendChild(bar);
   });
   setTimeout(() => {
@@ -412,3 +591,4 @@ function afficherProfil(data) {
 </script>
 </body>
 </html>
+
