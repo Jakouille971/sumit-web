@@ -13,14 +13,14 @@
   <style>
     body { padding-top: 64px; }
 
-    .page-hero { position:relative; overflow:hidden; height:200px; display:flex; align-items:flex-end; }
-    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(160deg,#1B3D5E 0%,#0D2A40 40%,#091820 100%); }
+    .page-hero { position:relative; overflow:hidden; height:240px; display:flex; align-items:flex-end; }
+    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(180deg,#9DBDD4 0%,#7AA5C0 35%,#3F6383 70%,#0D2A40 100%); }
     .page-hero-mountain { position:absolute; bottom:0; left:0; right:0; }
     .page-hero-content { position:relative; z-index:2; padding:0 80px 28px; width:100%; }
     .page-hero h1 { font-family:var(--font-display); font-size:36px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:4px; }
     .page-hero p { font-size:14px; font-weight:300; color:var(--mist); }
 
-    .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 200px); }
+    .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 240px); }
     .sim-sidebar { border-right:0.5px solid var(--border); padding:40px 36px; background:var(--navy2); }
     .sim-main { padding:40px 48px; background:var(--navy3); }
 
@@ -173,6 +173,15 @@
       font-family: var(--font-display); font-size: 10px; color: var(--cyan);
       text-transform: uppercase; letter-spacing: 0.14em;
     }
+    /* ── Checkbox items modal ── */
+    .checkbox-item {
+      padding: 7px 12px; border: 0.5px solid var(--border); cursor: pointer;
+      font-size: 12px; color: var(--slate); transition: all 0.2s; user-select: none;
+    }
+    .checkbox-item:hover, .checkbox-item.checked {
+      border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
+    }
+
     #leafletMap { height: 320px; width: 100%; }
   </style>
 </head>
@@ -198,20 +207,130 @@
 <!-- Bandeau hero -->
 <div class="page-hero">
   <div class="page-hero-bg"></div>
-  <svg class="page-hero-mountain" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:160px;">
+  <svg class="page-hero-mountain" viewBox="0 0 1440 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:200px;">
     <defs>
-      <linearGradient id="phg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A3A5C" stop-opacity="0.55"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F2A40" stop-opacity="0.9"/><stop offset="100%" stop-color="#091820" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#091820" stop-opacity="0.95"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
-      <linearGradient id="phsnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D8ECF0" stop-opacity="0.55"/><stop offset="100%" stop-color="#1A3A5C" stop-opacity="0"/></linearGradient>
-      <linearGradient id="phfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <!-- Couches de plus en plus sombres vers l'avant -->
+      <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#A8C2D6" stop-opacity="0.85"/>
+        <stop offset="100%" stop-color="#7C9BB5" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7C9BB5" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#5878A0" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5878A0" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#3F5C82" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3F5C82" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#2A4366" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="m5" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1F3252" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
+      </linearGradient>
+      <linearGradient id="snow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#E8F0F5" stop-opacity="0.7"/>
+        <stop offset="100%" stop-color="#A8C2D6" stop-opacity="0"/>
+      </linearGradient>
     </defs>
-    <polygon points="0,160 0,95 100,78 200,88 300,65 400,75 500,52 600,64 700,44 800,56 900,38 1000,50 1100,32 1200,46 1300,28 1440,40 1440,160" fill="url(#phg1)"/>
-    <polygon points="580,160 585,140 590,128 594,120 598,128 601,118 605,126 609,112 613,122 617,106 620,116 623,96 626,110 629,88 632,102 635,72 638,90 641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 672,86 678,100 686,112 696,122 708,130 722,137 738,143 756,148 776,152 800,155 830,158 860,160" fill="url(#phg2)"/>
-    <polygon points="641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 660,18 653,25 646,42" fill="url(#phsnow)"/>
-    <polygon points="0,160 0,130 80,115 160,125 230,108 300,120 360,102 410,160" fill="url(#phg3)" opacity="0.9"/>
-    <polygon points="900,160 940,128 990,142 1040,118 1100,132 1160,112 1220,126 1300,108 1370,120 1440,105 1440,160" fill="url(#phg3)" opacity="0.85"/>
-    <rect x="0" y="115" width="1440" height="45" fill="url(#phfade)"/>
+
+    <!-- Couche 1 : massifs très lointains avec petits sommets enneigés -->
+    <path d="M0,200 L0,90
+      C50,80 100,72 140,75 C175,77 195,55 220,48
+      C245,42 265,55 290,60 C320,65 340,72 370,68
+      C410,62 440,70 480,62 C520,55 550,68 590,65
+      C620,62 650,72 680,68 C720,62 760,72 800,65
+      C840,58 870,65 910,60 C950,55 990,68 1030,62
+      C1070,55 1110,72 1150,65 C1200,55 1250,72 1300,65
+      C1350,58 1400,65 1440,60 L1440,200 Z" fill="url(#m1)"/>
+    <!-- Neige sommets couche 1 -->
+    <ellipse cx="220" cy="50" rx="30" ry="10" fill="url(#snow)" opacity="0.6"/>
+    <ellipse cx="700" cy="135" rx="60" ry="20" fill="url(#snow)" opacity="0.4"/>
+
+    <!-- Couche 2 : massifs intermédiaires lointains -->
+    <path d="M0,200 L0,118
+      C40,108 80,115 120,108 C170,98 220,108 260,100
+      C310,90 360,75 400,68 C440,62 480,72 520,65
+      C560,58 600,40 640,30 C680,20 700,15 720,12
+      C740,15 760,25 780,40 C810,58 850,72 890,65
+      C935,58 980,72 1025,65 C1070,58 1115,75 1160,68
+      C1210,62 1260,72 1310,65 C1360,58 1410,72 1440,68
+      L1440,200 Z" fill="url(#m2)"/>
+    <!-- Sommet principal central avec neige -->
+    <path d="M620,40 L720,12 L820,52 L800,55 L780,40 L760,30 L740,22 L720,15 L700,18 L680,28 L660,38 L640,45 Z" fill="url(#snow)" opacity="0.55"/>
+
+    <!-- Couche 3 : massifs proches plus sombres -->
+    <path d="M0,200 L0,140
+      C40,135 80,128 120,132 C170,138 220,128 270,135
+      C320,142 370,128 420,135 C480,142 540,125 600,118
+      C660,110 720,135 780,128 C840,120 900,138 960,130
+      C1020,122 1080,140 1140,132 C1200,124 1260,142 1320,135
+      C1380,128 1430,140 1440,138 L1440,200 Z" fill="url(#m3)"/>
+
+    <!-- Couche 4 : collines avant-plan -->
+    <path d="M0,200 L0,158
+      C60,152 120,162 180,155 C240,148 300,162 360,158
+      C420,153 480,165 540,160 C600,155 660,168 720,162
+      C780,155 840,170 900,162 C960,155 1020,168 1080,162
+      C1140,155 1200,168 1260,160 C1320,152 1380,165 1440,158
+      L1440,200 Z" fill="url(#m4)"/>
+
+    <!-- Sapins silhouette sur la couche 4 -->
+    <g fill="#0D1B2A" opacity="0.9">
+      <polygon points="20,158  28,140 36,158"/>
+      <polygon points="32,160  42,138 52,160"/>
+      <polygon points="48,156  60,135 72,156"/>
+      <polygon points="68,158  82,134 96,158"/>
+      <polygon points="92,154  108,130 124,154"/>
+      <polygon points="120,156 138,128 156,156"/>
+      <polygon points="152,152 172,124 192,152"/>
+      <polygon points="190,154 212,126 234,154"/>
+      <polygon points="232,150 256,122 280,150"/>
+      <polygon points="280,154 306,124 332,154"/>
+      <polygon points="334,152 362,122 390,152"/>
+      <polygon points="394,154 424,124 454,154"/>
+      <polygon points="460,150 492,118 524,150"/>
+      <polygon points="530,152 564,122 598,152"/>
+      <polygon points="606,148 642,116 678,148"/>
+      <polygon points="688,150 726,118 764,150"/>
+      <polygon points="774,146 814,114 854,146"/>
+      <polygon points="864,148 906,116 948,148"/>
+      <polygon points="958,144 1002,112 1046,144"/>
+      <polygon points="1056,146 1102,114 1148,146"/>
+      <polygon points="1158,142 1206,110 1254,142"/>
+      <polygon points="1264,144 1314,112 1364,144"/>
+      <polygon points="1374,140 1410,112 1440,140"/>
+    </g>
+
+    <!-- Couche 5 : avant-plan très sombre -->
+    <path d="M0,200 L0,180
+      C100,175 200,182 300,178 C400,174 500,184 600,180
+      C700,176 800,186 900,182 C1000,178 1100,188 1200,184
+      C1300,180 1400,188 1440,186 L1440,200 Z" fill="url(#m5)"/>
+
+    <!-- Sapins avant-plan plus grands et plus sombres -->
+    <g fill="#060F18">
+      <polygon points="0,180   12,158 24,180"/>
+      <polygon points="20,182  35,156 50,182"/>
+      <polygon points="46,178  65,152 84,178"/>
+      <polygon points="78,180  100,150 122,180"/>
+      <polygon points="118,176 144,146 170,176"/>
+      <polygon points="166,178 196,148 226,178"/>
+      <polygon points="222,174 256,142 290,174"/>
+      <polygon points="286,176 324,144 362,176"/>
+      <polygon points="358,172 400,140 442,172"/>
+      <polygon points="438,174 484,142 530,174"/>
+      <polygon points="526,170 576,138 626,170"/>
+      <polygon points="622,172 676,140 730,172"/>
+      <polygon points="726,168 784,136 842,168"/>
+      <polygon points="838,170 900,138 962,170"/>
+      <polygon points="958,166 1024,134 1090,166"/>
+      <polygon points="1086,168 1156,136 1226,168"/>
+      <polygon points="1222,164 1296,132 1370,164"/>
+      <polygon points="1366,166 1402,138 1440,166"/>
+    </g>
   </svg>
   <div class="page-hero-content">
     <div class="section-tag" style="margin-bottom:10px;">Étape 2 sur 2</div>
@@ -409,6 +528,20 @@
           <button class="rating-btn" onclick="selectRating('ratingProfil',this,3)">3</button>
           <button class="rating-btn" onclick="selectRating('ratingProfil',this,4)">4</button>
           <button class="rating-btn" onclick="selectRating('ratingProfil',this,5)">5</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Fonctionnalités que tu souhaiterais voir</label>
+        <div id="modalFeatures" style="display:flex;flex-wrap:wrap;gap:8px;">
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Strava</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Garmin</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Conseils nutritionnels</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Coach IA personnalisé</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Intégration météo</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Suivi d'autres athlètes</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Application mobile</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Profil Coach (multi-athlètes)</div>
         </div>
       </div>
 
@@ -786,12 +919,12 @@ function afficherCarte(coords) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  PDF — Génération côté navigateur
+//  PDF — Génération page unique A4
 // ══════════════════════════════════════════════════════════════
 async function genererPDF() {
   const { jsPDF } = window.jspdf;
-  const profil = chargerProfil();
-  const prenom = profil?.prenom || 'Coureur';
+  const profil    = chargerProfil();
+  const prenom    = profil?.prenom || 'Coureur';
   const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
 
   const btn = document.querySelector('.btn-pdf');
@@ -800,169 +933,134 @@ async function genererPDF() {
 
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const W   = 210;
-    let y     = 20;
+    const W = 210;  // largeur A4 mm
+    const H = 297;  // hauteur A4 mm
+    let y = 0;
 
-    // ── HEADER ──
+    // ── HEADER (compact) ──
     pdf.setFillColor(13, 27, 42);
-    pdf.rect(0, 0, W, 30, 'F');
+    pdf.rect(0, 0, W, 22, 'F');
     pdf.setTextColor(0, 200, 224);
-    pdf.setFontSize(20);
+    pdf.setFontSize(16);
     pdf.setFont('helvetica', 'bold');
-    pdf.text("SUM'IT", 15, 15);
-    pdf.setFontSize(8);
+    pdf.text("SUM'IT", 12, 12);
+    pdf.setFontSize(7);
     pdf.setTextColor(150, 200, 210);
-    pdf.text('PLAN YOUR PEAKS', 15, 21);
+    pdf.text('PLAN YOUR PEAKS', 12, 17);
     pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(11);
+    pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(new Date().toLocaleDateString('fr-FR'), W - 15, 15, { align: 'right' });
+    pdf.text(new Date().toLocaleDateString('fr-FR'), W - 12, 12, { align: 'right' });
+    pdf.text(`${prenom}`, W - 12, 17, { align: 'right' });
 
-    y = 42;
+    y = 28;
 
-    // ── COURSE ──
+    // ── TITRE COURSE ──
     pdf.setTextColor(13, 27, 42);
-    pdf.setFontSize(18);
+    pdf.setFontSize(15);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(nomCourse, 15, y);
-    y += 7;
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Simulation pour ${prenom}`, 15, y);
-    y += 12;
+    pdf.text(nomCourse, 12, y);
+    y += 8;
 
-    // ── KPIs ──
+    // ── KPIs 6 EN GRILLE 3x2 ──
     const kpis = [
       ['Temps estimé',  document.getElementById('resTemps').textContent],
-      ['Allure moyenne',document.getElementById('resAllure').textContent],
+      ['Allure moy.',   document.getElementById('resAllure').textContent],
       ['Distance',      document.getElementById('fileDist').textContent],
       ['Dénivelé +',    document.getElementById('fileDplus').textContent],
       ['Top condition', document.getElementById('fourchBas').textContent],
       ['Jour difficile',document.getElementById('fourchHaut').textContent],
     ];
-
     pdf.setFillColor(245, 248, 250);
-    pdf.rect(15, y, W-30, 38, 'F');
-    pdf.setTextColor(13, 27, 42);
-
-    let kx = 18, ky = y + 10;
+    pdf.rect(12, y, W - 24, 22, 'F');
     kpis.forEach((kpi, i) => {
       const col = i % 3;
       const row = Math.floor(i / 3);
-      const px  = 18 + col * 60;
-      const py  = y + 8 + row * 18;
-      pdf.setFontSize(8);
+      const px  = 16 + col * 62;
+      const py  = y + 6 + row * 9;
+      pdf.setFontSize(7);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(100, 100, 100);
+      pdf.setTextColor(110, 110, 110);
       pdf.text(kpi[0].toUpperCase(), px, py);
-      pdf.setFontSize(11);
+      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 150, 180);
-      pdf.text(kpi[1], px, py + 6);
+      pdf.text(kpi[1], px, py + 4.5);
     });
-    y += 46;
+    y += 26;
 
-    // ── PROFIL COUREUR ──
+    // ── PROFIL COUREUR (compact) ──
     if (profil && profil.archetype) {
-      pdf.setFontSize(13);
+      pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(13, 27, 42);
-      pdf.text('PROFIL COUREUR', 15, y);
-      y += 6;
-      pdf.setDrawColor(0, 200, 224);
-      pdf.line(15, y, 60, y);
-      y += 7;
-
-      pdf.setFontSize(14);
       pdf.setTextColor(0, 150, 180);
-      pdf.text(profil.archetype.nom || 'Combattant', 15, y);
-      y += 6;
-      pdf.setFontSize(9);
+      pdf.text(`PROFIL : ${profil.archetype.nom || 'Combattant'}`, 12, y);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(80, 80, 80);
-      const desc = pdf.splitTextToSize(profil.archetype.desc || '', W - 30);
-      pdf.text(desc, 15, y);
-      y += desc.length * 4 + 4;
-
-      // Coeff course + drain
-      pdf.setFontSize(9);
-      pdf.text(`Coefficient course : ×${profil.coefficient.toFixed(2)} · Drain énergie : ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax : ${profil.fcmax} bpm`, 15, y);
-      y += 10;
+      pdf.text(`Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm`, W-12, y, { align: 'right' });
+      y += 5;
     }
 
-    // ── GRAPHIQUE PROFIL ──
-    pdf.setFontSize(13);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(13, 27, 42);
-    pdf.text('PROFIL DE COURSE', 15, y);
-    y += 6;
-    pdf.setDrawColor(0, 200, 224);
-    pdf.line(15, y, 60, y);
-    y += 4;
-
+    // ── GRAPHIQUE PROFIL DE COURSE ──
     const chartEl = document.getElementById('profilChart');
     if (chartEl) {
-      // Fond blanc temporaire pour capture
+      // Wrapper avec fond blanc
       const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'background:white;padding:10px;';
+      wrapper.style.cssText = 'background:white;padding:10px;width:680px;';
       const clone = chartEl.cloneNode(true);
-      // Inverse les couleurs claires pour le fond blanc
       clone.querySelectorAll('text').forEach(t => t.setAttribute('fill', '#333'));
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
       const canvas = await html2canvas(wrapper, { backgroundColor: '#fff', scale: 2 });
       document.body.removeChild(wrapper);
       const imgData = canvas.toDataURL('image/png');
-      const imgH = (canvas.height * (W-30)) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 15, y, W-30, imgH);
-      y += imgH + 8;
+      const imgH    = (canvas.height * (W-24)) / canvas.width;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 150, 180);
+      pdf.text('PROFIL DE COURSE — ALLURE', 12, y);
+      y += 3;
+      pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 50));
+      y += Math.min(imgH, 50) + 3;
     }
 
-    // ── Nouvelle page : carte + ravitos ──
-    pdf.addPage();
-    y = 20;
+    // ── CARTE DU PARCOURS ──
+    if (trackPoints && trackPoints.length > 0) {
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 150, 180);
+      pdf.text('CARTE DU PARCOURS', 12, y);
+      y += 3;
 
-    pdf.setFontSize(13);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(13, 27, 42);
-    pdf.text('CARTE DU PARCOURS', 15, y);
-    y += 6;
-    pdf.setDrawColor(0, 200, 224);
-    pdf.line(15, y, 60, y);
-    y += 4;
-
-    const mapEl = document.getElementById('leafletMap');
-    if (mapEl && leafletMap) {
-      const canvas = await html2canvas(mapEl, { useCORS: true, scale: 2 });
-      const imgData = canvas.toDataURL('image/png');
-      const imgH    = (canvas.height * (W-30)) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 15, y, W-30, Math.min(imgH, 120));
-      y += Math.min(imgH, 120) + 8;
+      // Dessine le tracé en SVG sur fond simple — pas de tuiles
+      const mapCanvas = await dessinerCarteSimplePDF();
+      if (mapCanvas) {
+        const imgData = mapCanvas.toDataURL('image/png');
+        const imgH    = (mapCanvas.height * (W-24)) / mapCanvas.width;
+        pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 55));
+        y += Math.min(imgH, 55) + 3;
+      }
     }
 
-    // ── Tableau ravitos ──
-    pdf.setFontSize(13);
+    // ── TABLEAU RAVITOS (compact) ──
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(13, 27, 42);
-    pdf.text('TEMPS DE PASSAGE', 15, y);
-    y += 6;
-    pdf.setDrawColor(0, 200, 224);
-    pdf.line(15, y, 60, y);
-    y += 6;
+    pdf.setTextColor(0, 150, 180);
+    pdf.text('TEMPS DE PASSAGE', 12, y);
+    y += 3;
 
-    pdf.setFontSize(9);
     pdf.setFillColor(13, 27, 42);
-    pdf.rect(15, y, W-30, 7, 'F');
+    pdf.rect(12, y, W - 24, 5, 'F');
     pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(7);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Point',      18, y+5);
-    pdf.text('Distance',   55, y+5);
-    pdf.text('Temps',      85, y+5);
-    pdf.text('Top',       115, y+5);
-    pdf.text('Difficile', 145, y+5);
-    pdf.text('Batterie',  175, y+5);
-    y += 7;
+    pdf.text('Point',     14, y+3.5);
+    pdf.text('Distance',  50, y+3.5);
+    pdf.text('Temps',     80, y+3.5);
+    pdf.text('Top',      110, y+3.5);
+    pdf.text('Difficile',140, y+3.5);
+    pdf.text('Batterie', 175, y+3.5);
+    y += 5;
 
     const rows = document.querySelectorAll('#ravitoBody tr');
     pdf.setFont('helvetica', 'normal');
@@ -972,24 +1070,24 @@ async function genererPDF() {
       if (cells.length === 6) {
         if (i % 2 === 0) {
           pdf.setFillColor(245, 248, 250);
-          pdf.rect(15, y, W-30, 6, 'F');
+          pdf.rect(12, y, W - 24, 4.5, 'F');
         }
-        pdf.text(cells[0].textContent.substring(0,18),  18, y+4);
-        pdf.text(cells[1].textContent,  55, y+4);
-        pdf.text(cells[2].textContent,  85, y+4);
-        pdf.text(cells[3].textContent, 115, y+4);
-        pdf.text(cells[4].textContent, 145, y+4);
-        pdf.text(cells[5].textContent, 175, y+4);
-        y += 6;
+        pdf.setFontSize(7);
+        pdf.text(cells[0].textContent.substring(0,20),  14, y+3);
+        pdf.text(cells[1].textContent,  50, y+3);
+        pdf.text(cells[2].textContent,  80, y+3);
+        pdf.text(cells[3].textContent, 110, y+3);
+        pdf.text(cells[4].textContent, 140, y+3);
+        pdf.text(cells[5].textContent, 175, y+3);
+        y += 4.5;
       }
     });
 
-    // ── Footer ──
-    pdf.setFontSize(8);
+    // ── FOOTER en bas de page ──
+    pdf.setFontSize(7);
     pdf.setTextColor(150, 150, 150);
-    pdf.text("Généré par SUM'IT — Plan your peaks · sumit.run", W/2, 285, { align: 'center' });
+    pdf.text("Généré par SUM'IT — Plan your peaks · sumit-web-nine.vercel.app", W/2, H-8, { align: 'center' });
 
-    // Save
     const filename = `SUMIT_${prenom}_${nomCourse.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
     pdf.save(filename);
 
@@ -1000,6 +1098,111 @@ async function genererPDF() {
     btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Télécharger en PDF';
     btn.disabled = false;
   }
+}
+
+// ── Dessine la carte du parcours en canvas (sans tuiles) ──
+async function dessinerCarteSimplePDF() {
+  if (!trackPoints || trackPoints.length === 0) return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = 800;
+  canvas.height = 380;
+  const ctx = canvas.getContext('2d');
+
+  // Fond clair
+  ctx.fillStyle = '#F0F4F7';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Calcul des bornes
+  const lats = trackPoints.map(p => p[0]);
+  const lons = trackPoints.map(p => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+
+  // Marges
+  const padding = 30;
+  const w = canvas.width  - 2 * padding;
+  const h = canvas.height - 2 * padding;
+
+  // Garde le ratio
+  const latRange = maxLat - minLat;
+  const lonRange = maxLon - minLon;
+  const scaleX = w / lonRange;
+  const scaleY = h / latRange;
+  const scale  = Math.min(scaleX, scaleY);
+
+  // Centrage
+  const offsetX = padding + (w - lonRange * scale) / 2;
+  const offsetY = padding + (h - latRange * scale) / 2;
+
+  const project = (lat, lon) => ({
+    x: offsetX + (lon - minLon) * scale,
+    y: offsetY + (maxLat - lat) * scale,
+  });
+
+  // Grille de fond légère
+  ctx.strokeStyle = '#D8DFE5';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 10; i++) {
+    const x = padding + (w * i) / 10;
+    ctx.beginPath();
+    ctx.moveTo(x, padding);
+    ctx.lineTo(x, canvas.height - padding);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= 6; i++) {
+    const y = padding + (h * i) / 6;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(canvas.width - padding, y);
+    ctx.stroke();
+  }
+
+  // Tracé GPS
+  ctx.strokeStyle = '#00C8E0';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  trackPoints.forEach((pt, i) => {
+    const p = project(pt[0], pt[1]);
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else         ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  // Marqueur Départ (vert)
+  const start = project(trackPoints[0][0], trackPoints[0][1]);
+  ctx.fillStyle = '#5DCAA5';
+  ctx.beginPath();
+  ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#0D1B2A';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillText('D', start.x - 3.5, start.y + 4);
+
+  // Marqueur Arrivée (rouge)
+  const end = project(trackPoints[trackPoints.length-1][0], trackPoints[trackPoints.length-1][1]);
+  ctx.fillStyle = '#E24B4A';
+  ctx.beginPath();
+  ctx.arc(end.x, end.y, 8, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillText('A', end.x - 3.5, end.y + 4);
+
+  // Légende
+  ctx.fillStyle = '#0D1B2A';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('🟢 Départ · 🔴 Arrivée', padding, canvas.height - 8);
+
+  return canvas;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1019,13 +1222,20 @@ function selectRating(group, btn, val) {
 function envoyerAvis() {
   const profil = chargerProfil();
   const prenom = profil?.prenom || 'Anonyme';
+
+  // Récupération des fonctionnalités cochées
+  const features = [];
+  document.querySelectorAll('#modalFeatures .checkbox-item.checked').forEach(el => {
+    features.push(el.textContent.trim());
+  });
+
   const params = {
     to_email:        'sup.sumit@outlook.com',
     prenom:          prenom,
     niveau:          'Bêta-testeur simulateur',
     note_prediction: ratings.ratingPred  || 'Non noté',
     note_profil:     ratings.ratingProfil|| 'Non noté',
-    fonctionnalites: '(envoi depuis simulateur)',
+    fonctionnalites: features.length > 0 ? features.join(', ') : 'Aucune sélection',
     commentaire:     document.getElementById('modalCommentaire').value || 'Aucun',
     email_testeur:   document.getElementById('modalEmail').value      || 'Non renseigné',
     date:            new Date().toLocaleDateString('fr-FR'),
