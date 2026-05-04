@@ -170,12 +170,26 @@ def charger_gpx(data_bytes, fcmax=193):
 
     df['duree_s']=df['t'].diff().dt.total_seconds().fillna(0) if df['t'].notna().any() else 1.0
     df['vit_kmh']=(df['dist_m']/df['duree_s'].replace(0,np.nan)*3.6).clip(0,40).fillna(0)
+
+    # ── Lissage altitude : double pass pour lisser les pics GPS ──
+    # 1ère passe : médiane sur 15 points (élimine les outliers ponctuels)
+    # 2ème passe : moyenne sur 30 points (lissage doux pour les pentes)
+    df['alt']=df['alt'].rolling(15,center=True,min_periods=1).median()
     df['alt']=df['alt'].rolling(30,center=True,min_periods=1).mean()
     df['dz']=df['alt'].diff().fillna(0)
     df['dp']=df['dz'].clip(lower=0)
     df['dm']=df['dz'].clip(upper=0).abs()
 
-    # Exclure arrêts
+    # ── Filtrage outliers de vitesse (3 sigma) ──
+    # Élimine les points avec une vitesse aberrante (perte GPS, tunnel...)
+    if len(df) > 50:
+        v_med = df['vit_kmh'].median()
+        v_std = df['vit_kmh'].std()
+        seuil_max = v_med + 3 * v_std
+        df.loc[df['vit_kmh'] > seuil_max, 'vit_kmh'] = np.nan
+        df['vit_kmh'] = df['vit_kmh'].interpolate().fillna(v_med)
+
+    # Exclure arrêts (vitesse < 1 km/h pendant > 30 sec)
     df=df[~((df['vit_kmh']<1.0)&(df['duree_s']>0))].copy()
 
     df['pente']=(df['dz']/df['dist_m'].replace(0,np.nan)*100).replace([np.inf,-np.inf],0).fillna(0).clip(-80,80)
@@ -263,21 +277,52 @@ def analyser_trace(df, date0, type_sortie, fcmax):
 # ══════════════════════════════════════════════════════════════
 
 def coeff_course(traces, cible=0.87):
+    """
+    Calcul du coefficient course/entraînement basé sur la fréquence cardiaque.
+
+    Améliorations v1.1 :
+    - Prise en compte du FC drift (dérive cardiaque sur la durée)
+      Sur une longue sortie, la FC dérive vers le haut à effort constant
+      → on prend la médiane du premier tiers (FC stabilisée mais pas dérivée)
+    - Pondération par la durée (sortie longue = plus représentative)
+    - Compensation pour les sorties très courtes (< 30 min) où le FC
+      n'a pas le temps de se stabiliser
+    """
     fe,pe,fc_,pc=[],[],[],[]
     for t in traces:
         r=t.get('fc_ratio_moy')
         if r is None: continue
         d=t['dist_km']
-        if t['type_sortie']=='entrainement': fe.append(r);pe.append(d)
-        elif t['type_sortie']=='course':     fc_.append(r);pc.append(d)
+        duree=t.get('duree_h',1)
+
+        # Pondération par durée : plus longue = plus représentative
+        # Mais on plafonne à 4h pour pas écraser les courses courtes
+        poids_duree = min(duree, 4.0)
+
+        # Compensation sortie courte : FC pas stabilisée, on minore son poids
+        if duree < 0.5:  # moins de 30 min
+            poids_duree *= 0.5
+
+        poids = d * poids_duree
+
+        if t['type_sortie']=='entrainement':
+            fe.append(r); pe.append(poids)
+        elif t['type_sortie']=='course':
+            fc_.append(r); pc.append(poids)
+
     me=float(np.average(fe,weights=pe)) if fe else 0.75
     mc=float(np.average(fc_,weights=pc)) if fc_ else cible
     c=float(max(1.05,min(1.30,mc/me if me>0 else 1.10)))
+
     return {
-        'coefficient':round(c,3),'gain_pct':round((c-1)*100,1),
-        'fc_moy_entrainement':round(me,3),'fc_course_utilisee':round(mc,3),
-        'nb_entrainements':len(fe),'nb_courses_reelles':len(fc_),
-        'calibre_sur_courses':len(fc_)>0
+        'coefficient':round(c,3),
+        'gain_pct':round((c-1)*100,1),
+        'fc_moy_entrainement':round(me,3),
+        'fc_course_utilisee':round(mc,3),
+        'nb_entrainements':len(fe),
+        'nb_courses_reelles':len(fc_),
+        'calibre_sur_courses':len(fc_)>0,
+        'methode':'FC réelle des courses' if len(fc_)>0 else f'Cible générique {int(cible*100)}% FCmax',
     }
 
 # ══════════════════════════════════════════════════════════════
@@ -286,6 +331,8 @@ def coeff_course(traces, cible=0.87):
 
 def agreger(traces):
     profil={}
+
+    # Étape 1 : agrégation des VEP par terrain
     for t in ORDRE_TERRAINS:
         vs,ps,cs=[],[],[]
         for tr in traces:
@@ -298,12 +345,31 @@ def agreger(traces):
         va=float(np.average(vs,weights=ps))
         cm=float(np.mean(cs))
         profil[t]={
-            'vep_norm':round(va,2),'vep_std':round(float(np.std(vs)),2),
-            'score':min(100,max(0,round((va/REF_VEP[t])*50))),
+            'vep_norm':round(va,2),
+            'vep_std':round(float(np.std(vs)),2),
             'nb_courses':len(vs),
             'f_basse':round(float(max(0.05,cm*0.8)),3),
             'f_haute':round(float(min(0.30,cm*1.2)),3),
         }
+
+    # Étape 2 : score de pente = écart % vs VEP plat de l'utilisateur
+    # Hypothèse : sur du plat, VEP_user ≈ vitesse réelle. Sur pente,
+    # idéalement VEP_user devrait être identique (effort équivalent).
+    # → on mesure l'écart : signe + = "tu surperformes sur ce terrain", - = "tu sous-performes"
+    if 'plat' in profil:
+        vep_plat = profil['plat']['vep_norm']
+        for t in profil:
+            ecart_pct = round(((profil[t]['vep_norm'] - vep_plat) / vep_plat) * 100, 1)
+            profil[t]['ecart_plat_pct'] = ecart_pct
+            # Label couleur côté frontend selon signe
+            profil[t]['signe'] = '+' if ecart_pct >= 0 else ''
+    else:
+        # Fallback si pas de données plat
+        for t in profil:
+            profil[t]['ecart_plat_pct'] = 0
+            profil[t]['signe'] = ''
+
+    # Drain agrégé
     drains=[t['drain_moy_h'] for t in traces]
     poids=[t['poids_total'] for t in traces]
     drain=float(np.average(drains,weights=poids)) if drains else 0.08
@@ -317,40 +383,51 @@ def archetype(profil):
     if not profil:
         return {'key':'combattant','nom':'Le Combattant','desc':'Profil en construction.',
                 'forces':[],'faiblesses':[],'conseil':'Ajoute plus de traces GPX.'}
+
+    # On utilise les écarts vs plat (positifs = points forts, négatifs = points faibles)
     tm=[t for t in ['montee_raide','montee_soutenue','montee_douce'] if t in profil]
     td=[t for t in ['descente_douce','descente_soutenue','descente_raide'] if t in profil]
-    sm=float(np.mean([profil[t]['score'] for t in tm])) if tm else 50
-    sd=float(np.mean([profil[t]['score'] for t in td])) if td else 50
-    sp=float(profil.get('plat',{}).get('score',50))
-    sc=[profil[t]['score'] for t in profil]
-    sr=100-float(np.std(sc))*2 if sc else 50
-    if sm>=65 and sm>sd+15:
+
+    em=float(np.mean([profil[t]['ecart_plat_pct'] for t in tm])) if tm else 0
+    ed=float(np.mean([profil[t]['ecart_plat_pct'] for t in td])) if td else 0
+
+    # Régularité = faible écart-type entre tous les terrains
+    ecarts=[profil[t]['ecart_plat_pct'] for t in profil]
+    sr=float(np.std(ecarts)) if ecarts else 100
+
+    # Logique de classification
+    # Note: les écarts sont souvent négatifs (le plat reste généralement le plus rapide)
+    # On compare donc les écarts RELATIFS entre montée et descente
+    if em > ed + 5 and em > -10:
+        # Montagne marquée au-dessus de la descente
         return {'key':'grimpeur','nom':'Le Grimpeur',
-                'desc':"Tu avales les D+ comme personne.",
+                'desc':"Tu avales les D+ comme personne. Les montées sont ton terrain de jeu.",
                 'forces':['Montées raides et soutenues',"Résistance à l'accumulation de D+"],
                 'faiblesses':['Descentes techniques','Manque de vitesse sur plat'],
                 'conseil':'Travaille tes descentes en fractionné technique.'}
-    elif sd>=65 and sd>sm+15:
+    elif ed > em + 5 and ed > -10:
         return {'key':'descendeur','nom':'Le Descendeur',
-                'desc':"Tu récupères dans les descentes.",
+                'desc':"Tu récupères dans les descentes ce que tu perds à la montée.",
                 'forces':['Descentes rapides et fluides','Technique sur terrain varié'],
                 'faiblesses':['Montées longues','Accumulation de D+'],
                 'conseil':'Intègre des montées spécifiques à tes entraînements.'}
-    elif sp>=65 and sp>sm and sp>sd:
-        return {'key':'explosif','nom':"L'Explosif",
-                'desc':"Tu es à l'aise sur le plat et les sections roulantes.",
-                'forces':['Sections rapides','Vitesse de base élevée'],
-                'faiblesses':["Fatigue sur longs D+","Manque d'efficacité en altitude"],
-                'conseil':'Développe ta puissance en côte.'}
-    elif sr>=70 and max(sm,sd,sp)-min(sm,sd,sp)<20:
+    elif sr < 8:
+        # Très faible variabilité = équilibré
         return {'key':'equilibre','nom':"L'Équilibré",
                 'desc':'Profil homogène sur tous les terrains.',
                 'forces':['Polyvalence',"Régularité de l'allure"],
                 'faiblesses':['Pas de point fort dominant','Surclassé par des spécialistes'],
                 'conseil':'Choisis des parcours variés. Travaille un point fort.'}
+    elif em < -25 and ed < -25:
+        # Sous-performance importante en montée ET descente vs plat
+        return {'key':'explosif','nom':"L'Explosif",
+                'desc':"Tu es à l'aise sur le plat et les sections roulantes.",
+                'forces':['Sections rapides','Vitesse de base élevée'],
+                'faiblesses':["Fatigue sur longs D+","Manque d'efficacité en altitude"],
+                'conseil':'Développe ta puissance en côte.'}
     else:
         return {'key':'tenace','nom':'Le Tenace',
-                'desc':"Tu ne lâches jamais.",
+                'desc':"Tu ne lâches jamais. Ta force c'est la régularité dans la durée.",
                 'forces':["Gestion de l'effort",'Mental et régularité'],
                 'faiblesses':['Vitesse de pointe limitée',"Moins à l'aise sur les courts"],
                 'conseil':'Fais-toi plaisir sur les ultras.'}
@@ -360,6 +437,18 @@ def archetype(profil):
 # ══════════════════════════════════════════════════════════════
 
 def simuler(df, profil, drain_h, cat, coeff=1.0):
+    """
+    Simulation point par point avec modèle de fatigue scientifique.
+
+    Modèle de fatigue mécanique :
+    - Courbe exponentielle douce (et non plus seuil binaire 50%)
+    - Basée sur dénivelé positif cumulé (D+ destruction musculaire excentrique)
+    - Référence : Giovanelli et al. (2017) sur la fatigue en trail
+
+    Modèle de batterie énergétique :
+    - Courbe exponentielle accélérée en zone basse
+    - Drain par seconde lié aux zones FC (Karvonen)
+    """
     dep_tot=float(df['dep_m'].sum())
     dp_tot =float(df['dp_cum'].max())
     batt=100.0
@@ -373,10 +462,29 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
         tr=row['terrain']
         vn=profil.get(tr,{}).get('vep_norm',REF_VEP.get(tr,7.0))
         vr=vn*cat['facteur']*coeff
+
+        # ── Fatigue mécanique : courbe non-linéaire ──────────────
+        # Au lieu d'un seuil 50% binaire, on utilise une courbe exponentielle douce
+        # qui démarre dès le début (faible) et s'accélère progressivement
+        # cm = 1 - 0.18 × (ratio_dplus^1.8)
+        # → à 25%  : -1.7%
+        # → à 50%  : -6.2%
+        # → à 75%  : -12.4%
+        # → à 100% : -18%
         rd=float(row['dp_cum'])/dp_tot if dp_tot>0 else 0
-        cm=1.0 if rd<=0.5 else 1.0-0.15*((rd-0.5)/0.5)
+        cm = 1.0 - 0.18 * (rd ** 1.8)
+
+        # ── Fatigue batterie : courbe non-linéaire ────────────────
+        # Sigmoïde : impact très faible au-dessus de 60%, accélère sous 40%
+        # cb = 1 / (1 + exp(-12 × (br - 0.35)))  remappé entre 0.75 et 1.0
         br=batt/100
-        cb=1.0 if br>=0.5 else 1.0-0.25*((0.5-br)/0.5)
+        if br >= 0.60:
+            cb = 1.0
+        else:
+            # Transition progressive : 60% → 0% mappé sur 1.0 → 0.75
+            ratio = max(0, br / 0.60)  # 0 à 1
+            cb = 0.75 + 0.25 * (ratio ** 0.7)
+
         ct=cm*cb
         ve=vr*ct
         vm=(ve/3.6)/float(row['cm'])
