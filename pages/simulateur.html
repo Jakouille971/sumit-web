@@ -183,6 +183,42 @@
     }
 
     #leafletMap { height: 320px; width: 100%; }
+
+    /* ── Tooltip (i) ── */
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 0.5px solid var(--slate); color: var(--slate);
+      font-size: 10px; font-weight: 600; font-family: serif;
+      cursor: help; margin-left: 6px;
+      vertical-align: middle; transition: all 0.2s;
+      position: relative;
+    }
+    .info-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+    .info-icon::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      width: 280px; padding: 10px 12px;
+      background: var(--navy3); color: var(--white);
+      border: 0.5px solid var(--cyan);
+      font-size: 11px; font-weight: 300; line-height: 1.5;
+      letter-spacing: 0.02em;
+      white-space: normal; text-align: left;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .info-icon:hover::after { opacity: 1; visibility: visible; }
+    .info-icon::before {
+      content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: var(--cyan);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s;
+    }
+    .info-icon:hover::before { opacity: 1; visibility: visible; }
   </style>
 </head>
 <body>
@@ -442,14 +478,14 @@
       </button>
 
       <div class="result-kpis">
-        <div class="result-kpi"><div class="result-kpi-label">Temps estimé</div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique).">i</span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
         <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Batterie finale</div><div class="result-kpi-val" id="resBatterie">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Catégorie</div><div class="result-kpi-val" id="resCat">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Batterie finale<span class="info-icon" data-tooltip="État de ta réserve énergétique à l'arrivée. Calculée depuis ton drain horaire et la durée de la course. Sous 50% tu commences à ralentir, à 0% tu es au bout du rouleau.">i</span></div><div class="result-kpi-val" id="resBatterie">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km.">i</span></div><div class="result-kpi-val" id="resCat">—</div></div>
       </div>
       <div class="fourch-row">
-        <div class="fourch-item fg"><div class="fourch-label">Top condition</div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
-        <div class="fourch-item fr"><div class="fourch-label">Jour difficile</div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+        <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" data-tooltip="Temps optimiste calculé à partir de la fourchette basse de variabilité de tes performances par terrain. Représente ton temps potentiel un jour où tout se passe bien.">i</span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+        <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" data-tooltip="Temps pessimiste basé sur la fourchette haute de variabilité. Représente un jour où les conditions sont défavorables (météo, fatigue résiduelle, gestion difficile).">i</span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
       </div>
 
       <div class="chart-card">
@@ -1251,4 +1287,6 @@ function envoyerAvis() {
 </script>
 
 </body>
+</html>
+
 </html>
