@@ -57,6 +57,12 @@ async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coeffi
 // ── Sauvegarde / chargement du profil ──────────────────────
 function sauvegarderProfil(data) {
   try {
+    // VEP globale = moyenne pondérée des vep_globale de toutes les traces
+    let vepGlobale = 0;
+    if (data.traces && data.traces.length > 0) {
+      vepGlobale = data.traces.reduce((s,t) => s + t.vep_globale, 0) / data.traces.length;
+    }
+
     sessionStorage.setItem('sumit_profil', JSON.stringify({
       profil:      data.profil,
       drain_moy_h: data.drain_moy_h,
@@ -65,6 +71,7 @@ function sauvegarderProfil(data) {
       fcmax:       data.fcmax || 193,
       prenom:      data.prenom || 'Coureur',
       nb_traces:   data.nb_traces,
+      vep_globale: vepGlobale,
       timestamp:   Date.now(),
     }));
   } catch(e) {
