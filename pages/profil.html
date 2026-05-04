@@ -94,14 +94,14 @@
     /* ── Tooltip (i) ── */
     .info-icon {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 0.5px solid var(--slate); color: var(--slate);
-      font-size: 10px; font-weight: 600; font-family: serif;
+      width: 16px; height: 16px;
       cursor: help; margin-left: 6px;
       vertical-align: middle; transition: all 0.2s;
       position: relative;
+      color: var(--slate);
     }
-    .info-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+    .info-icon svg { width: 14px; height: 14px; display: block; }
+    .info-icon:hover { color: var(--cyan); }
     .info-icon::after {
       content: attr(data-tooltip);
       position: absolute; bottom: calc(100% + 8px); left: 50%;
@@ -383,12 +383,12 @@
       <!-- KPIs -->
       <div class="profil-kpis">
         <div class="profil-kpi">
-          <div class="profil-kpi-label">VEP globale<span class="info-icon" data-tooltip="Vitesse Équivalente Plat — la vitesse que tu aurais sur du plat à effort comparable. Calculée via les coefficients de Minetti qui pondèrent ta vitesse réelle selon la pente. Plus elle est élevée, plus tu es performant en équivalent plat.">i</span></div>
+          <div class="profil-kpi-label">VEP globale<span class="info-icon" data-tooltip="Vitesse Équivalente Plat — la vitesse que tu aurais sur du plat à effort comparable. Calculée via les coefficients de Minetti qui pondèrent ta vitesse réelle selon la pente. Plus elle est élevée, plus tu es performant en équivalent plat."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
           <div class="profil-kpi-val" id="vepGlobale">—</div>
           <div class="profil-kpi-sub">km/h éq. plat</div>
         </div>
         <div class="profil-kpi">
-          <div class="profil-kpi-label">Drain énergie<span class="info-icon" data-tooltip="Pourcentage de batterie énergétique consommé par heure d'effort. Calculé depuis ta FC moyenne et les zones cardiaques (Karvonen). Plus tu cours en zone haute, plus tu drainés vite ta batterie.">i</span></div>
+          <div class="profil-kpi-label">Drain énergie<span class="info-icon" data-tooltip="Pourcentage de batterie énergétique consommé par heure d'effort. Calculé depuis ta FC moyenne et les zones cardiaques (Karvonen). Plus tu cours en zone haute, plus tu drainés vite ta batterie."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
           <div class="profil-kpi-val" id="drainEnergie">—</div>
           <div class="profil-kpi-sub">% batterie / heure</div>
         </div>
@@ -398,14 +398,14 @@
           <div class="profil-kpi-sub">fichiers GPX</div>
         </div>
         <div class="profil-kpi">
-          <div class="profil-kpi-label">Coeff. course<span class="info-icon" data-tooltip="Coefficient de performance entre tes entraînements et tes courses. Calculé via le ratio de FC moyenne : en course tu pousses plus (≈87% FCmax) qu'à l'entraînement (≈75%). Le coefficient ajuste la prédiction pour refléter ton effort réel en compétition.">i</span></div>
+          <div class="profil-kpi-label">Coeff. course<span class="info-icon" data-tooltip="Coefficient de performance entre tes entraînements et tes courses. Calculé via le ratio de FC moyenne : en course tu pousses plus (≈87% FCmax) qu'à l'entraînement (≈75%). Le coefficient ajuste la prédiction pour refléter ton effort réel en compétition."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
           <div class="profil-kpi-val" id="coeffCourse">—</div>
           <div class="profil-kpi-sub">vs entraînement</div>
         </div>
       </div>
       <!-- Scores -->
       <div class="profil-card">
-        <div class="profil-card-header">Score de pente<span class="info-icon" data-tooltip="Écart de performance par rapport à ton plat. Pour chaque type de pente, on compare ta VEP réelle à celle attendue (théorie de Minetti basée sur ton plat). Un + vert = tu surperformes sur ce terrain. Un - rouge = tu sous-performes. Le plat est ta référence à 0%.">i</span></div>
+        <div class="profil-card-header">Score de pente<span class="info-icon" data-tooltip="Écart de performance par rapport à ton plat. Pour chaque type de pente, on compare ta VEP réelle à celle attendue (théorie de Minetti basée sur ton plat). Un + vert = tu surperformes sur ce terrain. Un - rouge = tu sous-performes. Le plat est ta référence à 0%."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
         <div class="profil-card-body" id="scoresBars"></div>
       </div>
       <button class="btn-primary" style="width:100%;padding:16px;" onclick="window.location.href='simulateur.html'">
@@ -467,7 +467,7 @@ function setType(btn, type) {
 function handleFiles(files) {
   Array.from(files).forEach(file => {
     if (file.name.toLowerCase().endsWith('.gpx') && !filesData.find(f => f.name === file.name)) {
-      filesData.push({ name:file.name, file, type:'course' });
+      filesData.push({ name:file.name, file, type:'entrainement' });
     }
   });
   renderFileList();
@@ -591,4 +591,3 @@ function afficherProfil(data) {
 </script>
 </body>
 </html>
-
