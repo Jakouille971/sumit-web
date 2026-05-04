@@ -6,7 +6,7 @@
 // Détection automatique : local ou production
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8000'
-  : 'https://sumit-api.onrender.com';  // ← À remplacer par ton URL Render après déploiement
+  : 'https://sumit-web-s4lf.onrender.com';
 
 // ── Appel API analyser-profil ───────────────────────────────
 async function analyserProfilAPI(filesData, fcmax, profilType) {
