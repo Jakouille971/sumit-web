@@ -464,26 +464,32 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
         vr=vn*cat['facteur']*coeff
 
         # ── Fatigue mécanique : courbe non-linéaire ──────────────
-        # Au lieu d'un seuil 50% binaire, on utilise une courbe exponentielle douce
-        # qui démarre dès le début (faible) et s'accélère progressivement
-        # cm = 1 - 0.18 × (ratio_dplus^1.8)
-        # → à 25%  : -1.7%
-        # → à 50%  : -6.2%
-        # → à 75%  : -12.4%
-        # → à 100% : -18%
+        # Modèle : impact négligeable jusqu'à 30% du D+, puis montée progressive
+        # cm = 1 - 0.13 × max(0, ratio_dplus - 0.30)^1.5 / 0.7^1.5
+        # → à 30%  : 0%  (pas de fatigue)
+        # → à 50%  : -2.0%
+        # → à 70%  : -5.5%
+        # → à 90%  : -10.0%
+        # → à 100% : -13%
         rd=float(row['dp_cum'])/dp_tot if dp_tot>0 else 0
-        cm = 1.0 - 0.18 * (rd ** 1.8)
+        if rd <= 0.30:
+            cm = 1.0
+        else:
+            facteur = ((rd - 0.30) / 0.70) ** 1.5
+            cm = 1.0 - 0.13 * facteur
 
         # ── Fatigue batterie : courbe non-linéaire ────────────────
-        # Sigmoïde : impact très faible au-dessus de 60%, accélère sous 40%
-        # cb = 1 / (1 + exp(-12 × (br - 0.35)))  remappé entre 0.75 et 1.0
+        # Impact très faible au-dessus de 50%, accélère sous 30%
         br=batt/100
-        if br >= 0.60:
+        if br >= 0.50:
             cb = 1.0
+        elif br >= 0.30:
+            # Transition douce 50% → 30% mappée sur 1.0 → 0.92
+            cb = 0.92 + 0.08 * ((br - 0.30) / 0.20)
         else:
-            # Transition progressive : 60% → 0% mappé sur 1.0 → 0.75
-            ratio = max(0, br / 0.60)  # 0 à 1
-            cb = 0.75 + 0.25 * (ratio ** 0.7)
+            # Sous 30% : ralentissement plus marqué
+            ratio = max(0, br / 0.30)
+            cb = 0.78 + 0.14 * (ratio ** 0.7)
 
         ct=cm*cb
         ve=vr*ct
@@ -688,3 +694,4 @@ if __name__=="__main__":
     print("  Docs    : http://localhost:8000/docs")
     print("="*55+"\n")
     uvicorn.run("api:app",host="0.0.0.0",port=8000,reload=True)
+
