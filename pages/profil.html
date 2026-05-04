@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUM'IT — Mon Profil</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    body { padding-top: 64px; }
+
+    .page-hero { position:relative; overflow:hidden; height:200px; display:flex; align-items:flex-end; }
+    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(160deg,#1B3D5E 0%,#0D2A40 40%,#091820 100%); }
+    .page-hero-bg::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 75% 40%,rgba(0,200,224,0.07) 0%,transparent 60%); }
+    .page-hero-mountain { position:absolute; bottom:0; left:0; right:0; }
+    .page-hero-content { position:relative; z-index:2; padding:0 80px 28px; width:100%; }
+    .page-hero h1 { font-family:var(--font-display); font-size:36px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:4px; }
+    .page-hero p { font-size:14px; font-weight:300; color:var(--mist); }
+
+    .profil-layout { display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 64px - 200px); }
+    .col-left { border-right:0.5px solid var(--border); padding:48px; }
+    .col-right { padding:48px; background:var(--navy3); }
+
+    .step-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:24px; }
+    .step-num { width:28px; height:28px; border:0.5px solid var(--cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:13px; color:var(--cyan); }
+    .step-title { font-family:var(--font-display); font-size:18px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:4px; }
+    .step-desc { font-size:13px; font-weight:300; color:var(--slate); line-height:1.6; }
+    .step-divider { height:0.5px; background:var(--border); margin:36px 0; }
+
+    .file-list { margin-top:16px; }
+    .file-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:0.5px solid var(--border); }
+    .file-item:last-child { border-bottom:none; }
+    .file-icon { width:32px; height:32px; background:var(--cyan-dim); border:0.5px solid var(--border2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .file-icon svg { width:14px; height:14px; stroke:var(--cyan); fill:none; stroke-width:1.5; }
+    .file-name { font-size:13px; color:var(--white); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .file-type-select { width:auto; padding:4px 8px; font-size:11px; background:transparent; border:0.5px solid var(--border); color:var(--slate); flex-shrink:0; }
+    .file-remove { width:20px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0.4; transition:opacity 0.2s; flex-shrink:0; }
+    .file-remove:hover { opacity:1; }
+    .file-remove svg { width:12px; height:12px; stroke:var(--slate); fill:none; stroke-width:2; }
+
+    .input-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
+    .input-group { margin-bottom:16px; }
+    .input-hint { font-size:11px; color:var(--slate); margin-top:6px; opacity:0.7; line-height:1.5; }
+
+    .profil-type-toggle { display:flex; border:0.5px solid var(--border); margin-bottom:36px; }
+    .toggle-btn { flex:1; padding:14px; text-align:center; cursor:pointer; background:transparent; border:none; border-right:0.5px solid var(--border); transition:background 0.2s; }
+    .toggle-btn:last-child { border-right:none; }
+    .toggle-btn.active { background:var(--cyan-dim); }
+    .toggle-btn-name { font-family:var(--font-display); font-size:13px; letter-spacing:0.08em; text-transform:uppercase; color:var(--slate); }
+    .toggle-btn.active .toggle-btn-name { color:var(--cyan); }
+    .toggle-btn-sub { font-size:11px; color:var(--slate); margin-top:3px; opacity:0.6; }
+
+    .empty-state { text-align:center; padding:80px 20px; }
+    .empty-icon { width:56px; height:56px; border:0.5px solid var(--border2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+    .empty-icon svg { width:24px; height:24px; stroke:var(--slate); fill:none; stroke-width:1.5; }
+    .empty-title { font-family:var(--font-display); font-size:18px; font-weight:500; color:var(--slate); margin-bottom:8px; letter-spacing:0.04em; }
+    .empty-sub { font-size:13px; color:var(--slate); opacity:0.5; line-height:1.6; }
+
+    .archetype-card { background:rgba(0,200,224,0.04); border:0.5px solid var(--border2); padding:24px; margin-bottom:20px; display:flex; gap:20px; align-items:flex-start; }
+    .archetype-icon-wrap { width:72px; height:72px; border:0.5px solid var(--cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(0,200,224,0.06); }
+    .archetype-icon-wrap svg { width:38px; height:38px; }
+    .archetype-info { flex:1; }
+    .archetype-name { font-family:var(--font-display); font-size:26px; font-weight:500; color:var(--cyan); letter-spacing:0.04em; margin-bottom:6px; line-height:1; }
+    .archetype-desc { font-size:13px; font-weight:300; color:var(--slate); line-height:1.65; margin-bottom:12px; }
+    .archetype-tips { display:flex; flex-direction:column; gap:5px; }
+    .archetype-tip { display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.5; }
+    .tip-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+    .tip-dot.green { background:var(--green); }
+    .tip-dot.orange { background:var(--orange); }
+
+    .profil-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+    .profil-kpi { background:var(--navy2); border:0.5px solid var(--border); padding:16px 18px; }
+    .profil-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+    .profil-kpi-val { font-family:var(--font-display); font-size:26px; font-weight:500; color:var(--cyan); }
+    .profil-kpi-sub { font-size:11px; color:var(--slate); margin-top:3px; }
+
+    .profil-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:16px; }
+    .profil-card-header { padding:14px 20px; border-bottom:0.5px solid var(--border); font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .profil-card-body { padding:16px 20px; }
+
+    .score-bar { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .score-terrain-icon { width:28px; height:28px; border:0.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,0.03); }
+    .score-terrain-icon svg { width:14px; height:14px; fill:none; stroke-width:1.8; }
+    .score-label { font-family:var(--font-display); font-size:12px; color:var(--slate); width:130px; flex-shrink:0; }
+    .score-track { flex:1; height:3px; background:rgba(255,255,255,0.06); }
+    .score-fill { height:100%; background:var(--cyan); transition:width 1s ease; }
+    .score-fill.low { background:var(--slate); }
+    .score-val { font-family:var(--font-display); font-size:12px; color:var(--white); width:44px; text-align:right; }
+
+    @media (max-width:900px) {
+      .page-hero-content { padding:0 24px 24px; }
+      .profil-layout { grid-template-columns:1fr; }
+      .col-left { border-right:none; border-bottom:0.5px solid var(--border); padding:32px 24px; }
+      .col-right { padding:32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">S</div>
+    <div class="nav-logo-text">
+      <div class="nav-logo-name">SUM<span>'IT</span></div>
+      <div class="nav-logo-sub">Plan your peaks</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="../index.html"   class="nav-link">Accueil</a>
+    <a href="profil.html"     class="nav-link active">Mon profil</a>
+    <a href="simulateur.html" class="nav-link">Simulateur</a>
+    <a href="avenir.html"     class="nav-link">À venir</a>
+  </div>
+  <button class="nav-cta" onclick="window.location.href='simulateur.html'">Simuler une course</button>
+</nav>
+
+<!-- Bandeau hero -->
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  <svg class="page-hero-mountain" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:160px;">
+    <defs>
+      <linearGradient id="phg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A3A5C" stop-opacity="0.55"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F2A40" stop-opacity="0.9"/><stop offset="100%" stop-color="#091820" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#091820" stop-opacity="0.95"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phsnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D8ECF0" stop-opacity="0.55"/><stop offset="100%" stop-color="#1A3A5C" stop-opacity="0"/></linearGradient>
+      <linearGradient id="phfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+    </defs>
+    <polygon points="0,160 0,95 100,78 200,88 300,65 400,75 500,52 600,64 700,44 800,56 900,38 1000,50 1100,32 1200,46 1300,28 1440,40 1440,160" fill="url(#phg1)"/>
+    <polygon points="580,160 585,140 590,128 594,120 598,128 601,118 605,126 609,112 613,122 617,106 620,116 623,96 626,110 629,88 632,102 635,72 638,90 641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 672,86 678,100 686,112 696,122 708,130 722,137 738,143 756,148 776,152 800,155 830,158 860,160" fill="url(#phg2)"/>
+    <polygon points="641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 660,18 653,25 646,42" fill="url(#phsnow)"/>
+    <polygon points="0,160 0,130 80,115 160,125 230,108 300,120 360,102 410,160" fill="url(#phg3)" opacity="0.9"/>
+    <polygon points="900,160 940,128 990,142 1040,118 1100,132 1160,112 1220,126 1300,108 1370,120 1440,105 1440,160" fill="url(#phg3)" opacity="0.85"/>
+    <rect x="0" y="115" width="1440" height="45" fill="url(#phfade)"/>
+  </svg>
+  <div class="page-hero-content">
+    <div class="section-tag" style="margin-bottom:10px;">Étape 1 sur 2</div>
+    <h1>Mon profil coureur</h1>
+    <p>Importe tes traces GPX pour construire ton profil personnalisé.</p>
+  </div>
+</div>
+
+<div class="profil-layout">
+  <!-- Colonne gauche -->
+  <div class="col-left">
+    <div class="profil-type-toggle">
+      <button class="toggle-btn active" onclick="setType(this,'trail')">
+        <div class="toggle-btn-name">Trail running</div>
+        <div class="toggle-btn-sub">Courses et entraînements</div>
+      </button>
+      <button class="toggle-btn" onclick="setType(this,'rando')">
+        <div class="toggle-btn-name">Randonnée</div>
+        <div class="toggle-btn-sub">Treks et sorties nature</div>
+      </button>
+    </div>
+
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <div class="step-title">Ton prénom</div>
+        <div class="step-desc">Pour personnaliser ton rapport PDF.</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Prénom</label>
+      <input type="text" id="prenom" placeholder="Ex : Jake">
+    </div>
+
+    <div class="step-divider"></div>
+
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <div class="step-title">Importe tes traces GPX</div>
+        <div class="step-desc">Garmin, Strava, Komoot, Suunto — plus tu en importes, plus le profil est précis.</div>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      </div>
+      <div class="upload-title">Glisse-dépose tes fichiers GPX</div>
+      <div class="upload-sub">ou clique pour parcourir · fichiers .gpx acceptés</div>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".gpx" style="display:none" onchange="handleFiles(this.files)">
+    <div class="file-list" id="fileList"></div>
+
+    <div class="step-divider"></div>
+
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <div class="step-title">Fréquence cardiaque maximale</div>
+        <div class="step-desc">Renseigne ta FCmax pour calibrer le modèle énergétique.</div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">FCmax (bpm)</label>
+      <input type="number" id="fcmax" placeholder="Ex : 193" min="120" max="230">
+      <div class="input-hint">Ta FCmax mesurée lors d'un effort maximal — pas une valeur estimée.</div>
+    </div>
+
+    <div class="step-divider"></div>
+
+    <button class="btn-primary" id="btnAnalyser" style="width:100%;padding:16px;" onclick="analyserProfil()">
+      Analyser mon profil
+    </button>
+    <p style="font-size:12px;color:var(--slate);text-align:center;margin-top:14px;line-height:1.6;">
+      L'analyse se fait via l'API locale.<br>Tes données ne quittent pas ton appareil.
+    </p>
+  </div>
+
+  <!-- Colonne droite -->
+  <div class="col-right" id="colRight">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      </div>
+      <div class="empty-title">Ton profil s'affichera ici</div>
+      <div class="empty-sub">Importe au moins une trace GPX<br>et clique sur "Analyser mon profil"</div>
+    </div>
+
+    <div id="profilResults" style="display:none;">
+      <!-- Archétype -->
+      <div class="archetype-card">
+        <div class="archetype-icon-wrap" id="archetypeIconWrap"></div>
+        <div class="archetype-info">
+          <div class="archetype-name" id="archetypeName">—</div>
+          <div class="archetype-desc" id="archetypeDesc">—</div>
+          <div class="archetype-tips" id="archetypeTips"></div>
+        </div>
+      </div>
+      <!-- KPIs -->
+      <div class="profil-kpis">
+        <div class="profil-kpi"><div class="profil-kpi-label">VEP globale</div><div class="profil-kpi-val" id="vepGlobale">—</div><div class="profil-kpi-sub">km/h éq. plat</div></div>
+        <div class="profil-kpi"><div class="profil-kpi-label">Drain énergie</div><div class="profil-kpi-val" id="drainEnergie">—</div><div class="profil-kpi-sub">% batterie / heure</div></div>
+        <div class="profil-kpi"><div class="profil-kpi-label">Traces analysées</div><div class="profil-kpi-val" id="nbTraces">—</div><div class="profil-kpi-sub">fichiers GPX</div></div>
+        <div class="profil-kpi"><div class="profil-kpi-label">Coeff. course</div><div class="profil-kpi-val" id="coeffCourse">—</div><div class="profil-kpi-sub">vs entraînement</div></div>
+      </div>
+      <!-- Scores -->
+      <div class="profil-card">
+        <div class="profil-card-header">Scores par terrain</div>
+        <div class="profil-card-body" id="scoresBars"></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:16px;" onclick="window.location.href='simulateur.html'">
+        Simuler une course avec ce profil →
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div><div class="footer-logo">SUM<span>'IT</span></div><div class="footer-sub">Plan your peaks · Trail &amp; Rando</div></div>
+  <div class="footer-copy">© 2026 SUM'IT</div>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/api-client.js"></script>
+<script>
+
+// ── Icônes archétypes ────────────────────────────────────────
+const ARCHETYPE_ICONS = {
+  grimpeur: `<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="19,4 34,30 4,30" fill="rgba(0,200,224,0.08)"/><polygon points="19,4 24,14 14,14" fill="rgba(0,200,224,0.2)" stroke-width="1"/><line x1="19" y1="34" x2="19" y2="20"/><polyline points="15,24 19,20 23,24"/></svg>`,
+  descendeur:`<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,8 14,22 19,16 24,26 34,8"/><circle cx="26" cy="26" r="3" fill="rgba(0,200,224,0.2)"/><line x1="8" y1="28" x2="28" y2="28"/><polyline points="24,24 28,28 24,32"/></svg>`,
+  explosif:  `<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,4 12,20 18,20 16,34 26,18 20,18" fill="rgba(0,200,224,0.15)"/></svg>`,
+  equilibre: `<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,28 12,14 19,20 26,10 34,28"/><circle cx="4" cy="28" r="2" fill="rgba(0,200,224,0.3)"/><circle cx="19" cy="20" r="2" fill="rgba(0,200,224,0.3)"/><circle cx="34" cy="28" r="2" fill="rgba(0,200,224,0.3)"/></svg>`,
+  tenace:    `<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="22" r="12" fill="rgba(0,200,224,0.06)"/><line x1="19" y1="10" x2="19" y2="6"/><line x1="16" y1="6" x2="22" y2="6"/><line x1="19" y1="22" x2="19" y2="14" stroke-width="2"/><line x1="19" y1="22" x2="25" y2="26" stroke-width="1.4"/><circle cx="19" cy="22" r="2" fill="rgba(0,200,224,0.5)"/></svg>`,
+  combattant:`<svg viewBox="0 0 38 38" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="8" r="3" fill="rgba(0,200,224,0.2)"/><line x1="19" y1="11" x2="19" y2="22"/><line x1="19" y1="15" x2="13" y2="12"/><line x1="19" y1="15" x2="25" y2="19"/><line x1="19" y1="22" x2="13" y2="30"/><line x1="19" y1="22" x2="26" y2="28"/></svg>`,
+};
+
+const TERRAIN_ICONS = {
+  'montee_raide':     `<svg viewBox="0 0 14 14" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round"><polyline points="2,12 7,2 11,7"/><line x1="7" y1="2" x2="7" y2="5"/><line x1="7" y1="2" x2="10" y2="3.5"/></svg>`,
+  'montee_soutenue':  `<svg viewBox="0 0 14 14" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round"><polyline points="2,11 5,7 9,4 11,3"/><line x1="9" y1="3" x2="11" y2="3"/><line x1="11" y1="3" x2="11" y2="5"/></svg>`,
+  'montee_douce':     `<svg viewBox="0 0 14 14" fill="none" stroke="#5DCAA5" stroke-width="1.6" stroke-linecap="round"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
+  'plat':             `<svg viewBox="0 0 14 14" fill="none" stroke="#00C8E0" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="7" x2="11" y2="7"/><polyline points="8,4 11,7 8,10"/></svg>`,
+  'descente_douce':   `<svg viewBox="0 0 14 14" fill="none" stroke="#5DCAA5" stroke-width="1.6" stroke-linecap="round"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
+  'descente_soutenue':`<svg viewBox="0 0 14 14" fill="none" stroke="#EF9F27" stroke-width="1.6" stroke-linecap="round"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
+  'descente_raide':   `<svg viewBox="0 0 14 14" fill="none" stroke="#E24B4A" stroke-width="1.6" stroke-linecap="round"><polyline points="6,2 11,9 7,11"/></svg>`,
+};
+
+const TERRAIN_LABELS = {
+  montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
+  montee_douce:'Montée douce', plat:'Plat',
+  descente_douce:'Descente douce', descente_soutenue:'Descente soutenue',
+  descente_raide:'Descente raide',
+};
+
+const ORDRE_T = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+
+// ── État ────────────────────────────────────────────────────
+let profilType = 'trail';
+let filesData  = [];
+
+function setType(btn, type) {
+  profilType = type;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Gestion fichiers ────────────────────────────────────────
+function handleFiles(files) {
+  Array.from(files).forEach(file => {
+    if (file.name.toLowerCase().endsWith('.gpx') && !filesData.find(f => f.name === file.name)) {
+      filesData.push({ name:file.name, file, type:'course' });
+    }
+  });
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  filesData.forEach((f, i) => {
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `
+      <div class="file-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="file-name">${f.name}</div>
+      <select class="file-type-select" onchange="filesData[${i}].type=this.value">
+        <option value="course"       ${f.type==='course'?'selected':''}>Course</option>
+        <option value="entrainement" ${f.type==='entrainement'?'selected':''}>Entraînement</option>
+        <option value="sortie"       ${f.type==='sortie'?'selected':''}>Sortie tranquille</option>
+      </select>
+      <div class="file-remove" onclick="removeFile(${i})">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function removeFile(i) { filesData.splice(i,1); renderFileList(); }
+
+// Drag & drop
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='rgba(0,200,224,0.6)'; });
+dz.addEventListener('dragleave', () => { dz.style.borderColor=''; });
+dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor=''; handleFiles(e.dataTransfer.files); });
+
+// ── Analyse ─────────────────────────────────────────────────
+async function analyserProfil() {
+  if (filesData.length === 0) { alert('Importe au moins une trace GPX !'); return; }
+  const fcmax = document.getElementById('fcmax').value;
+  if (!fcmax) { alert('Renseigne ta FCmax !'); return; }
+
+  const btn = document.getElementById('btnAnalyser');
+  btn.textContent = '⏳ Analyse en cours...';
+  btn.disabled = true;
+
+  try {
+    const data = await analyserProfilAPI(filesData, parseInt(fcmax), profilType);
+    data.fcmax  = parseInt(fcmax);
+    data.prenom = document.getElementById('prenom').value.trim() || 'Coureur';
+    afficherProfil(data);
+    sauvegarderProfil(data);
+  } catch(err) {
+    alert(`Erreur : ${err.message}\n\nVérifie que l'API tourne (python api.py)`);
+  } finally {
+    btn.textContent = 'Analyser mon profil';
+    btn.disabled = false;
+  }
+}
+
+function afficherProfil(data) {
+  document.getElementById('emptyState').style.display    = 'none';
+  document.getElementById('profilResults').style.display = 'block';
+
+  // KPIs
+  const vepMoy = data.traces.length > 0
+    ? (data.traces.reduce((s,t)=>s+t.vep_globale,0)/data.traces.length).toFixed(1)
+    : '—';
+  document.getElementById('vepGlobale').textContent   = vepMoy;
+  document.getElementById('drainEnergie').textContent = (data.drain_moy_h*100).toFixed(1);
+  document.getElementById('nbTraces').textContent     = data.nb_traces;
+  document.getElementById('coeffCourse').textContent  = `×${data.coefficient_course?.coefficient?.toFixed(2)||'—'}`;
+
+  // Archétype
+  const arch = data.archetype || {};
+  const key  = arch.key || 'combattant';
+  if (ARCHETYPE_ICONS[key]) document.getElementById('archetypeIconWrap').innerHTML = ARCHETYPE_ICONS[key];
+  document.getElementById('archetypeName').textContent = arch.nom || '—';
+  document.getElementById('archetypeDesc').textContent = arch.desc || '';
+  const tipsEl = document.getElementById('archetypeTips');
+  tipsEl.innerHTML = [
+    ...(arch.forces||[]).map(f=>`<div class="archetype-tip"><div class="tip-dot green"></div><span style="font-size:12px;color:var(--slate);">${f}</span></div>`),
+    ...(arch.faiblesses||[]).map(f=>`<div class="archetype-tip"><div class="tip-dot orange"></div><span style="font-size:12px;color:var(--slate);">${f}</span></div>`),
+    arch.conseil?`<div class="archetype-tip"><div class="tip-dot" style="background:var(--cyan);"></div><span style="font-size:12px;color:var(--cyan);">💡 ${arch.conseil}</span></div>`:''
+  ].join('');
+
+  // Barres scores
+  const container = document.getElementById('scoresBars');
+  container.innerHTML = '';
+  ORDRE_T.forEach(t => {
+    const p = data.profil[t];
+    if (!p) return;
+    const high = t.startsWith('montee') || t==='plat';
+    const bar  = document.createElement('div');
+    bar.className = 'score-bar';
+    bar.innerHTML = `
+      <div class="score-terrain-icon">${TERRAIN_ICONS[t]||''}</div>
+      <div class="score-label">${TERRAIN_LABELS[t]}</div>
+      <div class="score-track">
+        <div class="score-fill ${high?'':'low'}" style="width:0%;transition:width 1s ease" data-target="${p.score}"></div>
+      </div>
+      <div class="score-val">${p.score}/100</div>`;
+    container.appendChild(bar);
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.score-fill[data-target]').forEach(b => { b.style.width = b.dataset.target+'%'; });
+  }, 100);
+
+  if (window.innerWidth < 900) document.getElementById('colRight').scrollIntoView({behavior:'smooth'});
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUM'IT — Plan your peaks</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    /* ══ Questionnaire ══════════════════════════════════ */
+    .survey-section {
+      background: var(--navy2);
+      border-top: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+      padding: 80px;
+    }
+
+    .survey-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .survey-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .survey-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .survey-field.full { grid-column: 1 / -1; }
+
+    .survey-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      color: var(--slate);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .survey-field textarea {
+      resize: vertical;
+      min-height: 90px;
+      font-family: var(--font-body);
+    }
+
+    .rating-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .rating-btn {
+      flex: 1;
+      padding: 10px 6px;
+      border: 0.5px solid var(--border);
+      background: transparent;
+      color: var(--slate);
+      font-family: var(--font-display);
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .rating-btn:hover,
+    .rating-btn.selected {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border: 0.5px solid var(--border);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--slate);
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .checkbox-item:hover,
+    .checkbox-item.checked {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: var(--cyan-glow);
+    }
+    .checkbox-item input { display: none; }
+
+    .survey-success {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      border: 0.5px solid var(--border2);
+      background: var(--cyan-glow);
+    }
+
+    .survey-success-icon {
+      width: 48px;
+      height: 48px;
+      border: 0.5px solid var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .survey-success-icon svg { width: 24px; height: 24px; stroke: var(--cyan); fill: none; stroke-width: 1.5; }
+
+    .survey-success h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .survey-success p { font-size: 13px; color: var(--slate); }
+
+    /* ══ Section "Comment ça marche" ═══════════════════ */
+    .how-section {
+      background: var(--navy3);
+      border-top: 0.5px solid var(--border);
+      padding: 80px;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-top: 48px;
+    }
+
+    .how-card {
+      background: var(--navy2);
+      padding: 36px 32px;
+    }
+
+    .how-num {
+      width: 36px;
+      height: 36px;
+      border: 0.5px solid var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--cyan);
+    }
+
+    .how-card h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--white);
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+
+    .how-card p {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--slate);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 768px) {
+      .survey-section, .how-section { padding: 48px 24px; }
+      .survey-grid { grid-template-columns: 1fr; }
+      .how-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">S</div>
+    <div class="nav-logo-text">
+      <div class="nav-logo-name">SUM<span>'IT</span></div>
+      <div class="nav-logo-sub">Plan your peaks</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="index.html"            class="nav-link active">Accueil</a>
+    <a href="pages/profil.html"     class="nav-link">Mon profil</a>
+    <a href="pages/simulateur.html" class="nav-link">Simulateur</a>
+    <a href="pages/avenir.html"     class="nav-link">À venir</a>
+  </div>
+  <button class="nav-cta" onclick="window.location.href='pages/profil.html'">Commencer</button>
+</nav>
+
+<!-- ══ HERO avec montagne style illustration ═════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+
+  <!-- Montagne style illustration vectorielle — plusieurs couches + sapins -->
+  <svg class="hero-mountain" viewBox="0 0 1440 520" xmlns="http://www.w3.org/2000/svg"
+       preserveAspectRatio="xMidYMax meet"
+       style="display:block; width:100%; height:520px; position:absolute; bottom:0;">
+    <defs>
+      <!-- Couches de brume progressives -->
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#1A3A5C" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
+      </linearGradient>
+
+      <!-- Couche 1 : montagnes très lointaines (presque brume) -->
+      <linearGradient id="c1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#2A4A6A" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#1A3050" stop-opacity="0.75"/>
+      </linearGradient>
+
+      <!-- Couche 2 -->
+      <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#1E3D5C" stop-opacity="0.75"/>
+        <stop offset="100%" stop-color="#132840" stop-opacity="0.9"/>
+      </linearGradient>
+
+      <!-- Couche 3 -->
+      <linearGradient id="c3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#162E48" stop-opacity="0.88"/>
+        <stop offset="100%" stop-color="#0E2035" stop-opacity="1"/>
+      </linearGradient>
+
+      <!-- Couche 4 : forêt sapins foncée -->
+      <linearGradient id="c4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#0E2030" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#091820" stop-opacity="1"/>
+      </linearGradient>
+
+      <!-- Couche 5 : avant-plan très sombre -->
+      <linearGradient id="c5" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#091820" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
+      </linearGradient>
+
+      <!-- Neige -->
+      <linearGradient id="sn" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#C8DCE8" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#2A4A6A"  stop-opacity="0"/>
+      </linearGradient>
+
+      <!-- Fondu bas -->
+      <linearGradient id="fd" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#0D1B2A" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
+      </linearGradient>
+    </defs>
+
+    <!-- ══ COUCHE 1 : Massifs très lointains, brumeux ══ -->
+    <path d="
+      M0,520 L0,300
+      C60,280 100,260 150,250
+      C200,240 240,255 280,240
+      C320,225 360,200 400,195
+      C440,190 480,205 520,195
+      C560,185 600,165 640,160
+      C680,155 720,170 760,162
+      C800,154 840,135 880,130
+      C920,125 960,140 1000,132
+      C1040,124 1080,108 1120,105
+      C1160,102 1200,118 1240,110
+      C1280,102 1320,88  1360,85
+      C1400,82  1430,92  1440,90
+      L1440,520 Z
+    " fill="url(#c1)"/>
+
+    <!-- Neige sur les plus hauts sommets couche 1 -->
+    <ellipse cx="880"  cy="128" rx="45" ry="18" fill="url(#sn)" opacity="0.5"/>
+    <ellipse cx="1120" cy="103" rx="38" ry="14" fill="url(#sn)" opacity="0.45"/>
+    <ellipse cx="640"  cy="158" rx="35" ry="12" fill="url(#sn)" opacity="0.4"/>
+
+    <!-- ══ COUCHE 2 : Massifs intermédiaires ══ -->
+    <path d="
+      M0,520 L0,360
+      C40,345 80,330 120,320
+      C160,310 200,325 240,308
+      C280,291 320,270 360,262
+      C400,254 440,268 480,255
+      C520,242 555,220 590,215
+      C625,210 660,228 695,218
+      C730,208 765,188 800,182
+      C835,176 870,192 905,184
+      C940,176 975,158 1010,153
+      C1045,148 1080,162 1115,155
+      C1150,148 1185,132 1220,128
+      C1255,124 1290,138 1330,132
+      C1370,126 1410,115 1440,112
+      L1440,520 Z
+    " fill="url(#c2)"/>
+
+    <!-- Neige couche 2 -->
+    <ellipse cx="590"  cy="212" rx="40" ry="15" fill="url(#sn)" opacity="0.5"/>
+    <ellipse cx="800"  cy="180" rx="35" ry="13" fill="url(#sn)" opacity="0.45"/>
+    <ellipse cx="1010" cy="150" rx="30" ry="11" fill="url(#sn)" opacity="0.4"/>
+
+    <!-- ══ COUCHE 3 : Massifs proches + Dent Parrachée ══ -->
+    <path d="
+      M0,520 L0,400
+      C30,388 60,375 90,365
+      C120,355 155,368 185,352
+      C215,336 240,315 265,308
+      C290,301 318,316 342,302
+      C366,288 385,268 405,260
+      C425,252 448,265 468,252
+      C488,239 505,220 525,214
+
+      C540,208 548,195 556,182
+      C562,172 566,158 570,145
+      C574,132 576,118 578,105
+      C580,92  581,80  583,68
+      C585,55  587,42  589,30
+      C591,18  593,10  595,4
+      C597,10  599,18  601,30
+      C603,42  605,56  607,70
+      C609,84  611,96  613,108
+      C615,120 617,132 620,142
+      C624,155 629,165 635,175
+      C642,187 650,196 660,205
+      C672,215 686,222 700,228
+      C718,236 738,240 755,235
+      C772,230 785,218 800,212
+      C818,205 838,202 855,196
+      C875,189 892,178 908,172
+      C928,165 948,168 965,162
+      C985,155 1000,142 1018,137
+      C1038,131 1058,140 1075,134
+      C1095,127 1112,115 1130,110
+      C1150,104 1170,112 1192,106
+      C1215,100 1238,88  1262,85
+      C1286,82  1310,90  1340,86
+      C1370,82  1408,75  1440,72
+      L1440,520 Z
+    " fill="url(#c3)"/>
+
+    <!-- Neige Dent Parrachée (sommet ~595,4) -->
+    <path d="
+      M583,68 C585,55 587,42 589,30 C591,18 593,10 595,4
+      C597,10 599,18 601,30 C603,42 605,56 607,70
+      C604,58 600,35 595,8 C590,35 586,58 583,68 Z
+    " fill="url(#sn)" opacity="0.7"/>
+    <ellipse cx="595" cy="45" rx="22" ry="28" fill="url(#sn)" opacity="0.35"/>
+
+    <!-- ══ COUCHE 4 : Collines avec forêt de sapins ══ -->
+    <!-- Collines de base -->
+    <path d="
+      M0,520 L0,430
+      C50,415 100,405 150,398
+      C200,391 250,400 300,390
+      C350,380 400,365 450,358
+      C500,351 545,362 585,352
+      C620,343 650,330 680,322
+      C710,314 740,325 770,316
+      C800,307 830,292 865,286
+      C900,280 930,290 960,283
+      C990,276 1020,263 1055,258
+      C1090,253 1120,262 1155,256
+      C1190,250 1220,238 1255,234
+      C1290,230 1325,240 1370,235
+      C1400,231 1425,226 1440,224
+      L1440,520 Z
+    " fill="url(#c4)"/>
+
+    <!-- Sapins gauche — silhouettes triangulaires groupées -->
+    <!-- Groupe 1 : très gauche -->
+    <g fill="#091520" opacity="0.95">
+      <polygon points="20,430  26,410  32,430"/>
+      <polygon points="28,432  35,408  42,432"/>
+      <polygon points="38,428  46,405  54,428"/>
+      <polygon points="50,430  59,403  68,430"/>
+      <polygon points="64,426  74,400  84,426"/>
+      <polygon points="80,428  92,398  104,428"/>
+      <polygon points="98,426  112,395  126,426"/>
+      <polygon points="118,424 134,392  150,424"/>
+      <polygon points="142,422 160,388  178,422"/>
+      <polygon points="170,420 190,385  210,420"/>
+      <polygon points="200,418 222,382  244,418"/>
+      <polygon points="235,416 260,378  285,416"/>
+      <polygon points="272,414 300,374  328,414"/>
+      <polygon points="312,412 343,370  374,412"/>
+      <polygon points="356,410 390,368  424,410"/>
+    </g>
+
+    <!-- Groupe 2 : zone centrale gauche (hauteurs variées) -->
+    <g fill="#091520" opacity="0.9">
+      <polygon points="400,415 412,392  424,415"/>
+      <polygon points="418,418 432,394  446,418"/>
+      <polygon points="440,412 456,388  472,412"/>
+      <polygon points="464,416 480,390  496,416"/>
+      <polygon points="490,410 508,385  526,410"/>
+    </g>
+
+    <!-- Groupe 3 : centre -->
+    <g fill="#0A1620" opacity="0.88">
+      <polygon points="530,355 542,332  554,355"/>
+      <polygon points="548,358 562,333  576,358"/>
+      <polygon points="568,352 584,328  600,352"/>
+      <polygon points="590,356 606,330  622,356"/>
+      <polygon points="614,350 632,325  650,350"/>
+      <polygon points="640,353 660,327  680,353"/>
+      <polygon points="668,348 690,322  712,348"/>
+      <polygon points="700,351 724,324  748,351"/>
+      <polygon points="735,346 762,318  789,346"/>
+      <polygon points="775,349 804,320  833,349"/>
+    </g>
+
+    <!-- Groupe 4 : droite -->
+    <g fill="#091520" opacity="0.92">
+      <polygon points="845,292 860,268  875,292"/>
+      <polygon points="862,295 879,270  896,295"/>
+      <polygon points="882,290 901,264  920,290"/>
+      <polygon points="905,293 926,266  947,293"/>
+      <polygon points="932,288 955,261  978,288"/>
+      <polygon points="962,291 987,263  1012,291"/>
+      <polygon points="996,286 1024,257  1052,286"/>
+      <polygon points="1032,289 1062,259  1092,289"/>
+      <polygon points="1072,284 1105,253  1138,284"/>
+      <polygon points="1116,287 1151,255  1186,287"/>
+      <polygon points="1162,282 1200,249  1238,282"/>
+      <polygon points="1210,285 1250,252  1290,285"/>
+      <polygon points="1262,280 1305,246  1348,280"/>
+      <polygon points="1318,283 1364,247  1410,283"/>
+      <polygon points="1378,278 1408,246  1440,278"/>
+    </g>
+
+    <!-- ══ COUCHE 5 : Avant-plan très sombre ══ -->
+    <path d="
+      M0,520 L0,470
+      C80,460 160,452 240,448
+      C320,444 400,455 480,450
+      C560,445 640,435 720,432
+      C800,429 880,440 960,436
+      C1040,432 1120,420 1200,418
+      C1280,416 1360,425 1440,422
+      L1440,520 Z
+    " fill="url(#c5)"/>
+
+    <!-- Sapins avant-plan (les plus sombres et grands) -->
+    <g fill="#060F18" opacity="1">
+      <polygon points="0,470   10,445   20,470"/>
+      <polygon points="15,472  27,444   39,472"/>
+      <polygon points="35,468  50,438   65,468"/>
+      <polygon points="58,471  76,440   94,471"/>
+      <polygon points="85,466  106,434  127,466"/>
+      <polygon points="118,469 142,436  166,469"/>
+      <polygon points="155,464 182,430  209,464"/>
+      <polygon points="196,467 226,432  256,467"/>
+      <polygon points="242,462 276,426  310,462"/>
+      <polygon points="295,465 332,428  369,465"/>
+      <polygon points="355,460 396,423  437,460"/>
+      <polygon points="422,463 466,425  510,463"/>
+      <polygon points="496,458 544,420  592,458"/>
+      <polygon points="578,461 629,422  680,461"/>
+      <polygon points="668,456 724,416  780,456"/>
+      <polygon points="766,459 826,419  886,459"/>
+      <polygon points="872,454 936,413  1000,454"/>
+      <polygon points="986,457 1054,415  1122,457"/>
+      <polygon points="1108,452 1180,410  1252,452"/>
+      <polygon points="1238,455 1314,412  1390,455"/>
+      <polygon points="1376,450 1408,415  1440,450"/>
+    </g>
+
+    <!-- Fondu global bas -->
+    <rect x="0" y="430" width="1440" height="90" fill="url(#fd)"/>
+  </svg>
+
+  <div class="hero-content">
+    <div class="hero-tag">Trail running · Randonnée · Analyse GPX</div>
+    <h1>
+      Plan your
+      <em>peaks.</em>
+    </h1>
+    <p class="hero-sub">
+      Importe tes traces GPX, découvre ton profil de coureur et simule
+      tes prochaines courses — ravitaillements trail ou points d'intérêt rando.
+    </p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="window.location.href='pages/profil.html'">
+        Commencer gratuitement
+      </button>
+      <button class="btn-ghost" onclick="window.location.href='pages/simulateur.html'">
+        Voir une démo
+      </button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">7</div>
+        <div class="hero-stat-label">Types de terrain</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">VEP</div>
+        <div class="hero-stat-label">Modèle Minetti</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">Trail + Rando</div>
+        <div class="hero-stat-label">Double profil</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">±</div>
+        <div class="hero-stat-label">Fourchettes dynamiques</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<div class="features">
+  <div class="feat">
+    <div class="feat-num">01 — Profil</div>
+    <h3>Analyse de ton style</h3>
+    <p>Grimpeur, descendeur, équilibré... Découvre tes forces et faiblesses sur chaque type de terrain depuis tes propres traces GPX.</p>
+  </div>
+  <div class="feat">
+    <div class="feat-num">02 — Prédiction</div>
+    <h3>Simulation de course</h3>
+    <p>Temps estimé avec fourchette basse et haute personnalisées, batterie énergétique et graphique de profil coloré kilomètre par kilomètre.</p>
+  </div>
+  <div class="feat">
+    <div class="feat-num">03 — Passage</div>
+    <h3>Ravitos &amp; points clés</h3>
+    <p>Temps de passage précis aux ravitaillements trail ou points d'intérêt rando, avec état de ta réserve d'énergie.</p>
+  </div>
+</div>
+
+<!-- ── Comment ça marche ── -->
+<div class="how-section">
+  <div style="max-width:1120px; margin:0 auto;">
+    <div class="section-tag">Comment ça marche</div>
+    <h2 class="section-title">Trois étapes pour <em>prédire ta course</em></h2>
+    <p class="section-sub">Un algorithme calibré sur tes propres performances, pas sur des moyennes génériques.</p>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-num">1</div>
+        <h3>Importe tes GPX</h3>
+        <p>Glisse tes traces depuis Garmin, Strava ou Komoot. Plus tu en importes, plus ton profil est précis et fiable.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">2</div>
+        <h3>Découvre ton profil</h3>
+        <p>L'algorithme calcule ta VEP par terrain, ton modèle de fatigue et ton archétype de coureur.</p>
+      </div>
+      <div class="how-card">
+        <div class="how-num">3</div>
+        <h3>Simule ta course</h3>
+        <p>Importe la trace de ta prochaine course, entre tes ravitos et obtiens tes temps de passage avec fourchette haute/basse.</p>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:48px;">
+      <button class="btn-primary" onclick="window.location.href='pages/profil.html'">
+        Créer mon profil
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ QUESTIONNAIRE BÊTA-TESTEURS ════════════════════════════════════ -->
+<div class="survey-section" id="questionnaire">
+  <div class="survey-inner">
+
+    <div class="section-tag">Bêta-testeurs</div>
+    <h2 class="section-title">Ton avis nous est <em>précieux</em></h2>
+    <p class="section-sub">
+      SUM'IT est en phase de test. Partage ton expérience pour nous aider à améliorer l'algorithme et les fonctionnalités.
+    </p>
+
+    <!-- Formulaire -->
+    <div id="surveyForm">
+      <div class="survey-grid">
+
+        <!-- Prénom -->
+        <div class="survey-field">
+          <label class="survey-label">Prénom</label>
+          <input type="text" id="s_prenom" placeholder="Ex : Jake">
+        </div>
+
+        <!-- Niveau -->
+        <div class="survey-field">
+          <label class="survey-label">Niveau trail</label>
+          <select id="s_niveau">
+            <option value="">— Sélectionne —</option>
+            <option value="debutant">Débutant (premiers trails)</option>
+            <option value="intermediaire">Intermédiaire (trails régulier)</option>
+            <option value="avance">Avancé (compétiteur)</option>
+            <option value="elite">Élite (podiums)</option>
+          </select>
+        </div>
+
+        <!-- Note pertinence prédiction -->
+        <div class="survey-field full">
+          <label class="survey-label">Pertinence des prédictions de temps — note de 1 à 5</label>
+          <div class="rating-group" id="ratingPrediction">
+            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '1')">1 — Pas du tout</button>
+            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '2')">2 — Peu pertinent</button>
+            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '3')">3 — Moyen</button>
+            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '4')">4 — Pertinent</button>
+            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '5')">5 — Très pertinent</button>
+          </div>
+        </div>
+
+        <!-- Note profil coureur -->
+        <div class="survey-field full">
+          <label class="survey-label">Pertinence du profil coureur (archétype, scores) — note de 1 à 5</label>
+          <div class="rating-group" id="ratingProfil">
+            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '1')">1</button>
+            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '2')">2</button>
+            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '3')">3</button>
+            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '4')">4</button>
+            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '5')">5</button>
+          </div>
+        </div>
+
+        <!-- Fonctionnalités souhaitées -->
+        <div class="survey-field full">
+          <label class="survey-label">Fonctionnalités que tu souhaiterais voir dans SUM'IT</label>
+          <div class="checkbox-group" id="checkFeatures">
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Strava</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Garmin</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Conseils nutritionnels</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Export PDF de la simulation</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Coach IA personnalisé</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Intégration météo</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Suivi d'autres athlètes</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Application mobile</div>
+            <div class="checkbox-item" onclick="this.classList.toggle('checked')">Profil Coach (multi-athlètes)</div>
+          </div>
+        </div>
+
+        <!-- Commentaire libre -->
+        <div class="survey-field full">
+          <label class="survey-label">Commentaires libres — améliorations, bugs, impressions</label>
+          <textarea id="s_commentaire" placeholder="Tes retours nous aident directement à améliorer l'algorithme..."></textarea>
+        </div>
+
+        <!-- Email optionnel -->
+        <div class="survey-field full">
+          <label class="survey-label">Ton email (optionnel — pour te tenir informé des mises à jour)</label>
+          <input type="email" id="s_email" placeholder="ton@email.com">
+        </div>
+
+      </div>
+
+      <button class="btn-primary" style="width:100%; padding:16px; margin-top:8px;"
+              onclick="envoyerQuestionnaire()">
+        Envoyer mon avis
+      </button>
+    </div>
+
+    <!-- Message succès -->
+    <div class="survey-success" id="surveySuccess">
+      <div class="survey-success-icon">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h3>Merci pour ton retour !</h3>
+      <p>Ton avis a été envoyé à l'équipe SUM'IT.<br>Il nous aide directement à améliorer l'algorithme.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer class="footer">
+  <div>
+    <div class="footer-logo">SUM<span>'IT</span></div>
+    <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
+  </div>
+  <div style="display:flex; gap:24px; align-items:center;">
+    <a href="pages/avenir.html" style="font-size:12px; color:var(--slate);">À venir</a>
+    <a href="#questionnaire"    style="font-size:12px; color:var(--slate);">Donner mon avis</a>
+    <div class="footer-copy">© 2026 SUM'IT</div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  EmailJS — initialisation
+//  Remplace 'rc324sv1XWdtOjTM6' par ta clé EmailJS
+// ══════════════════════════════════════════════
+emailjs.init('rc324sv1XWdtOjTM6');
+
+// Ratings sélectionnés
+const ratings = { ratingPrediction: '', ratingProfil: '' };
+
+function selectRating(groupId, btn, value) {
+  ratings[groupId] = value;
+  document.querySelectorAll(`#${groupId} .rating-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function toggleCheck(label) {
+  label.classList.toggle('checked');
+}
+
+function envoyerQuestionnaire() {
+  const prenom      = document.getElementById('s_prenom').value.trim();
+  const niveau      = document.getElementById('s_niveau').value;
+  const commentaire = document.getElementById('s_commentaire').value.trim();
+  const email       = document.getElementById('s_email').value.trim();
+
+  if (!prenom) { alert('Indique ton prénom !'); return; }
+
+  // Récupération des fonctionnalités cochées
+  const features = [];
+  document.querySelectorAll('#checkFeatures .checkbox-item.checked').forEach(el => {
+    features.push(el.textContent.trim());
+  });
+
+  // Paramètres du mail
+  const params = {
+    to_email:          'sup.sumit@outlook.com',
+    prenom:            prenom || 'Non renseigné',
+    niveau:            niveau || 'Non renseigné',
+    note_prediction:   ratings.ratingPrediction || 'Non noté',
+    note_profil:       ratings.ratingProfil || 'Non noté',
+    fonctionnalites:   features.length > 0 ? features.join(', ') : 'Aucune sélection',
+    commentaire:       commentaire || 'Aucun commentaire',
+    email_testeur:     email || 'Non renseigné',
+    date:              new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+  };
+
+  // Envoi via EmailJS
+  // Remplace 'sumit_outlook' et 'template_2yb8f5l' après création sur emailjs.com
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
+    .then(() => {
+      document.getElementById('surveyForm').style.display    = 'none';
+      document.getElementById('surveySuccess').style.display = 'block';
+    })
+    .catch(err => {
+      console.error('EmailJS error:', err);
+      alert('Erreur d\'envoi. Réessaie dans quelques instants.');
+    });
+}
+</script>
+
+</body>
+</html>

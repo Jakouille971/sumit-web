@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUM'IT — Simulateur de Course</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    body { padding-top: 64px; }
+
+    .page-hero { position:relative; overflow:hidden; height:200px; display:flex; align-items:flex-end; }
+    .page-hero-bg { position:absolute; inset:0; background:linear-gradient(160deg,#1B3D5E 0%,#0D2A40 40%,#091820 100%); }
+    .page-hero-mountain { position:absolute; bottom:0; left:0; right:0; }
+    .page-hero-content { position:relative; z-index:2; padding:0 80px 28px; width:100%; }
+    .page-hero h1 { font-family:var(--font-display); font-size:36px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:4px; }
+    .page-hero p { font-size:14px; font-weight:300; color:var(--mist); }
+
+    .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 200px); }
+    .sim-sidebar { border-right:0.5px solid var(--border); padding:40px 36px; background:var(--navy2); }
+    .sim-main { padding:40px 48px; background:var(--navy3); }
+
+    .step-block { margin-bottom:32px; }
+    .step-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+    .step-num { width:26px; height:26px; border:0.5px solid var(--cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:12px; color:var(--cyan); }
+    .step-title { font-family:var(--font-display); font-size:16px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:3px; }
+    .step-desc { font-size:12px; font-weight:300; color:var(--slate); line-height:1.6; }
+    .step-divider { height:0.5px; background:var(--border); margin:28px 0; }
+
+    .upload-zone-sm { border:0.5px dashed rgba(0,200,224,0.25); padding:20px; text-align:center; background:var(--cyan-glow); cursor:pointer; transition:all 0.2s; }
+    .upload-zone-sm:hover { background:rgba(0,200,224,0.08); border-color:rgba(0,200,224,0.5); }
+    .upload-zone-sm svg { width:18px; height:18px; stroke:var(--cyan); fill:none; stroke-width:1.5; margin:0 auto 8px; display:block; }
+    .upload-zone-sm p { font-size:12px; color:var(--slate); pointer-events:none; }
+
+    .file-detected { background:rgba(0,200,224,0.04); border:0.5px solid var(--border2); padding:12px 14px; margin-top:10px; display:none; }
+    .file-detected-name { font-size:13px; color:var(--white); margin-bottom:6px; }
+    .file-meta-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .file-meta-val { font-family:var(--font-display); font-size:14px; color:var(--cyan); }
+    .file-meta-label { font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.08em; }
+
+    .input-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
+    .input-group { margin-bottom:16px; }
+
+    .btn-simulate { width:100%; padding:15px; background:var(--cyan); color:var(--navy); font-family:var(--font-display); font-size:13px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; border:none; cursor:pointer; transition:opacity 0.2s; margin-top:8px; }
+    .btn-simulate:hover { opacity:0.88; }
+    .btn-simulate:disabled { opacity:0.4; cursor:not-allowed; }
+
+    .empty-state { text-align:center; padding:80px 20px; }
+    .empty-icon { width:64px; height:64px; border:0.5px solid var(--border2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+    .empty-icon svg { width:28px; height:28px; stroke:var(--slate); fill:none; stroke-width:1.5; }
+    .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--slate); margin-bottom:8px; letter-spacing:0.04em; }
+    .empty-sub { font-size:13px; color:var(--slate); opacity:0.5; line-height:1.6; }
+
+    .result-kpis { display:grid; grid-template-columns:repeat(4,1fr); border:0.5px solid var(--border); margin-bottom:20px; }
+    .result-kpi { padding:20px; border-right:0.5px solid var(--border); text-align:center; }
+    .result-kpi:last-child { border-right:none; }
+    .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+    .result-kpi-val { font-family:var(--font-display); font-size:22px; font-weight:500; color:var(--white); }
+    .result-kpi-val.cyan { color:var(--cyan); }
+    .result-kpi-val.red { color:var(--red); }
+    .result-kpi-val.grn { color:var(--green); }
+
+    .fourch-row { display:grid; grid-template-columns:1fr 1fr; border:0.5px solid var(--border); margin-bottom:20px; }
+    .fourch-item { padding:16px 20px; border-right:0.5px solid var(--border); }
+    .fourch-item:last-child { border-right:none; }
+    .fourch-label { font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:6px; }
+    .fg .fourch-label { color:var(--green); }
+    .fr .fourch-label { color:var(--red); }
+    .fourch-val { font-family:var(--font-display); font-size:20px; font-weight:500; }
+    .fg .fourch-val { color:#9FE1CB; }
+    .fr .fourch-val { color:#F5C4B3; }
+    .fourch-sub { font-size:11px; color:var(--slate); margin-top:4px; }
+
+    .chart-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
+    .chart-header { padding:14px 20px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+    .chart-title { font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .chart-legend { display:flex; gap:14px; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:5px; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; }
+    .legend-label { font-size:11px; color:var(--slate); }
+    .chart-body { padding:16px 20px 8px; }
+
+    .ravito-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
+    .ravito-header { padding:14px 20px; border-bottom:0.5px solid var(--border); font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+
+    .terrain-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
+    .terrain-header { padding:14px 20px; border-bottom:0.5px solid var(--border); font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .terrain-body { padding:16px 20px; }
+    .terrain-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .terrain-icon { width:26px; height:26px; border:0.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .terrain-icon svg { width:13px; height:13px; fill:none; stroke-width:1.8; }
+    .terrain-label { font-family:var(--font-display); font-size:11px; color:var(--slate); width:130px; flex-shrink:0; }
+    .terrain-track { flex:1; height:4px; background:rgba(255,255,255,0.06); }
+    .terrain-fill { height:100%; transition:width 1s ease; }
+    .terrain-time { font-family:var(--font-display); font-size:12px; color:var(--white); width:60px; text-align:right; }
+    .terrain-pct { font-size:11px; color:var(--slate); width:36px; text-align:right; }
+
+    @media (max-width:1024px) {
+      .sim-layout { grid-template-columns:1fr; }
+      .sim-sidebar { border-right:none; border-bottom:0.5px solid var(--border); padding:32px 24px; }
+      .sim-main { padding:32px 24px; }
+      .result-kpis { grid-template-columns:1fr 1fr; }
+      .page-hero-content { padding:0 24px 24px; }
+    }
+
+    /* ── Bouton avis flottant ── */
+    .floating-feedback {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+      background: var(--cyan); color: var(--navy);
+      font-family: var(--font-display); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 14px 20px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,200,224,0.4);
+      display: flex; align-items: center; gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .floating-feedback:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,200,224,0.5); }
+    .floating-feedback svg { width: 16px; height: 16px; stroke: var(--navy); fill: none; stroke-width: 2; }
+
+    /* ── Modal avis ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(13,27,42,0.85);
+      display: none; align-items: center; justify-content: center;
+      z-index: 2000; padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--navy2); border: 0.5px solid var(--border2);
+      max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;
+      padding: 36px;
+    }
+    .modal-close {
+      float: right; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
+      background: none; border: none; color: var(--white); font-size: 24px;
+    }
+    .modal-close:hover { opacity: 1; }
+    .modal-content h2 { font-family: var(--font-display); font-size: 24px; color: var(--white); margin-bottom: 8px; }
+    .modal-content p.modal-sub { font-size: 13px; color: var(--slate); margin-bottom: 24px; }
+
+    .rating-group { display: flex; gap: 6px; }
+    .rating-btn {
+      flex: 1; padding: 8px 4px; border: 0.5px solid var(--border);
+      background: transparent; color: var(--slate);
+      font-family: var(--font-display); font-size: 11px; cursor: pointer;
+      transition: all 0.2s; text-align: center;
+    }
+    .rating-btn:hover, .rating-btn.selected {
+      border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
+    }
+
+    /* ── Bouton PDF ── */
+    .btn-pdf {
+      background: transparent; color: var(--cyan);
+      font-family: var(--font-display); font-size: 12px;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 12px 24px; border: 0.5px solid var(--cyan);
+      cursor: pointer; transition: all 0.2s; margin-bottom: 20px;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-pdf:hover { background: var(--cyan-glow); }
+    .btn-pdf svg { width: 14px; height: 14px; stroke: var(--cyan); fill: none; stroke-width: 1.8; }
+
+    /* ── Carte Leaflet ── */
+    .map-card {
+      background: var(--navy2); border: 0.5px solid var(--border); margin-bottom: 20px;
+    }
+    .map-header {
+      padding: 14px 20px; border-bottom: 0.5px solid var(--border);
+      font-family: var(--font-display); font-size: 10px; color: var(--cyan);
+      text-transform: uppercase; letter-spacing: 0.14em;
+    }
+    #leafletMap { height: 320px; width: 100%; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon">S</div>
+    <div class="nav-logo-text">
+      <div class="nav-logo-name">SUM<span>'IT</span></div>
+      <div class="nav-logo-sub">Plan your peaks</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="../index.html"   class="nav-link">Accueil</a>
+    <a href="profil.html"     class="nav-link">Mon profil</a>
+    <a href="simulateur.html" class="nav-link active">Simulateur</a>
+    <a href="avenir.html"     class="nav-link">À venir</a>
+  </div>
+  <button class="nav-cta" onclick="window.location.href='profil.html'">Mon profil</button>
+</nav>
+
+<!-- Bandeau hero -->
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  <svg class="page-hero-mountain" viewBox="0 0 1440 160" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:160px;">
+    <defs>
+      <linearGradient id="phg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A3A5C" stop-opacity="0.55"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0F2A40" stop-opacity="0.9"/><stop offset="100%" stop-color="#091820" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#091820" stop-opacity="0.95"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+      <linearGradient id="phsnow" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D8ECF0" stop-opacity="0.55"/><stop offset="100%" stop-color="#1A3A5C" stop-opacity="0"/></linearGradient>
+      <linearGradient id="phfade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/><stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/></linearGradient>
+    </defs>
+    <polygon points="0,160 0,95 100,78 200,88 300,65 400,75 500,52 600,64 700,44 800,56 900,38 1000,50 1100,32 1200,46 1300,28 1440,40 1440,160" fill="url(#phg1)"/>
+    <polygon points="580,160 585,140 590,128 594,120 598,128 601,118 605,126 609,112 613,122 617,106 620,116 623,96 626,110 629,88 632,102 635,72 638,90 641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 672,86 678,100 686,112 696,122 708,130 722,137 738,143 756,148 776,152 800,155 830,158 860,160" fill="url(#phg2)"/>
+    <polygon points="641,56 644,76 647,38 650,60 653,20 656,44 659,8 662,32 665,52 668,70 660,18 653,25 646,42" fill="url(#phsnow)"/>
+    <polygon points="0,160 0,130 80,115 160,125 230,108 300,120 360,102 410,160" fill="url(#phg3)" opacity="0.9"/>
+    <polygon points="900,160 940,128 990,142 1040,118 1100,132 1160,112 1220,126 1300,108 1370,120 1440,105 1440,160" fill="url(#phg3)" opacity="0.85"/>
+    <rect x="0" y="115" width="1440" height="45" fill="url(#phfade)"/>
+  </svg>
+  <div class="page-hero-content">
+    <div class="section-tag" style="margin-bottom:10px;">Étape 2 sur 2</div>
+    <h1>Simulateur de course</h1>
+    <p>Importe la trace de ta prochaine course et obtiens tes temps de passage.</p>
+  </div>
+</div>
+
+<div class="sim-layout">
+  <!-- Sidebar -->
+  <div class="sim-sidebar">
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Trace de la course</div>
+          <div class="step-desc">Importe le GPX de ta prochaine course.</div>
+        </div>
+      </div>
+      <div class="upload-zone-sm" id="dropzoneSim">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <p>Glisse ou clique pour importer</p>
+        <p style="font-size:11px;margin-top:3px;opacity:0.5;">fichier .gpx</p>
+      </div>
+      <input type="file" id="fileGPX" accept=".gpx" style="display:none">
+
+      <div class="file-detected" id="fileInfo">
+        <div class="file-detected-name" id="fileName">—</div>
+        <div style="margin-top:6px;"><span class="tag tag-cyan" id="fileCat">—</span></div>
+        <div class="file-meta-row" style="margin-top:10px;">
+          <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
+          <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé +</div></div>
+        </div>
+      </div>
+
+      <div class="input-group" style="margin-top:14px;">
+        <label class="input-label">Nom de la course</label>
+        <input type="text" id="nomCourse" placeholder="Ex : Trail EDF 2026">
+      </div>
+    </div>
+
+    <div class="step-divider"></div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Ravitaillements</div>
+          <div class="step-desc">Kilométrages séparés par des virgules.</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Kilométrages (ex : 12, 25, 42)</label>
+        <input type="text" id="ravitos" placeholder="Laisse vide pour auto">
+      </div>
+    </div>
+
+    <div class="step-divider"></div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Profil de référence</div>
+          <div class="step-desc">Issu de ton analyse GPX.</div>
+        </div>
+      </div>
+      <div style="background:var(--navy3);border:0.5px solid var(--border);padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--slate);">VEP globale</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilVEP">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--slate);">Drain énergie</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilDrain">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--slate);">Coeff. course</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilCoeff">—</span>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--slate);margin-top:10px;line-height:1.5;opacity:0.7;">
+        Pas encore de profil ? <a href="profil.html" style="color:var(--cyan);">Analyse tes traces GPX →</a>
+      </p>
+    </div>
+
+    <div class="step-divider"></div>
+
+    <button class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>
+      Lancer la simulation
+    </button>
+  </div>
+
+  <!-- Main résultats -->
+  <div class="sim-main">
+    <div class="empty-state" id="emptyStateSim">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="empty-title">Ta simulation s'affichera ici</div>
+      <div class="empty-sub">Importe une trace GPX de course<br>et lance la simulation</div>
+    </div>
+
+    <div id="simResults" style="display:none;">
+
+      <button class="btn-pdf" onclick="genererPDF()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Télécharger en PDF
+      </button>
+
+      <div class="result-kpis">
+        <div class="result-kpi"><div class="result-kpi-label">Temps estimé</div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Batterie finale</div><div class="result-kpi-val" id="resBatterie">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Catégorie</div><div class="result-kpi-val" id="resCat">—</div></div>
+      </div>
+      <div class="fourch-row">
+        <div class="fourch-item fg"><div class="fourch-label">Top condition</div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+        <div class="fourch-item fr"><div class="fourch-label">Jour difficile</div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Profil de course — allure &amp; ravitaillements</div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#00C8E0"></div><span class="legend-label">&lt;10'/km</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div><span class="legend-label">10-13'</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div><span class="legend-label">13-18'</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div><span class="legend-label">&gt;18'/km</span></div>
+          </div>
+        </div>
+        <div class="chart-body">
+          <svg id="profilChart" viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+        </div>
+      </div>
+
+      <div class="map-card">
+        <div class="map-header">🗺️ Tracé GPX</div>
+        <div id="leafletMap"></div>
+      </div>
+
+      <div class="ravito-card">
+        <div class="ravito-header">⛽ Temps de passage aux ravitaillements</div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Point</th><th>Distance</th><th>Temps estimé</th><th>🟢 Top</th><th>🔴 Difficile</th><th>Batterie</th></tr>
+          </thead>
+          <tbody id="ravitoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="terrain-card">
+        <div class="terrain-header">Répartition du temps par terrain</div>
+        <div class="terrain-body" id="terrainBars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div><div class="footer-logo">SUM<span>'IT</span></div><div class="footer-sub">Plan your peaks · Trail &amp; Rando</div></div>
+  <div class="footer-copy">© 2026 SUM'IT</div>
+</footer>
+
+<!-- ══ Bouton flottant avis ══ -->
+<button class="floating-feedback" onclick="ouvrirModal()">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  Donner mon avis
+</button>
+
+<!-- ══ Modal avis bêta ══ -->
+<div class="modal-overlay" id="modalAvis">
+  <div class="modal-content">
+    <button class="modal-close" onclick="fermerModal()">×</button>
+    <h2>Ton avis nous est précieux</h2>
+    <p class="modal-sub">Aide-nous à améliorer SUM'IT en partageant ton expérience.</p>
+
+    <div id="formAvis">
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Pertinence des prédictions de temps</label>
+        <div class="rating-group" id="ratingPred">
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,1)">1</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,2)">2</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,3)">3</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,4)">4</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,5)">5</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Pertinence du profil coureur</label>
+        <div class="rating-group" id="ratingProfil">
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,1)">1</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,2)">2</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,3)">3</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,4)">4</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,5)">5</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Commentaire libre</label>
+        <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées..." style="width:100%;min-height:80px;padding:10px;font-family:var(--font-body);"></textarea>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Email (optionnel)</label>
+        <input type="email" id="modalEmail" placeholder="ton@email.com">
+      </div>
+
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="envoyerAvis()">
+        Envoyer mon avis
+      </button>
+    </div>
+
+    <div id="successAvis" style="display:none;text-align:center;padding:30px 0;">
+      <div style="font-size:48px;margin-bottom:14px;">✓</div>
+      <h3 style="font-family:var(--font-display);color:var(--cyan);margin-bottom:8px;">Merci pour ton retour !</h3>
+      <p style="font-size:13px;color:var(--slate);">Ton avis a bien été envoyé.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../js/main.js"></script>
+<script src="../js/api-client.js"></script>
+<script>
+emailjs.init('rc324sv1XWdtOjTM6');
+
+// Variables globales
+let gpxFile = null;
+
+// Constantes affichage
+const TERRAIN_COLORS = {
+  montee_raide:'#E24B4A', montee_soutenue:'#EF9F27', montee_douce:'#5DCAA5',
+  plat:'#00C8E0', descente_douce:'#5DCAA5', descente_soutenue:'#EF9F27', descente_raide:'#E24B4A'
+};
+const TERRAIN_LABELS_S = {
+  montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
+  montee_douce:'Montée douce', plat:'Plat',
+  descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide'
+};
+const TERRAIN_ICONS_S = {
+  montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="2,11 7,2 11,7"/></svg>`,
+  montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
+  montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
+  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="#00C8E0" stroke-width="1.6"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
+  descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
+  descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
+  descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="6,2 11,9 7,11"/></svg>`,
+};
+
+const ORDRE_T2 = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+
+// ── INIT — Sélection du fichier ────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('fileGPX');
+  const zone  = document.getElementById('dropzoneSim');
+
+  // Click sur la zone → ouvrir le sélecteur
+  zone.addEventListener('click', () => input.click());
+
+  // Sélection d'un fichier via le dialog
+  input.addEventListener('change', e => {
+    if (e.target.files.length > 0) chargerFichier(e.target.files[0]);
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'rgba(0,200,224,0.6)';
+  });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    if (e.dataTransfer.files.length > 0) chargerFichier(e.dataTransfer.files[0]);
+  });
+
+  // Charger le profil sauvegardé dans la sidebar
+  afficherProfilSidebar();
+});
+
+// ── Chargement du fichier ──────────────────────────────────────────
+function chargerFichier(file) {
+  if (!file.name.toLowerCase().endsWith('.gpx')) {
+    alert('Seuls les fichiers .gpx sont acceptés !');
+    return;
+  }
+  gpxFile = file;
+  // Affichage info fichier
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileDist').textContent = '...';
+  document.getElementById('fileDplus').textContent = '...';
+  document.getElementById('fileCat').textContent = 'Prêt';
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('btnSimuler').disabled = false;
+  console.log('✅ Fichier chargé :', file.name, file.size, 'bytes');
+}
+
+// ── Profil sidebar ─────────────────────────────────────────────────
+function afficherProfilSidebar() {
+  const p = chargerProfil();
+  if (p && p.profil) {
+    const veps = Object.values(p.profil).map(t => t.vep_norm);
+    const moy = veps.length ? (veps.reduce((a,b) => a+b, 0) / veps.length).toFixed(1) : '—';
+    document.getElementById('profilVEP').textContent   = `${moy} km/h`;
+    document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1)} %/h`;
+    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2)}`;
+  } else {
+    document.getElementById('profilVEP').textContent   = '—';
+    document.getElementById('profilDrain').textContent = '—';
+    document.getElementById('profilCoeff').textContent = '—';
+  }
+}
+
+// ── Lancer la simulation ──────────────────────────────────────────
+async function lancerSimulation() {
+  if (!gpxFile) { alert('Importe une trace GPX !'); return; }
+
+  const p = chargerProfil();
+  if (!p || !p.profil) {
+    alert('Aucun profil sauvegardé. Va d\'abord créer ton profil sur la page "Mon profil".');
+    return;
+  }
+
+  const ravitos = document.getElementById('ravitos').value.trim();
+  const btn     = document.getElementById('btnSimuler');
+  btn.textContent = '⏳ Simulation en cours...';
+  btn.disabled = true;
+
+  try {
+    // Charger les points GPS pour la carte
+    trackPoints = await chargerTrackPoints(gpxFile);
+
+    const data = await simulerCourseAPI(
+      gpxFile, ravitos,
+      p.profil, p.drain_moy_h, p.coefficient, p.fcmax || 193
+    );
+
+    console.log('Réponse API:', data);
+    afficherResultats(data);
+
+    // Affichage carte après résultats
+    setTimeout(() => afficherCarte(trackPoints), 200);
+
+    envoyerMailSimulation(data);
+
+  } catch(err) {
+    console.error('Erreur simulation:', err);
+    alert(`Erreur : ${err.message}\n\nVérifie que l'API tourne (python api.py)`);
+  } finally {
+    btn.textContent = 'Lancer la simulation';
+    btn.disabled = false;
+  }
+}
+
+// ── Affichage résultats ───────────────────────────────────────────
+function afficherResultats(data) {
+  document.getElementById('emptyStateSim').style.display = 'none';
+  document.getElementById('simResults').style.display    = 'block';
+
+  // KPIs
+  document.getElementById('resTemps').textContent  = data.temps_fmt || '—';
+  document.getElementById('resAllure').textContent = data.allure_moy ? `${data.allure_moy}'/km` : '—';
+
+  const cat = data.categorie || {};
+  document.getElementById('resCat').textContent = `${cat.emoji || ''} ${cat.nom || '—'}`;
+
+  const battEl = document.getElementById('resBatterie');
+  battEl.textContent = data.batt_finale != null ? `${data.batt_finale}%` : '—';
+  battEl.className = `result-kpi-val ${data.batt_finale < 20 ? 'red' : data.batt_finale < 50 ? 'grn' : 'cyan'}`;
+
+  // Mise à jour info fichier
+  document.getElementById('fileDist').textContent  = `${data.distance_km.toFixed(1)} km`;
+  document.getElementById('fileDplus').textContent = `${Math.round(data.dplus_m)} m`;
+  document.getElementById('fileCat').textContent   = `${cat.emoji} ${cat.nom}`;
+
+  // Fourchettes
+  document.getElementById('fourchBas').textContent  = data.bas_fmt;
+  document.getElementById('fourchHaut').textContent = data.haut_fmt;
+
+  // Graphique
+  dessinerProfilChart(data);
+
+  // Tableau ravitos
+  const tbody = document.getElementById('ravitoBody');
+  tbody.innerHTML = `
+    <tr>
+      <td style="font-family:var(--font-display);">Départ</td>
+      <td>0 km</td>
+      <td style="color:var(--cyan);font-family:var(--font-display);">0h00m00s</td>
+      <td class="range-col">0h00m00s</td>
+      <td class="range-col">0h00m00s</td>
+      <td class="batt-g">100%</td>
+    </tr>`;
+  (data.ravitos || []).forEach(r => {
+    const cls = r.batterie_pct < 20 ? 'batt-r' : r.batterie_pct < 50 ? 'batt-o' : 'batt-g';
+    tbody.innerHTML += `
+      <tr>
+        <td>Ravito ${r.km.toFixed(1)} km</td>
+        <td>${r.km.toFixed(1)} km</td>
+        <td style="color:var(--cyan);font-family:var(--font-display);">${r.temps_fmt}</td>
+        <td class="range-col">${r.bas_fmt}</td>
+        <td class="range-col">${r.haut_fmt}</td>
+        <td class="${cls}">${Math.round(r.batterie_pct)}%</td>
+      </tr>`;
+  });
+  tbody.innerHTML += `
+    <tr>
+      <td>Arrivée</td>
+      <td>${data.distance_km.toFixed(1)} km</td>
+      <td>${data.temps_fmt}</td>
+      <td class="range-col">${data.bas_fmt}</td>
+      <td class="range-col">${data.haut_fmt}</td>
+      <td class="${data.batt_finale < 20 ? 'batt-r' : 'batt-o'}">${data.batt_finale}%</td>
+    </tr>`;
+
+  // Barres terrain
+  const tbars  = document.getElementById('terrainBars');
+  tbars.innerHTML = '';
+  const rep    = data.repartition || {};
+  const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+  ORDRE_T2.forEach(terrain => {
+    const r = rep[terrain];
+    if (!r) return;
+    tbars.innerHTML += `
+      <div class="terrain-bar-row">
+        <div class="terrain-icon">${TERRAIN_ICONS_S[terrain] || ''}</div>
+        <div class="terrain-label">${TERRAIN_LABELS_S[terrain]}</div>
+        <div class="terrain-track">
+          <div class="terrain-fill"
+               style="width:0%;background:${TERRAIN_COLORS[terrain]};opacity:0.75"
+               data-target="${(r.pct/maxPct)*100}"></div>
+        </div>
+        <div class="terrain-time">${r.temps_fmt}</div>
+        <div class="terrain-pct">${r.pct}%</div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.terrain-fill[data-target]').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 100);
+}
+
+// ── Graphique profil SVG ──────────────────────────────────────────
+function dessinerProfilChart(data) {
+  const svg = document.getElementById('profilChart');
+  const pts = data.profil_chart || [];
+  if (pts.length === 0) return;
+
+  const W=680, H=180, padL=44, padR=16, padT=20, padB=40;
+  const cW=W-padL-padR, cH=H-padT-padB;
+
+  const alts   = pts.map(p => p.altitude);
+  const minA   = Math.min(...alts);
+  const maxA   = Math.max(...alts);
+  const rangeA = maxA - minA || 1;
+  const dist   = data.distance_km;
+
+  const couleur = v => {
+    const a = 60 / Math.max(v, 0.1);
+    if (a < 10) return '#00C8E0';
+    if (a < 13) return '#5DCAA5';
+    if (a < 18) return '#EF9F27';
+    return '#E24B4A';
+  };
+  const x = km => padL + (km / dist) * cW;
+  const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
+
+  let c = '';
+  // Grille
+  [0, 0.25, 0.5, 0.75, 1].forEach(p => {
+    const xp = padL + p * cW;
+    c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(100,180,210,0.08)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
+    c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#7A9AAA" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
+  });
+  [minA, (minA+maxA)/2, maxA].forEach(a => {
+    const yp = y(a);
+    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(100,180,210,0.07)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
+    c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#7A9AAA" text-anchor="end">${Math.round(a)}m</text>`;
+  });
+
+  // Courbe colorée
+  for (let i = 1; i < pts.length; i++) {
+    const p1 = pts[i-1], p2 = pts[i];
+    const col = couleur(p2.vitesse_kmh);
+    c += `<polygon points="${x(p1.dist_km)},${y(p1.altitude)} ${x(p2.dist_km)},${y(p2.altitude)} ${x(p2.dist_km)},${padT+cH} ${x(p1.dist_km)},${padT+cH}" fill="${col}" opacity="0.18"/>`;
+    c += `<line x1="${x(p1.dist_km)}" y1="${y(p1.altitude)}" x2="${x(p2.dist_km)}" y2="${y(p2.altitude)}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
+  }
+
+  // Ravitos
+  (data.ravitos || []).forEach(r => {
+    const xR = x(r.km);
+    const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
+    const yR = Math.max(padT + 18, y(closest.altitude));
+    c += `
+      <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#00C8E0" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
+      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0D1B2A" stroke="#00C8E0" stroke-width="1.2"/>
+      <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#00C8E0" stroke-width="1"/>
+      <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#00C8E0" stroke-width="0.8"/>
+      <text x="${xR}" y="${yR+4}" font-size="7" fill="#00C8E0" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
+  });
+
+  svg.innerHTML = c;
+}
+
+// ── Envoi mail simulation ─────────────────────────────────────────
+function envoyerMailSimulation(data) {
+  const cat = data.categorie || {};
+  const params = {
+    to_email:   'sup.sumit@outlook.com',
+    date:       new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+    distance:   `${data.distance_km.toFixed(1)} km`,
+    denivelé:   `${Math.round(data.dplus_m)} m D+`,
+    categorie:  `${cat.emoji || ''} ${cat.nom || '—'}`,
+    temps_estime: data.temps_fmt,
+    coeff_course: `×${data.coefficient_course}`,
+    nb_ravitos:   (data.ravitos || []).length,
+    ravitos_km:   (data.ravitos || []).map(r => `${r.km.toFixed(1)}km → ${r.temps_fmt}`).join(' | '),
+  };
+  emailjs.send('sumit_outlook', 'template_6htljlf', params)
+    .then(() => console.log('✅ Simulation envoyée'))
+    .catch(e => console.warn('EmailJS:', e));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CARTE LEAFLET — affiche le tracé GPX
+// ══════════════════════════════════════════════════════════════
+let leafletMap = null;
+let trackPoints = [];
+
+async function chargerTrackPoints(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(e.target.result, 'text/xml');
+      const pts    = doc.querySelectorAll('trkpt');
+      const coords = [];
+      pts.forEach(pt => {
+        coords.push([
+          parseFloat(pt.getAttribute('lat')),
+          parseFloat(pt.getAttribute('lon'))
+        ]);
+      });
+      resolve(coords);
+    };
+    reader.readAsText(file);
+  });
+}
+
+function afficherCarte(coords) {
+  if (coords.length === 0) return;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+
+  leafletMap = L.map('leafletMap').setView(coords[0], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(leafletMap);
+
+  const polyline = L.polyline(coords, { color: '#00C8E0', weight: 3 }).addTo(leafletMap);
+
+  L.marker(coords[0], { title: 'Départ' }).addTo(leafletMap).bindPopup('🟢 Départ');
+  L.marker(coords[coords.length-1], { title: 'Arrivée' }).addTo(leafletMap).bindPopup('🔴 Arrivée');
+
+  leafletMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+
+  // Force resize après affichage
+  setTimeout(() => leafletMap.invalidateSize(), 100);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PDF — Génération côté navigateur
+// ══════════════════════════════════════════════════════════════
+async function genererPDF() {
+  const { jsPDF } = window.jspdf;
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Coureur';
+  const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+
+  const btn = document.querySelector('.btn-pdf');
+  btn.textContent = '⏳ Génération...';
+  btn.disabled = true;
+
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const W   = 210;
+    let y     = 20;
+
+    // ── HEADER ──
+    pdf.setFillColor(13, 27, 42);
+    pdf.rect(0, 0, W, 30, 'F');
+    pdf.setTextColor(0, 200, 224);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("SUM'IT", 15, 15);
+    pdf.setFontSize(8);
+    pdf.setTextColor(150, 200, 210);
+    pdf.text('PLAN YOUR PEAKS', 15, 21);
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(new Date().toLocaleDateString('fr-FR'), W - 15, 15, { align: 'right' });
+
+    y = 42;
+
+    // ── COURSE ──
+    pdf.setTextColor(13, 27, 42);
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(nomCourse, 15, y);
+    y += 7;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Simulation pour ${prenom}`, 15, y);
+    y += 12;
+
+    // ── KPIs ──
+    const kpis = [
+      ['Temps estimé',  document.getElementById('resTemps').textContent],
+      ['Allure moyenne',document.getElementById('resAllure').textContent],
+      ['Distance',      document.getElementById('fileDist').textContent],
+      ['Dénivelé +',    document.getElementById('fileDplus').textContent],
+      ['Top condition', document.getElementById('fourchBas').textContent],
+      ['Jour difficile',document.getElementById('fourchHaut').textContent],
+    ];
+
+    pdf.setFillColor(245, 248, 250);
+    pdf.rect(15, y, W-30, 38, 'F');
+    pdf.setTextColor(13, 27, 42);
+
+    let kx = 18, ky = y + 10;
+    kpis.forEach((kpi, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const px  = 18 + col * 60;
+      const py  = y + 8 + row * 18;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(kpi[0].toUpperCase(), px, py);
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 150, 180);
+      pdf.text(kpi[1], px, py + 6);
+    });
+    y += 46;
+
+    // ── PROFIL COUREUR ──
+    if (profil && profil.archetype) {
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(13, 27, 42);
+      pdf.text('PROFIL COUREUR', 15, y);
+      y += 6;
+      pdf.setDrawColor(0, 200, 224);
+      pdf.line(15, y, 60, y);
+      y += 7;
+
+      pdf.setFontSize(14);
+      pdf.setTextColor(0, 150, 180);
+      pdf.text(profil.archetype.nom || 'Combattant', 15, y);
+      y += 6;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80, 80, 80);
+      const desc = pdf.splitTextToSize(profil.archetype.desc || '', W - 30);
+      pdf.text(desc, 15, y);
+      y += desc.length * 4 + 4;
+
+      // Coeff course + drain
+      pdf.setFontSize(9);
+      pdf.text(`Coefficient course : ×${profil.coefficient.toFixed(2)} · Drain énergie : ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax : ${profil.fcmax} bpm`, 15, y);
+      y += 10;
+    }
+
+    // ── GRAPHIQUE PROFIL ──
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(13, 27, 42);
+    pdf.text('PROFIL DE COURSE', 15, y);
+    y += 6;
+    pdf.setDrawColor(0, 200, 224);
+    pdf.line(15, y, 60, y);
+    y += 4;
+
+    const chartEl = document.getElementById('profilChart');
+    if (chartEl) {
+      // Fond blanc temporaire pour capture
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'background:white;padding:10px;';
+      const clone = chartEl.cloneNode(true);
+      // Inverse les couleurs claires pour le fond blanc
+      clone.querySelectorAll('text').forEach(t => t.setAttribute('fill', '#333'));
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      const canvas = await html2canvas(wrapper, { backgroundColor: '#fff', scale: 2 });
+      document.body.removeChild(wrapper);
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = (canvas.height * (W-30)) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 15, y, W-30, imgH);
+      y += imgH + 8;
+    }
+
+    // ── Nouvelle page : carte + ravitos ──
+    pdf.addPage();
+    y = 20;
+
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(13, 27, 42);
+    pdf.text('CARTE DU PARCOURS', 15, y);
+    y += 6;
+    pdf.setDrawColor(0, 200, 224);
+    pdf.line(15, y, 60, y);
+    y += 4;
+
+    const mapEl = document.getElementById('leafletMap');
+    if (mapEl && leafletMap) {
+      const canvas = await html2canvas(mapEl, { useCORS: true, scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const imgH    = (canvas.height * (W-30)) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 15, y, W-30, Math.min(imgH, 120));
+      y += Math.min(imgH, 120) + 8;
+    }
+
+    // ── Tableau ravitos ──
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(13, 27, 42);
+    pdf.text('TEMPS DE PASSAGE', 15, y);
+    y += 6;
+    pdf.setDrawColor(0, 200, 224);
+    pdf.line(15, y, 60, y);
+    y += 6;
+
+    pdf.setFontSize(9);
+    pdf.setFillColor(13, 27, 42);
+    pdf.rect(15, y, W-30, 7, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Point',      18, y+5);
+    pdf.text('Distance',   55, y+5);
+    pdf.text('Temps',      85, y+5);
+    pdf.text('Top',       115, y+5);
+    pdf.text('Difficile', 145, y+5);
+    pdf.text('Batterie',  175, y+5);
+    y += 7;
+
+    const rows = document.querySelectorAll('#ravitoBody tr');
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(50, 50, 50);
+    rows.forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length === 6) {
+        if (i % 2 === 0) {
+          pdf.setFillColor(245, 248, 250);
+          pdf.rect(15, y, W-30, 6, 'F');
+        }
+        pdf.text(cells[0].textContent.substring(0,18),  18, y+4);
+        pdf.text(cells[1].textContent,  55, y+4);
+        pdf.text(cells[2].textContent,  85, y+4);
+        pdf.text(cells[3].textContent, 115, y+4);
+        pdf.text(cells[4].textContent, 145, y+4);
+        pdf.text(cells[5].textContent, 175, y+4);
+        y += 6;
+      }
+    });
+
+    // ── Footer ──
+    pdf.setFontSize(8);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text("Généré par SUM'IT — Plan your peaks · sumit.run", W/2, 285, { align: 'center' });
+
+    // Save
+    const filename = `SUMIT_${prenom}_${nomCourse.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
+    pdf.save(filename);
+
+  } catch(err) {
+    console.error('Erreur PDF:', err);
+    alert('Erreur lors de la génération du PDF : ' + err.message);
+  } finally {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Télécharger en PDF';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL AVIS
+// ══════════════════════════════════════════════════════════════
+const ratings = { ratingPred: '', ratingProfil: '' };
+
+function ouvrirModal()  { document.getElementById('modalAvis').classList.add('active'); }
+function fermerModal()  { document.getElementById('modalAvis').classList.remove('active'); }
+
+function selectRating(group, btn, val) {
+  ratings[group] = val;
+  document.querySelectorAll(`#${group} .rating-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function envoyerAvis() {
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Anonyme';
+  const params = {
+    to_email:        'sup.sumit@outlook.com',
+    prenom:          prenom,
+    niveau:          'Bêta-testeur simulateur',
+    note_prediction: ratings.ratingPred  || 'Non noté',
+    note_profil:     ratings.ratingProfil|| 'Non noté',
+    fonctionnalites: '(envoi depuis simulateur)',
+    commentaire:     document.getElementById('modalCommentaire').value || 'Aucun',
+    email_testeur:   document.getElementById('modalEmail').value      || 'Non renseigné',
+    date:            new Date().toLocaleDateString('fr-FR'),
+  };
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
+    .then(() => {
+      document.getElementById('formAvis').style.display    = 'none';
+      document.getElementById('successAvis').style.display = 'block';
+      setTimeout(fermerModal, 2500);
+    })
+    .catch(err => alert("Erreur d'envoi : " + err.message));
+}
+</script>
+
+</body>
+</html>
