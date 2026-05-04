@@ -182,19 +182,34 @@
       border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
     }
 
+    /* ── Toggles courbes ── */
+    .chart-toggle {
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+    }
+    .chart-toggle input { display: none; }
+    .toggle-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      opacity: 0.3; transition: opacity 0.2s;
+    }
+    .chart-toggle input:checked ~ .toggle-dot { opacity: 1; box-shadow: 0 0 8px currentColor; }
+    .toggle-label {
+      font-size: 11px; color: var(--slate); transition: color 0.2s;
+    }
+    .chart-toggle input:checked ~ .toggle-label { color: var(--white); }
+
     #leafletMap { height: 320px; width: 100%; }
 
     /* ── Tooltip (i) ── */
     .info-icon {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 0.5px solid var(--slate); color: var(--slate);
-      font-size: 10px; font-weight: 600; font-family: serif;
+      width: 16px; height: 16px;
       cursor: help; margin-left: 6px;
       vertical-align: middle; transition: all 0.2s;
       position: relative;
+      color: var(--slate);
     }
-    .info-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+    .info-icon svg { width: 14px; height: 14px; display: block; }
+    .info-icon:hover { color: var(--cyan); }
     .info-icon::after {
       content: attr(data-tooltip);
       position: absolute; bottom: calc(100% + 8px); left: 50%;
@@ -478,19 +493,19 @@
       </button>
 
       <div class="result-kpis">
-        <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique).">i</span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
         <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Batterie finale<span class="info-icon" data-tooltip="État de ta réserve énergétique à l'arrivée. Calculée depuis ton drain horaire et la durée de la course. Sous 50% tu commences à ralentir, à 0% tu es au bout du rouleau.">i</span></div><div class="result-kpi-val" id="resBatterie">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km.">i</span></div><div class="result-kpi-val" id="resCat">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Batterie finale<span class="info-icon" data-tooltip="État de ta réserve énergétique à l'arrivée. Calculée depuis ton drain horaire et la durée de la course. Sous 50% tu commences à ralentir, à 0% tu es au bout du rouleau."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resBatterie">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div></div>
       </div>
       <div class="fourch-row">
-        <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" data-tooltip="Temps optimiste calculé à partir de la fourchette basse de variabilité de tes performances par terrain. Représente ton temps potentiel un jour où tout se passe bien.">i</span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
-        <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" data-tooltip="Temps pessimiste basé sur la fourchette haute de variabilité. Représente un jour où les conditions sont défavorables (météo, fatigue résiduelle, gestion difficile).">i</span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+        <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" data-tooltip="Temps optimiste calculé à partir de la fourchette basse de variabilité de tes performances par terrain. Représente ton temps potentiel un jour où tout se passe bien."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+        <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" data-tooltip="Temps pessimiste basé sur la fourchette haute de variabilité. Représente un jour où les conditions sont défavorables (météo, fatigue résiduelle, gestion difficile)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
       </div>
 
       <div class="chart-card">
         <div class="chart-header">
-          <div class="chart-title">Profil de course — allure &amp; ravitaillements</div>
+          <div class="chart-title">Profil de course — allure &amp; ravitaillements<span class="info-icon" data-tooltip="Profil altimétrique de la course coloré par allure prédite. Les bulles cyan marquent les ravitaillements avec temps de passage. Tu peux superposer la batterie énergétique et la fréquence cardiaque estimée."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
           <div class="chart-legend">
             <div class="legend-item"><div class="legend-dot" style="background:#00C8E0"></div><span class="legend-label">&lt;10'/km</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div><span class="legend-label">10-13'</span></div>
@@ -498,8 +513,22 @@
             <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div><span class="legend-label">&gt;18'/km</span></div>
           </div>
         </div>
+        <!-- Toggles données superposées -->
+        <div style="padding:8px 20px; border-bottom:0.5px solid var(--border); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+          <span style="font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
+          <label class="chart-toggle">
+            <input type="checkbox" id="toggleBatt" onchange="dessinerProfilChart(window.lastSimData)">
+            <span class="toggle-dot" style="background:#FFD93D"></span>
+            <span class="toggle-label">Batterie énergétique</span>
+          </label>
+          <label class="chart-toggle">
+            <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
+            <span class="toggle-dot" style="background:#FF6B9D"></span>
+            <span class="toggle-label">Fréquence cardiaque (estimée)</span>
+          </label>
+        </div>
         <div class="chart-body">
-          <svg id="profilChart" viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+          <svg id="profilChart" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
         </div>
       </div>
 
@@ -684,9 +713,9 @@ function chargerFichier(file) {
 function afficherProfilSidebar() {
   const p = chargerProfil();
   if (p && p.profil) {
-    const veps = Object.values(p.profil).map(t => t.vep_norm);
-    const moy = veps.length ? (veps.reduce((a,b) => a+b, 0) / veps.length).toFixed(1) : '—';
-    document.getElementById('profilVEP').textContent   = `${moy} km/h`;
+    // Utilise la même VEP globale que sur la page profil
+    const vep = p.vep_globale ? p.vep_globale.toFixed(1) : '—';
+    document.getElementById('profilVEP').textContent   = `${vep} km/h`;
     document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1)} %/h`;
     document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2)}`;
   } else {
@@ -826,13 +855,19 @@ function afficherResultats(data) {
   }, 100);
 }
 
-// ── Graphique profil SVG ──────────────────────────────────────────
+// ── Graphique profil SVG avec courbes optionnelles ────────────
 function dessinerProfilChart(data) {
+  if (!data) return;
+  window.lastSimData = data;
+
   const svg = document.getElementById('profilChart');
   const pts = data.profil_chart || [];
   if (pts.length === 0) return;
 
-  const W=680, H=180, padL=44, padR=16, padT=20, padB=40;
+  const showBatt = document.getElementById('toggleBatt')?.checked || false;
+  const showFC   = document.getElementById('toggleFC')?.checked || false;
+
+  const W=680, H=200, padL=44, padR=44, padT=20, padB=40;
   const cW=W-padL-padR, cH=H-padT-padB;
 
   const alts   = pts.map(p => p.altitude);
@@ -840,6 +875,8 @@ function dessinerProfilChart(data) {
   const maxA   = Math.max(...alts);
   const rangeA = maxA - minA || 1;
   const dist   = data.distance_km;
+  const profil = chargerProfil();
+  const fcmax  = profil?.fcmax || 193;
 
   const couleur = v => {
     const a = 60 / Math.max(v, 0.1);
@@ -850,21 +887,32 @@ function dessinerProfilChart(data) {
   };
   const x = km => padL + (km / dist) * cW;
   const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
+  // Axe Y droit pour batterie / FC (0-100%)
+  const yPct = pct => padT + cH - (pct / 100) * cH;
 
   let c = '';
-  // Grille
+
+  // Grille verticale + labels distance
   [0, 0.25, 0.5, 0.75, 1].forEach(p => {
     const xp = padL + p * cW;
     c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(100,180,210,0.08)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
     c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#7A9AAA" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
   });
+  // Axe Y gauche : altitude
   [minA, (minA+maxA)/2, maxA].forEach(a => {
     const yp = y(a);
     c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(100,180,210,0.07)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
     c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#7A9AAA" text-anchor="end">${Math.round(a)}m</text>`;
   });
+  // Axe Y droit (uniquement si batt ou FC affichées)
+  if (showBatt || showFC) {
+    [0, 50, 100].forEach(p => {
+      const yp = yPct(p);
+      c += `<text x="${W-padR+4}" y="${yp+3}" font-size="7.5" fill="#7A9AAA" text-anchor="start">${p}%</text>`;
+    });
+  }
 
-  // Courbe colorée
+  // Courbe altimétrique colorée
   for (let i = 1; i < pts.length; i++) {
     const p1 = pts[i-1], p2 = pts[i];
     const col = couleur(p2.vitesse_kmh);
@@ -872,7 +920,40 @@ function dessinerProfilChart(data) {
     c += `<line x1="${x(p1.dist_km)}" y1="${y(p1.altitude)}" x2="${x(p2.dist_km)}" y2="${y(p2.altitude)}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
   }
 
-  // Ravitos
+  // ── Courbe batterie ──
+  if (showBatt) {
+    let path = '';
+    pts.forEach((p, i) => {
+      const px = x(p.dist_km), py = yPct(p.batterie_pct);
+      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#FFD93D" stroke-width="2" stroke-dasharray="4,3" opacity="0.9"/>`;
+    c += `<text x="${W-padR+4}" y="${padT+8}" font-size="8" fill="#FFD93D" text-anchor="start" font-weight="bold">⚡ Batt.</text>`;
+  }
+
+  // ── Courbe FC estimée ──
+  // Estimation simple : FC = FC_repos + (FCmax - FC_repos) × intensité
+  // Intensité approximée à partir de la vitesse et de la pente
+  if (showFC) {
+    // Hypothèse : FC évolue de 65% FCmax (départ) à 90% FCmax (effort max)
+    // selon l'intensité (vitesse réelle / vitesse max théorique du segment)
+    let path = '';
+    const vepGlobale = profil?.vep_globale || 9;
+    pts.forEach((p, i) => {
+      // Intensité basée sur l'écart entre vitesse réelle et VEP globale
+      // Plus le terrain est dur, plus la FC monte
+      const intensite = Math.min(1.0, p.vitesse_kmh / (vepGlobale * 1.3));
+      const fcRatio = 0.65 + 0.30 * intensite;  // 65% à 95%
+      const fcEstimee = fcRatio * 100;  // en % FCmax
+      const px = x(p.dist_km), py = yPct(fcEstimee);
+      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#FF6B9D" stroke-width="2" stroke-dasharray="2,2" opacity="0.9"/>`;
+    const yLabel = showBatt ? padT + 18 : padT + 8;
+    c += `<text x="${W-padR+4}" y="${yLabel}" font-size="8" fill="#FF6B9D" text-anchor="start" font-weight="bold">♥ FC</text>`;
+  }
+
+  // Bulles ravitos
   (data.ravitos || []).forEach(r => {
     const xR = x(r.km);
     const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
@@ -940,7 +1021,8 @@ function afficherCarte(coords) {
   leafletMap = L.map('leafletMap').setView(coords[0], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
-    maxZoom: 18
+    maxZoom: 18,
+    crossOrigin: true
   }).addTo(leafletMap);
 
   const polyline = L.polyline(coords, { color: '#00C8E0', weight: 3 }).addTo(leafletMap);
@@ -1025,22 +1107,81 @@ async function genererPDF() {
     });
     y += 26;
 
-    // ── PROFIL COUREUR (compact) ──
+    // ── PROFIL COUREUR (détaillé) ──
     if (profil && profil.archetype) {
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(0, 150, 180);
       pdf.text(`PROFIL : ${profil.archetype.nom || 'Combattant'}`, 12, y);
-      pdf.setFont('helvetica', 'normal');
+      y += 4;
+
+      // Description archétype
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'italic');
       pdf.setTextColor(80, 80, 80);
-      pdf.text(`Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm`, W-12, y, { align: 'right' });
+      const desc = pdf.splitTextToSize(profil.archetype.desc || '', W - 24);
+      pdf.text(desc, 12, y);
+      y += desc.length * 3 + 2;
+
+      // Stats clés du profil
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(60, 60, 60);
+      const vepStr = profil.vep_globale ? `VEP globale ${profil.vep_globale.toFixed(1)} km/h` : '';
+      pdf.text(`${vepStr} · Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm · ${profil.nb_traces} traces`, 12, y);
       y += 5;
+
+      // Score de pente (compact)
+      if (profil.profil) {
+        pdf.setFontSize(7);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(0, 150, 180);
+        pdf.text('SCORE DE PENTE (vs ton plat)', 12, y);
+        y += 3.5;
+
+        const labelsT = {
+          montee_raide:'Montée raide', montee_soutenue:'Montée soutenue', montee_douce:'Montée douce',
+          plat:'Plat (réf.)',
+          descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide',
+        };
+        const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+
+        // 2 colonnes
+        const colW = (W - 24) / 2;
+        let col = 0, lineY = y;
+        ordreT.forEach((t, i) => {
+          const p = profil.profil[t];
+          if (!p) return;
+          const ecart = p.ecart_plat_pct || 0;
+          const isPlat = (t === 'plat');
+          const isPositive = ecart >= 0;
+          const colX = 12 + col * colW;
+
+          pdf.setFontSize(6.5);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(80, 80, 80);
+          pdf.text(labelsT[t], colX, lineY);
+
+          // Valeur colorée
+          pdf.setFont('helvetica', 'bold');
+          if (isPlat) pdf.setTextColor(110, 110, 110);
+          else if (isPositive) pdf.setTextColor(0, 130, 80);
+          else pdf.setTextColor(180, 50, 50);
+          const sign = ecart > 0 ? '+' : '';
+          const display = isPlat ? '0% (réf)' : `${sign}${ecart.toFixed(1)}%`;
+          pdf.text(display, colX + colW - 4, lineY, { align: 'right' });
+
+          col++;
+          if (col >= 2) { col = 0; lineY += 3.2; }
+        });
+        if (col > 0) lineY += 3.2;
+        y = lineY + 3;
+      }
     }
 
     // ── GRAPHIQUE PROFIL DE COURSE ──
     const chartEl = document.getElementById('profilChart');
     if (chartEl) {
-      // Wrapper avec fond blanc
       const wrapper = document.createElement('div');
       wrapper.style.cssText = 'background:white;padding:10px;width:680px;';
       const clone = chartEl.cloneNode(true);
@@ -1060,7 +1201,7 @@ async function genererPDF() {
       y += Math.min(imgH, 50) + 3;
     }
 
-    // ── CARTE DU PARCOURS ──
+    // ── CARTE DU PARCOURS (capture Leaflet réelle) ──
     if (trackPoints && trackPoints.length > 0) {
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
@@ -1068,13 +1209,12 @@ async function genererPDF() {
       pdf.text('CARTE DU PARCOURS', 12, y);
       y += 3;
 
-      // Dessine le tracé en SVG sur fond simple — pas de tuiles
-      const mapCanvas = await dessinerCarteSimplePDF();
+      const mapCanvas = await capturerCarteLeaflet();
       if (mapCanvas) {
         const imgData = mapCanvas.toDataURL('image/png');
         const imgH    = (mapCanvas.height * (W-24)) / mapCanvas.width;
-        pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 55));
-        y += Math.min(imgH, 55) + 3;
+        pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 50));
+        y += Math.min(imgH, 50) + 3;
       }
     }
 
@@ -1136,7 +1276,31 @@ async function genererPDF() {
   }
 }
 
-// ── Dessine la carte du parcours en canvas (sans tuiles) ──
+// ── Capture de la carte Leaflet réelle pour le PDF ──
+async function capturerCarteLeaflet() {
+  const mapEl = document.getElementById('leafletMap');
+  if (!mapEl || !leafletMap) return null;
+
+  // Force un rendu propre avant capture
+  leafletMap.invalidateSize();
+  await new Promise(r => setTimeout(r, 500));
+
+  try {
+    const canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      scale: 2,
+      backgroundColor: null,
+    });
+    return canvas;
+  } catch(e) {
+    console.warn('Capture Leaflet échouée, fallback canvas simple:', e);
+    return await dessinerCarteSimplePDF();
+  }
+}
+
+// ── Fallback : tracé seul si la carte ne peut pas être capturée ──
 async function dessinerCarteSimplePDF() {
   if (!trackPoints || trackPoints.length === 0) return null;
 
@@ -1145,29 +1309,22 @@ async function dessinerCarteSimplePDF() {
   canvas.height = 380;
   const ctx = canvas.getContext('2d');
 
-  // Fond clair
   ctx.fillStyle = '#F0F4F7';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Calcul des bornes
   const lats = trackPoints.map(p => p[0]);
   const lons = trackPoints.map(p => p[1]);
   const minLat = Math.min(...lats), maxLat = Math.max(...lats);
   const minLon = Math.min(...lons), maxLon = Math.max(...lons);
 
-  // Marges
   const padding = 30;
-  const w = canvas.width  - 2 * padding;
+  const w = canvas.width - 2 * padding;
   const h = canvas.height - 2 * padding;
-
-  // Garde le ratio
   const latRange = maxLat - minLat;
   const lonRange = maxLon - minLon;
   const scaleX = w / lonRange;
   const scaleY = h / latRange;
   const scale  = Math.min(scaleX, scaleY);
-
-  // Centrage
   const offsetX = padding + (w - lonRange * scale) / 2;
   const offsetY = padding + (h - latRange * scale) / 2;
 
@@ -1176,25 +1333,17 @@ async function dessinerCarteSimplePDF() {
     y: offsetY + (maxLat - lat) * scale,
   });
 
-  // Grille de fond légère
   ctx.strokeStyle = '#D8DFE5';
   ctx.lineWidth = 0.5;
   for (let i = 0; i <= 10; i++) {
     const x = padding + (w * i) / 10;
-    ctx.beginPath();
-    ctx.moveTo(x, padding);
-    ctx.lineTo(x, canvas.height - padding);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, canvas.height - padding); ctx.stroke();
   }
   for (let i = 0; i <= 6; i++) {
     const y = padding + (h * i) / 6;
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(canvas.width - padding, y);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(canvas.width - padding, y); ctx.stroke();
   }
 
-  // Tracé GPS
   ctx.strokeStyle = '#00C8E0';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
@@ -1202,41 +1351,19 @@ async function dessinerCarteSimplePDF() {
   ctx.beginPath();
   trackPoints.forEach((pt, i) => {
     const p = project(pt[0], pt[1]);
-    if (i === 0) ctx.moveTo(p.x, p.y);
-    else         ctx.lineTo(p.x, p.y);
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
   });
   ctx.stroke();
 
-  // Marqueur Départ (vert)
   const start = project(trackPoints[0][0], trackPoints[0][1]);
   ctx.fillStyle = '#5DCAA5';
-  ctx.beginPath();
-  ctx.arc(start.x, start.y, 8, 0, Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = '#0D1B2A';
-  ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('D', start.x - 3.5, start.y + 4);
+  ctx.beginPath(); ctx.arc(start.x, start.y, 8, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
 
-  // Marqueur Arrivée (rouge)
   const end = project(trackPoints[trackPoints.length-1][0], trackPoints[trackPoints.length-1][1]);
   ctx.fillStyle = '#E24B4A';
-  ctx.beginPath();
-  ctx.arc(end.x, end.y, 8, 0, Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('A', end.x - 3.5, end.y + 4);
-
-  // Légende
-  ctx.fillStyle = '#0D1B2A';
-  ctx.font = '10px sans-serif';
-  ctx.fillText('🟢 Départ · 🔴 Arrivée', padding, canvas.height - 8);
+  ctx.beginPath(); ctx.arc(end.x, end.y, 8, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
 
   return canvas;
 }
@@ -1287,6 +1414,4 @@ function envoyerAvis() {
 </script>
 
 </body>
-</html>
-
 </html>
