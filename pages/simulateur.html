@@ -14,87 +14,112 @@
     body { padding-top: 64px; }
 
     .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 240px); }
-    .sim-sidebar { border-right:0.5px solid var(--border); padding:40px 36px; background:var(--navy2); }
-    .sim-main { padding:40px 48px; background:var(--navy3); }
+    .sim-sidebar { border-right:1px solid var(--line); padding:40px 36px; background:var(--bg-2); }
+    .sim-main { padding:40px 48px; background:var(--bg-3); }
 
     .step-block { margin-bottom:32px; }
     .step-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
-    .step-num { width:26px; height:26px; border:0.5px solid var(--cyan); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:12px; color:var(--cyan); }
-    .step-title { font-family:var(--font-display); font-size:16px; font-weight:500; color:var(--white); letter-spacing:0.02em; margin-bottom:3px; }
-    .step-desc { font-size:12px; font-weight:300; color:var(--slate); line-height:1.6; }
-    .step-divider { height:0.5px; background:var(--border); margin:28px 0; }
+    .step-num { width:26px; height:26px; border:1px solid var(--sun); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:12px; color:var(--sun); }
+    .step-title { font-family:var(--font-display); font-size:16px; font-weight:500; color:var(--text); letter-spacing:0.02em; margin-bottom:3px; }
+    .step-desc { font-size:12px; font-weight:300; color:var(--text-2); line-height:1.6; }
+    .step-divider { height:0.5px; background:var(--line); margin:28px 0; }
 
-    .upload-zone-sm { border:0.5px dashed rgba(0,200,224,0.25); padding:20px; text-align:center; background:var(--cyan-glow); cursor:pointer; transition:all 0.2s; }
-    .upload-zone-sm:hover { background:rgba(0,200,224,0.08); border-color:rgba(0,200,224,0.5); }
-    .upload-zone-sm svg { width:18px; height:18px; stroke:var(--cyan); fill:none; stroke-width:1.5; margin:0 auto 8px; display:block; }
-    .upload-zone-sm p { font-size:12px; color:var(--slate); pointer-events:none; }
+    .upload-zone-sm { border:0.5px dashed rgba(255,200,87,0.25); padding:20px; text-align:center; background:var(--sun-soft); cursor:pointer; transition:all 0.2s; }
+    .upload-zone-sm:hover { background:rgba(255,200,87,0.08); border-color:rgba(255,200,87,0.5); }
+    .upload-zone-sm svg { width:18px; height:18px; stroke:var(--sun); fill:none; stroke-width:1.5; margin:0 auto 8px; display:block; }
+    .upload-zone-sm p { font-size:12px; color:var(--text-2); pointer-events:none; }
 
-    .file-detected { background:rgba(0,200,224,0.04); border:0.5px solid var(--border2); padding:12px 14px; margin-top:10px; display:none; }
-    .file-detected-name { font-size:13px; color:var(--white); margin-bottom:6px; }
+    .file-detected { background:rgba(255,200,87,0.04); border:1px solid var(--line-2); padding:12px 14px; margin-top:10px; display:none; }
+    .file-detected-name { font-size:13px; color:var(--text); margin-bottom:6px; }
     .file-meta-row { display:flex; gap:12px; flex-wrap:wrap; }
-    .file-meta-val { font-family:var(--font-display); font-size:14px; color:var(--cyan); }
-    .file-meta-label { font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.08em; }
+    .file-meta-val { font-family:var(--font-display); font-size:14px; color:var(--sun); }
+    .file-meta-label { font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.08em; }
 
-    .input-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
+    .input-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
     .input-group { margin-bottom:16px; }
 
-    .btn-simulate { width:100%; padding:15px; background:var(--cyan); color:var(--navy); font-family:var(--font-display); font-size:13px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; border:none; cursor:pointer; transition:opacity 0.2s; margin-top:8px; }
-    .btn-simulate:hover { opacity:0.88; }
-    .btn-simulate:disabled { opacity:0.4; cursor:not-allowed; }
+    .btn-simulate {
+      width: 100%;
+      padding: 18px;
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 18px rgba(255, 200, 87, 0.25);
+      margin-top: 8px;
+    }
+    .btn-simulate:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+      box-shadow: 0 6px 24px rgba(255, 200, 87, 0.35);
+    }
+    .btn-simulate:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
 
     .empty-state { text-align:center; padding:80px 20px; }
-    .empty-icon { width:64px; height:64px; border:0.5px solid var(--border2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-    .empty-icon svg { width:28px; height:28px; stroke:var(--slate); fill:none; stroke-width:1.5; }
-    .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--slate); margin-bottom:8px; letter-spacing:0.04em; }
-    .empty-sub { font-size:13px; color:var(--slate); opacity:0.5; line-height:1.6; }
+    .empty-icon { width:64px; height:64px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+    .empty-icon svg { width:28px; height:28px; stroke:var(--text-2); fill:none; stroke-width:1.5; }
+    .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--text-2); margin-bottom:8px; letter-spacing:0.04em; }
+    .empty-sub { font-size:13px; color:var(--text-2); opacity:0.5; line-height:1.6; }
 
-    .result-kpis { display:grid; grid-template-columns:repeat(4,1fr); border:0.5px solid var(--border); margin-bottom:20px; }
-    .result-kpi { padding:20px; border-right:0.5px solid var(--border); text-align:center; }
+    .result-kpis { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line); margin-bottom:20px; }
+    .result-kpi { padding:20px; border-right:1px solid var(--line); text-align:center; }
     .result-kpi:last-child { border-right:none; }
-    .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
-    .result-kpi-val { font-family:var(--font-display); font-size:22px; font-weight:500; color:var(--white); }
-    .result-kpi-val.cyan { color:var(--cyan); }
-    .result-kpi-val.red { color:var(--red); }
-    .result-kpi-val.grn { color:var(--green); }
+    .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+    .result-kpi-val { font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--text); letter-spacing:0.01em; }
+    .result-kpi-val.cyan { background: var(--gradient-summit); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .result-kpi-val.red { color:var(--danger); }
+    .result-kpi-val.grn { color:var(--leaf); }
 
-    .fourch-row { display:grid; grid-template-columns:1fr 1fr; border:0.5px solid var(--border); margin-bottom:20px; }
-    .fourch-item { padding:16px 20px; border-right:0.5px solid var(--border); }
+    .fourch-row { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); margin-bottom:20px; }
+    .fourch-item { padding:16px 20px; border-right:1px solid var(--line); }
     .fourch-item:last-child { border-right:none; }
     .fourch-label { font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:6px; }
-    .fg .fourch-label { color:var(--green); }
-    .fr .fourch-label { color:var(--red); }
+    .fg .fourch-label { color:var(--leaf); }
+    .fr .fourch-label { color:var(--danger); }
     .fourch-val { font-family:var(--font-display); font-size:20px; font-weight:500; }
     .fg .fourch-val { color:#9FE1CB; }
     .fr .fourch-val { color:#F5C4B3; }
-    .fourch-sub { font-size:11px; color:var(--slate); margin-top:4px; }
+    .fourch-sub { font-size:11px; color:var(--text-2); margin-top:4px; }
 
-    .chart-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
-    .chart-header { padding:14px 20px; border-bottom:0.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    .chart-title { font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .chart-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .chart-header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+    .chart-title { font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
     .chart-legend { display:flex; gap:14px; flex-wrap:wrap; }
     .legend-item { display:flex; align-items:center; gap:5px; }
     .legend-dot { width:8px; height:8px; border-radius:50%; }
-    .legend-label { font-size:11px; color:var(--slate); }
+    .legend-label { font-size:11px; color:var(--text-2); }
     .chart-body { padding:16px 20px 8px; }
 
-    .ravito-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
-    .ravito-header { padding:14px 20px; border-bottom:0.5px solid var(--border); font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .ravito-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .ravito-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
 
-    .terrain-card { background:var(--navy2); border:0.5px solid var(--border); margin-bottom:20px; }
-    .terrain-header { padding:14px 20px; border-bottom:0.5px solid var(--border); font-family:var(--font-display); font-size:10px; color:var(--cyan); text-transform:uppercase; letter-spacing:0.14em; }
+    .terrain-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .terrain-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
     .terrain-body { padding:16px 20px; }
     .terrain-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .terrain-icon { width:26px; height:26px; border:0.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .terrain-icon { width:26px; height:26px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .terrain-icon svg { width:13px; height:13px; fill:none; stroke-width:1.8; }
-    .terrain-label { font-family:var(--font-display); font-size:11px; color:var(--slate); width:130px; flex-shrink:0; }
+    .terrain-label { font-family:var(--font-display); font-size:11px; color:var(--text-2); width:130px; flex-shrink:0; }
     .terrain-track { flex:1; height:4px; background:rgba(255,255,255,0.06); }
     .terrain-fill { height:100%; transition:width 1s ease; }
-    .terrain-time { font-family:var(--font-display); font-size:12px; color:var(--white); width:60px; text-align:right; }
-    .terrain-pct { font-size:11px; color:var(--slate); width:36px; text-align:right; }
+    .terrain-time { font-family:var(--font-display); font-size:12px; color:var(--text); width:60px; text-align:right; }
+    .terrain-pct { font-size:11px; color:var(--text-2); width:36px; text-align:right; }
 
     @media (max-width:1024px) {
       .sim-layout { grid-template-columns:1fr; }
-      .sim-sidebar { border-right:none; border-bottom:0.5px solid var(--border); padding:32px 24px; }
+      .sim-sidebar { border-right:none; border-bottom:1px solid var(--line); padding:32px 24px; }
       .sim-main { padding:32px 24px; }
       .result-kpis { grid-template-columns:1fr 1fr; }
       
@@ -103,16 +128,16 @@
     /* ── Bouton avis flottant ── */
     .floating-feedback {
       position: fixed; bottom: 24px; right: 24px; z-index: 1000;
-      background: var(--cyan); color: var(--navy);
+      background: var(--sun); color: var(--bg);
       font-family: var(--font-display); font-size: 12px; font-weight: 600;
       letter-spacing: 0.1em; text-transform: uppercase;
       padding: 14px 20px; border: none; cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0,200,224,0.4);
+      box-shadow: 0 4px 20px rgba(255,200,87,0.4);
       display: flex; align-items: center; gap: 8px;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .floating-feedback:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,200,224,0.5); }
-    .floating-feedback svg { width: 16px; height: 16px; stroke: var(--navy); fill: none; stroke-width: 2; }
+    .floating-feedback:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,200,87,0.5); }
+    .floating-feedback svg { width: 16px; height: 16px; stroke: var(--bg); fill: none; stroke-width: 2; }
 
     /* ── Modal avis ── */
     .modal-overlay {
@@ -122,57 +147,60 @@
     }
     .modal-overlay.active { display: flex; }
     .modal-content {
-      background: var(--navy2); border: 0.5px solid var(--border2);
+      background: var(--bg-2); border: 1px solid var(--line-2);
       max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;
       padding: 36px;
     }
     .modal-close {
       float: right; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
-      background: none; border: none; color: var(--white); font-size: 24px;
+      background: none; border: none; color: var(--text); font-size: 24px;
     }
     .modal-close:hover { opacity: 1; }
-    .modal-content h2 { font-family: var(--font-display); font-size: 24px; color: var(--white); margin-bottom: 8px; }
-    .modal-content p.modal-sub { font-size: 13px; color: var(--slate); margin-bottom: 24px; }
+    .modal-content h2 { font-family: var(--font-display); font-size: 24px; color: var(--text); margin-bottom: 8px; }
+    .modal-content p.modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
 
     .rating-group { display: flex; gap: 6px; }
     .rating-btn {
-      flex: 1; padding: 8px 4px; border: 0.5px solid var(--border);
-      background: transparent; color: var(--slate);
+      flex: 1; padding: 8px 4px; border: 1px solid var(--line);
+      background: transparent; color: var(--text-2);
       font-family: var(--font-display); font-size: 11px; cursor: pointer;
       transition: all 0.2s; text-align: center;
     }
     .rating-btn:hover, .rating-btn.selected {
-      border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
+      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
     }
 
     /* ── Bouton PDF ── */
     .btn-pdf {
-      background: transparent; color: var(--cyan);
-      font-family: var(--font-display); font-size: 12px;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 12px 24px; border: 0.5px solid var(--cyan);
-      cursor: pointer; transition: all 0.2s; margin-bottom: 20px;
-      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 14px 28px; border: none; border-radius: 4px;
+      cursor: pointer; transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      margin-bottom: 20px;
+      display: inline-flex; align-items: center; gap: 10px;
+      box-shadow: 0 4px 14px rgba(255, 200, 87, 0.20);
     }
-    .btn-pdf:hover { background: var(--cyan-glow); }
-    .btn-pdf svg { width: 14px; height: 14px; stroke: var(--cyan); fill: none; stroke-width: 1.8; }
+    .btn-pdf:hover { transform: translateY(-1px); opacity: 0.95; box-shadow: 0 6px 20px rgba(255, 200, 87, 0.30); }
+    .btn-pdf svg { width: 15px; height: 15px; stroke: var(--bg); fill: none; stroke-width: 2; }
 
     /* ── Carte Leaflet ── */
     .map-card {
-      background: var(--navy2); border: 0.5px solid var(--border); margin-bottom: 20px;
+      background: var(--bg-2); border: 1px solid var(--line); margin-bottom: 20px; border-radius: 6px; overflow: hidden;
     }
     .map-header {
-      padding: 14px 20px; border-bottom: 0.5px solid var(--border);
-      font-family: var(--font-display); font-size: 10px; color: var(--cyan);
+      padding: 14px 20px; border-bottom: 1px solid var(--line);
+      font-family: var(--font-display); font-size: 10px; color: var(--sun);
       text-transform: uppercase; letter-spacing: 0.14em;
     }
     /* ── Checkbox items modal ── */
     .checkbox-item {
-      padding: 7px 12px; border: 0.5px solid var(--border); cursor: pointer;
-      font-size: 12px; color: var(--slate); transition: all 0.2s; user-select: none;
+      padding: 7px 12px; border: 1px solid var(--line); cursor: pointer;
+      font-size: 12px; color: var(--text-2); transition: all 0.2s; user-select: none;
     }
     .checkbox-item:hover, .checkbox-item.checked {
-      border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow);
+      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
     }
 
     /* ── Toggles courbes ── */
@@ -186,9 +214,9 @@
     }
     .chart-toggle input:checked ~ .toggle-dot { opacity: 1; box-shadow: 0 0 8px currentColor; }
     .toggle-label {
-      font-size: 11px; color: var(--slate); transition: color 0.2s;
+      font-size: 11px; color: var(--text-2); transition: color 0.2s;
     }
-    .chart-toggle input:checked ~ .toggle-label { color: var(--white); }
+    .chart-toggle input:checked ~ .toggle-label { color: var(--text); }
 
     #leafletMap { height: 320px; width: 100%; }
 
@@ -199,17 +227,17 @@
       cursor: help; margin-left: 6px;
       vertical-align: middle; transition: all 0.2s;
       position: relative;
-      color: var(--slate);
+      color: var(--text-2);
     }
     .info-icon svg { width: 14px; height: 14px; display: block; }
-    .info-icon:hover { color: var(--cyan); }
+    .info-icon:hover { color: var(--sun); }
     .info-icon::after {
       content: attr(data-tooltip);
       position: absolute; bottom: calc(100% + 8px); left: 50%;
       transform: translateX(-50%);
       width: 280px; padding: 10px 12px;
-      background: var(--navy3); color: var(--white);
-      border: 0.5px solid var(--cyan);
+      background: var(--bg-3); color: var(--text);
+      border: 1px solid var(--sun);
       font-size: 11px; font-weight: 300; line-height: 1.5;
       letter-spacing: 0.02em;
       white-space: normal; text-align: left;
@@ -222,7 +250,7 @@
     .info-icon::before {
       content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
       transform: translateX(-50%);
-      border: 6px solid transparent; border-top-color: var(--cyan);
+      border: 6px solid transparent; border-top-color: var(--sun);
       opacity: 0; visibility: hidden;
       transition: opacity 0.2s;
     }
@@ -318,22 +346,22 @@
           <div class="step-desc">Issu de ton analyse GPX.</div>
         </div>
       </div>
-      <div style="background:var(--navy3);border:0.5px solid var(--border);padding:14px 16px;">
+      <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 16px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--slate);">VEP globale</span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilVEP">—</span>
+          <span style="font-size:12px;color:var(--text-2);">VEP globale</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilVEP">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--slate);">Drain énergie</span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilDrain">—</span>
+          <span style="font-size:12px;color:var(--text-2);">Drain énergie</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilDrain">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--slate);">Coeff. course</span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--cyan);" id="profilCoeff">—</span>
+          <span style="font-size:12px;color:var(--text-2);">Coeff. course</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilCoeff">—</span>
         </div>
       </div>
-      <p style="font-size:11px;color:var(--slate);margin-top:10px;line-height:1.5;opacity:0.7;">
-        Pas encore de profil ? <a href="profil.html" style="color:var(--cyan);">Analyse tes traces GPX →</a>
+      <p style="font-size:11px;color:var(--text-2);margin-top:10px;line-height:1.5;opacity:0.7;">
+        Pas encore de profil ? <a href="profil.html" style="color:var(--sun);">Analyse tes traces GPX →</a>
       </p>
     </div>
 
@@ -376,15 +404,15 @@
         <div class="chart-header">
           <div class="chart-title">Profil de course — allure &amp; ravitaillements<span class="info-icon" data-tooltip="Profil altimétrique de la course coloré par allure prédite. Les bulles cyan marquent les ravitaillements avec temps de passage. Tu peux superposer la batterie énergétique et la fréquence cardiaque estimée."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
           <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#00C8E0"></div><span class="legend-label">&lt;10'/km</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#FFC857"></div><span class="legend-label">&lt;10'/km</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div><span class="legend-label">10-13'</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div><span class="legend-label">13-18'</span></div>
             <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div><span class="legend-label">&gt;18'/km</span></div>
           </div>
         </div>
         <!-- Toggles données superposées -->
-        <div style="padding:8px 20px; border-bottom:0.5px solid var(--border); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
-          <span style="font-family:var(--font-display); font-size:10px; color:var(--slate); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
+        <div style="padding:8px 20px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+          <span style="font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
           <label class="chart-toggle">
             <input type="checkbox" id="toggleBatt" onchange="dessinerProfilChart(window.lastSimData)">
             <span class="toggle-dot" style="background:#FFD93D"></span>
@@ -481,7 +509,7 @@
 
       <div style="margin-bottom:16px;">
         <label class="input-label">Commentaire libre</label>
-        <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées..." style="width:100%;min-height:80px;padding:10px;font-family:var(--font-body);"></textarea>
+        <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées..." style="width:100%;min-height:80px;padding:10px;font-family:'Inter', sans-serif;"></textarea>
       </div>
 
       <div style="margin-bottom:16px;">
@@ -496,8 +524,8 @@
 
     <div id="successAvis" style="display:none;text-align:center;padding:30px 0;">
       <div style="font-size:48px;margin-bottom:14px;">✓</div>
-      <h3 style="font-family:var(--font-display);color:var(--cyan);margin-bottom:8px;">Merci pour ton retour !</h3>
-      <p style="font-size:13px;color:var(--slate);">Ton avis a bien été envoyé.</p>
+      <h3 style="font-family:var(--font-display);color:var(--sun);margin-bottom:8px;">Merci pour ton retour !</h3>
+      <p style="font-size:13px;color:var(--text-2);">Ton avis a bien été envoyé.</p>
     </div>
   </div>
 </div>
@@ -513,7 +541,7 @@ let gpxFile = null;
 // Constantes affichage
 const TERRAIN_COLORS = {
   montee_raide:'#E24B4A', montee_soutenue:'#EF9F27', montee_douce:'#5DCAA5',
-  plat:'#00C8E0', descente_douce:'#5DCAA5', descente_soutenue:'#EF9F27', descente_raide:'#E24B4A'
+  plat:'#FFC857', descente_douce:'#5DCAA5', descente_soutenue:'#EF9F27', descente_raide:'#E24B4A'
 };
 const TERRAIN_LABELS_S = {
   montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
@@ -524,7 +552,7 @@ const TERRAIN_ICONS_S = {
   montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="2,11 7,2 11,7"/></svg>`,
   montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
   montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
-  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="#00C8E0" stroke-width="1.6"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
+  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="#FFC857" stroke-width="1.6"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
   descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
   descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
   descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="6,2 11,9 7,11"/></svg>`,
@@ -548,7 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Drag & drop
   zone.addEventListener('dragover', e => {
     e.preventDefault();
-    zone.style.borderColor = 'rgba(0,200,224,0.6)';
+    zone.style.borderColor = 'rgba(255,200,87,0.6)';
   });
   zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
   zone.addEventListener('drop', e => {
@@ -669,7 +697,7 @@ function afficherResultats(data) {
     <tr>
       <td style="font-family:var(--font-display);">Départ</td>
       <td>0 km</td>
-      <td style="color:var(--cyan);font-family:var(--font-display);">0h00m00s</td>
+      <td style="color:var(--sun);font-family:var(--font-display);">0h00m00s</td>
       <td class="range-col">0h00m00s</td>
       <td class="range-col">0h00m00s</td>
       <td class="batt-g">100%</td>
@@ -680,7 +708,7 @@ function afficherResultats(data) {
       <tr>
         <td>Ravito ${r.km.toFixed(1)} km</td>
         <td>${r.km.toFixed(1)} km</td>
-        <td style="color:var(--cyan);font-family:var(--font-display);">${r.temps_fmt}</td>
+        <td style="color:var(--sun);font-family:var(--font-display);">${r.temps_fmt}</td>
         <td class="range-col">${r.bas_fmt}</td>
         <td class="range-col">${r.haut_fmt}</td>
         <td class="${cls}">${Math.round(r.batterie_pct)}%</td>
@@ -749,7 +777,7 @@ function dessinerProfilChart(data) {
 
   const couleur = v => {
     const a = 60 / Math.max(v, 0.1);
-    if (a < 10) return '#00C8E0';
+    if (a < 10) return '#FFC857';
     if (a < 13) return '#5DCAA5';
     if (a < 18) return '#EF9F27';
     return '#E24B4A';
@@ -828,11 +856,11 @@ function dessinerProfilChart(data) {
     const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
     const yR = Math.max(padT + 18, y(closest.altitude));
     c += `
-      <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#00C8E0" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
-      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0D1B2A" stroke="#00C8E0" stroke-width="1.2"/>
-      <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#00C8E0" stroke-width="1"/>
-      <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#00C8E0" stroke-width="0.8"/>
-      <text x="${xR}" y="${yR+4}" font-size="7" fill="#00C8E0" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
+      <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#FFC857" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
+      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0D1B2A" stroke="#FFC857" stroke-width="1.2"/>
+      <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#FFC857" stroke-width="1"/>
+      <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#FFC857" stroke-width="0.8"/>
+      <text x="${xR}" y="${yR+4}" font-size="7" fill="#FFC857" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
   });
 
   svg.innerHTML = c;
@@ -894,7 +922,7 @@ function afficherCarte(coords) {
     crossOrigin: true
   }).addTo(leafletMap);
 
-  const polyline = L.polyline(coords, { color: '#00C8E0', weight: 3 }).addTo(leafletMap);
+  const polyline = L.polyline(coords, { color: '#FFC857', weight: 3 }).addTo(leafletMap);
 
   L.marker(coords[0], { title: 'Départ' }).addTo(leafletMap).bindPopup('🟢 Départ');
   L.marker(coords[coords.length-1], { title: 'Arrivée' }).addTo(leafletMap).bindPopup('🔴 Arrivée');
@@ -1213,7 +1241,7 @@ async function dessinerCarteSimplePDF() {
     ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(canvas.width - padding, y); ctx.stroke();
   }
 
-  ctx.strokeStyle = '#00C8E0';
+  ctx.strokeStyle = '#FFC857';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
