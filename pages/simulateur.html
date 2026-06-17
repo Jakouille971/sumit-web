@@ -934,233 +934,477 @@ function afficherCarte(coords) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  PDF — Génération page unique A4
+//  PDF v3 — Page unique A4 avec style SUM'IT
 // ══════════════════════════════════════════════════════════════
+
+// Couleurs (palette SUM'IT)
+const PDF_COLORS = {
+  bg:       [10, 10, 10],       // Noir
+  bg2:      [19, 19, 19],
+  bg3:      [26, 26, 26],
+  text:     [244, 241, 232],    // Blanc cassé
+  text2:    [184, 180, 166],
+  text3:    [110, 106, 94],
+  sun:      [255, 200, 87],
+  leaf:     [107, 179, 107],
+  sky:      [79, 163, 217],
+  danger:   [229, 91, 91],
+  warning:  [243, 146, 55],
+  line:     [40, 40, 40],
+};
+
 async function genererPDF() {
   const { jsPDF } = window.jspdf;
-  const profil    = chargerProfil();
-  const prenom    = profil?.prenom || 'Coureur';
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Coureur';
   const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
 
   const btn = document.querySelector('.btn-pdf');
-  btn.textContent = '⏳ Génération...';
+  btn.innerHTML = '⏳ Génération...';
   btn.disabled = true;
 
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const W = 210;  // largeur A4 mm
-    const H = 297;  // hauteur A4 mm
+    const W = 210, H = 297;
+    const PAD = 12;
     let y = 0;
 
-    // ── HEADER (compact) ──
-    pdf.setFillColor(13, 27, 42);
-    pdf.rect(0, 0, W, 22, 'F');
-    pdf.setTextColor(0, 200, 224);
-    pdf.setFontSize(16);
+    // ═══ FOND NOIR GLOBAL ═══
+    pdf.setFillColor(...PDF_COLORS.bg);
+    pdf.rect(0, 0, W, H, 'F');
+
+    // ═══ BANNIÈRE HEADER avec topo en fond ═══
+    const HEADER_H = 32;
+
+    // Fond bannière
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.rect(0, 0, W, HEADER_H, 'F');
+
+    // Topo en filigrane (lignes courbes)
+    pdf.setDrawColor(...PDF_COLORS.text);
+    pdf.setLineWidth(0.15);
+    pdf.setGState(new pdf.GState({ opacity: 0.12 }));
+    for (let i = 0; i < 6; i++) {
+      const yo = 4 + i * 5;
+      pdf.lines(
+        [[40, -1], [40, 2], [40, -2], [40, 1], [40, -1]],
+        0, yo, [1, 1], 'S'
+      );
+    }
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+    // Bandeau dégradé fin en bas du header
+    const colors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
+    const segW = W / colors.length;
+    colors.forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(i * segW, HEADER_H - 0.6, segW, 0.6, 'F');
+    });
+
+    // Logo SUM'IT (rond avec dégradé simulé par 3 carrés)
+    const logoX = PAD, logoY = 8, logoSize = 16;
+    pdf.setFillColor(...PDF_COLORS.sun);
+    pdf.circle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 'F');
+    pdf.setTextColor(...PDF_COLORS.bg);
     pdf.setFont('helvetica', 'bold');
-    pdf.text("SUM'IT", 12, 12);
+    pdf.setFontSize(14);
+    pdf.text('S', logoX + logoSize/2, logoY + logoSize/2 + 2, { align: 'center' });
+
+    // SUM'IT text
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("SUM'IT", logoX + logoSize + 4, logoY + 8);
+
     pdf.setFontSize(7);
-    pdf.setTextColor(150, 200, 210);
-    pdf.text('PLAN YOUR PEAKS', 12, 17);
-    pdf.setTextColor(255, 255, 255);
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('PLAN YOUR PEAKS', logoX + logoSize + 4, logoY + 13);
+
+    // Côté droit : date + nom coureur
+    pdf.setFontSize(8);
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+             W - PAD, logoY + 6, { align: 'right' });
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.sun);
+    pdf.setFontSize(10);
+    pdf.text(prenom, W - PAD, logoY + 12, { align: 'right' });
+
+    y = HEADER_H + 8;
+
+    // ═══ TITRE DE LA COURSE ═══
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(nomCourse, PAD, y);
+
+    // Sous-titre catégorie
+    const cat = window.lastSimData?.categorie || {};
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    pdf.text(new Date().toLocaleDateString('fr-FR'), W - 12, 12, { align: 'right' });
-    pdf.text(`${prenom}`, W - 12, 17, { align: 'right' });
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text(`${cat.emoji || ''} ${cat.nom || ''} · Simulation personnalisée`, PAD, y + 5);
+    y += 12;
 
-    y = 28;
-
-    // ── TITRE COURSE ──
-    pdf.setTextColor(13, 27, 42);
-    pdf.setFontSize(15);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(nomCourse, 12, y);
-    y += 8;
-
-    // ── KPIs 6 EN GRILLE 3x2 ──
+    // ═══ KPIs PRINCIPAUX (4 colonnes) ═══
     const kpis = [
-      ['Temps estimé',  document.getElementById('resTemps').textContent],
-      ['Allure moy.',   document.getElementById('resAllure').textContent],
-      ['Distance',      document.getElementById('fileDist').textContent],
-      ['Dénivelé +',    document.getElementById('fileDplus').textContent],
-      ['Top condition', document.getElementById('fourchBas').textContent],
-      ['Jour difficile',document.getElementById('fourchHaut').textContent],
+      { label: 'TEMPS ESTIMÉ',  val: document.getElementById('resTemps').textContent,    color: PDF_COLORS.sun },
+      { label: 'ALLURE MOY.',   val: document.getElementById('resAllure').textContent,   color: PDF_COLORS.text },
+      { label: 'DISTANCE',      val: document.getElementById('fileDist').textContent,    color: PDF_COLORS.text },
+      { label: 'DÉNIVELÉ +',    val: document.getElementById('fileDplus').textContent,   color: PDF_COLORS.text },
     ];
-    pdf.setFillColor(245, 248, 250);
-    pdf.rect(12, y, W - 24, 22, 'F');
+
+    const kpiH = 22;
+    const kpiW = (W - 2*PAD) / 4;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.line);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'S');
+
     kpis.forEach((kpi, i) => {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const px  = 16 + col * 62;
-      const py  = y + 6 + row * 9;
+      const kx = PAD + i * kpiW;
+
+      // Séparateur vertical
+      if (i > 0) {
+        pdf.setDrawColor(...PDF_COLORS.line);
+        pdf.line(kx, y + 3, kx, y + kpiH - 3);
+      }
+
       pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(110, 110, 110);
-      pdf.text(kpi[0].toUpperCase(), px, py);
-      pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 150, 180);
-      pdf.text(kpi[1], px, py + 4.5);
+      pdf.setTextColor(...PDF_COLORS.text3);
+      pdf.text(kpi.label, kx + kpiW/2, y + 6, { align: 'center' });
+
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...kpi.color);
+      pdf.text(kpi.val, kx + kpiW/2, y + 15, { align: 'center' });
     });
-    y += 26;
+    y += kpiH + 6;
 
-    // ── PROFIL COUREUR (détaillé) ──
-    if (profil && profil.archetype) {
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 150, 180);
-      pdf.text(`PROFIL : ${profil.archetype.nom || 'Combattant'}`, 12, y);
-      y += 4;
+    // ═══ FOURCHETTES (2 colonnes vert/rouge) ═══
+    const fourchH = 16;
+    const fourchW = (W - 2*PAD - 4) / 2;
 
-      // Description archétype
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'italic');
-      pdf.setTextColor(80, 80, 80);
-      const desc = pdf.splitTextToSize(profil.archetype.desc || '', W - 24);
-      pdf.text(desc, 12, y);
-      y += desc.length * 3 + 2;
-
-      // Stats clés du profil
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(60, 60, 60);
-      const vepStr = profil.vep_globale ? `VEP globale ${profil.vep_globale.toFixed(1)} km/h` : '';
-      pdf.text(`${vepStr} · Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm · ${profil.nb_traces} traces`, 12, y);
-      y += 5;
-
-      // Score de pente (compact)
-      if (profil.profil) {
-        pdf.setFontSize(7);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(0, 150, 180);
-        pdf.text('SCORE DE PENTE (vs ton plat)', 12, y);
-        y += 3.5;
-
-        const labelsT = {
-          montee_raide:'Montée raide', montee_soutenue:'Montée soutenue', montee_douce:'Montée douce',
-          plat:'Plat (réf.)',
-          descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide',
-        };
-        const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
-
-        // 2 colonnes
-        const colW = (W - 24) / 2;
-        let col = 0, lineY = y;
-        ordreT.forEach((t, i) => {
-          const p = profil.profil[t];
-          if (!p) return;
-          const ecart = p.ecart_plat_pct || 0;
-          const isPlat = (t === 'plat');
-          const isPositive = ecart >= 0;
-          const colX = 12 + col * colW;
-
-          pdf.setFontSize(6.5);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(80, 80, 80);
-          pdf.text(labelsT[t], colX, lineY);
-
-          // Valeur colorée
-          pdf.setFont('helvetica', 'bold');
-          if (isPlat) pdf.setTextColor(110, 110, 110);
-          else if (isPositive) pdf.setTextColor(0, 130, 80);
-          else pdf.setTextColor(180, 50, 50);
-          const sign = ecart > 0 ? '+' : '';
-          const display = isPlat ? '0% (réf)' : `${sign}${ecart.toFixed(1)}%`;
-          pdf.text(display, colX + colW - 4, lineY, { align: 'right' });
-
-          col++;
-          if (col >= 2) { col = 0; lineY += 3.2; }
-        });
-        if (col > 0) lineY += 3.2;
-        y = lineY + 3;
-      }
-    }
-
-    // ── GRAPHIQUE PROFIL DE COURSE ──
-    const chartEl = document.getElementById('profilChart');
-    if (chartEl) {
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'background:white;padding:10px;width:680px;';
-      const clone = chartEl.cloneNode(true);
-      clone.querySelectorAll('text').forEach(t => t.setAttribute('fill', '#333'));
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-      const canvas = await html2canvas(wrapper, { backgroundColor: '#fff', scale: 2 });
-      document.body.removeChild(wrapper);
-      const imgData = canvas.toDataURL('image/png');
-      const imgH    = (canvas.height * (W-24)) / canvas.width;
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 150, 180);
-      pdf.text('PROFIL DE COURSE — ALLURE', 12, y);
-      y += 3;
-      pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 50));
-      y += Math.min(imgH, 50) + 3;
-    }
-
-    // ── CARTE DU PARCOURS (capture Leaflet réelle) ──
-    if (trackPoints && trackPoints.length > 0) {
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(0, 150, 180);
-      pdf.text('CARTE DU PARCOURS', 12, y);
-      y += 3;
-
-      const mapCanvas = await capturerCarteLeaflet();
-      if (mapCanvas) {
-        const imgData = mapCanvas.toDataURL('image/png');
-        const imgH    = (mapCanvas.height * (W-24)) / mapCanvas.width;
-        pdf.addImage(imgData, 'PNG', 12, y, W-24, Math.min(imgH, 50));
-        y += Math.min(imgH, 50) + 3;
-      }
-    }
-
-    // ── TABLEAU RAVITOS (compact) ──
-    pdf.setFontSize(8);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 150, 180);
-    pdf.text('TEMPS DE PASSAGE', 12, y);
-    y += 3;
-
-    pdf.setFillColor(13, 27, 42);
-    pdf.rect(12, y, W - 24, 5, 'F');
-    pdf.setTextColor(255, 255, 255);
+    // Top condition (vert)
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.leaf);
+    pdf.setLineWidth(0.3);
+    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
+    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'S');
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
     pdf.setFontSize(7);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Point',     14, y+3.5);
-    pdf.text('Distance',  50, y+3.5);
-    pdf.text('Temps',     80, y+3.5);
-    pdf.text('Top',      110, y+3.5);
-    pdf.text('Difficile',140, y+3.5);
-    pdf.text('Batterie', 175, y+3.5);
+    pdf.setTextColor(...PDF_COLORS.leaf);
+    pdf.text('TOP CONDITION', PAD + 4, y + 5);
+    pdf.setFontSize(13);
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.text(document.getElementById('fourchBas').textContent, PAD + 4, y + 12);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text('Tout se passe bien', PAD + 4, y + fourchH - 2);
+
+    // Jour difficile (rouge)
+    const dx = PAD + fourchW + 4;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.danger);
+    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
+    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'S');
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.danger);
+    pdf.text('JOUR DIFFICILE', dx + 4, y + 5);
+    pdf.setFontSize(13);
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.text(document.getElementById('fourchHaut').textContent, dx + 4, y + 12);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text('Conditions dégradées', dx + 4, y + fourchH - 2);
+
+    y += fourchH + 6;
+
+    // ═══ PROFIL COUREUR ═══
+    if (profil && profil.archetype) {
+      const profH = 16;
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'F');
+      pdf.setDrawColor(...PDF_COLORS.sun);
+      pdf.setLineWidth(0.3);
+      pdf.setGState(new pdf.GState({ opacity: 0.4 }));
+      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'S');
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+      // Icône archétype (cercle doré)
+      pdf.setFillColor(...PDF_COLORS.sun);
+      pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+      pdf.circle(PAD + 8, y + profH/2, 5, 'F');
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('PROFIL COUREUR', PAD + 17, y + 5);
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(...PDF_COLORS.text);
+      pdf.text(profil.archetype.nom || 'Combattant', PAD + 17, y + 11);
+
+      pdf.setFontSize(6.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...PDF_COLORS.text3);
+      const vepStr = profil.vep_globale ? `VEP ${profil.vep_globale.toFixed(1)} km/h` : '';
+      pdf.text(`${vepStr} · Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm · ${profil.nb_traces} traces`,
+               PAD + 17, y + 14.5);
+
+      y += profH + 6;
+    }
+
+    // ═══ GRAPHIQUE PROFIL DE COURSE ═══
+    const chartEl = document.getElementById('profilChart');
+    if (chartEl) {
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('PROFIL ALTIMÉTRIQUE — VITESSE PRÉDITE', PAD, y);
+      y += 3;
+
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'background:#131313;padding:8px;width:680px;';
+      const clone = chartEl.cloneNode(true);
+      // Ne change pas les couleurs : on garde le rendu sombre comme le site
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      const canvas = await html2canvas(wrapper, { backgroundColor: '#131313', scale: 2 });
+      document.body.removeChild(wrapper);
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = Math.min(45, (canvas.height * (W - 2*PAD)) / canvas.width);
+      pdf.addImage(imgData, 'PNG', PAD, y, W - 2*PAD, imgH);
+      y += imgH + 5;
+    }
+
+    // ═══ SCORE DE PENTE + RÉPARTITION TERRAIN (2 colonnes) ═══
+    if (profil && profil.profil) {
+      const colWidth = (W - 2*PAD - 4) / 2;
+      const colH = 50;
+
+      // ── Score de pente (gauche) ──
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(PAD, y, colWidth, colH, 1.5, 1.5, 'F');
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('SCORE DE PENTE (VS PLAT)', PAD + 3, y + 5);
+
+      const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+      const labelsT = {
+        montee_raide: 'M. raide', montee_soutenue: 'M. soutenue', montee_douce: 'M. douce',
+        plat: 'Plat',
+        descente_douce: 'D. douce', descente_soutenue: 'D. soutenue', descente_raide: 'D. raide',
+      };
+
+      let lineY = y + 9;
+      const barX = PAD + 26;
+      const barW = colWidth - 38;
+      const barCenter = barX + barW / 2;
+
+      ordreT.forEach(t => {
+        const p = profil.profil[t];
+        if (!p) return;
+        const ecart = p.ecart_plat_pct || 0;
+        const isPlat = (t === 'plat');
+
+        // Label
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(labelsT[t], PAD + 3, lineY + 1.5);
+
+        // Track (gris)
+        pdf.setFillColor(...PDF_COLORS.bg3);
+        pdf.rect(barX, lineY - 0.5, barW, 1.5, 'F');
+
+        // Ligne centrale (0%)
+        pdf.setDrawColor(...PDF_COLORS.text3);
+        pdf.setLineWidth(0.4);
+        pdf.line(barCenter, lineY - 1.5, barCenter, lineY + 2);
+
+        if (!isPlat) {
+          const widthPct = Math.min(50, Math.abs(ecart));
+          const fillW = (widthPct / 100) * barW;
+          if (ecart >= 0) {
+            pdf.setFillColor(...PDF_COLORS.leaf);
+            pdf.rect(barCenter, lineY - 0.5, fillW, 1.5, 'F');
+          } else {
+            pdf.setFillColor(...PDF_COLORS.danger);
+            pdf.rect(barCenter - fillW, lineY - 0.5, fillW, 1.5, 'F');
+          }
+        }
+
+        // Valeur
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'bold');
+        if (isPlat) pdf.setTextColor(...PDF_COLORS.text3);
+        else if (ecart >= 0) pdf.setTextColor(...PDF_COLORS.leaf);
+        else pdf.setTextColor(...PDF_COLORS.danger);
+        const sign = ecart > 0 ? '+' : '';
+        const display = isPlat ? '0%' : `${sign}${ecart.toFixed(1)}%`;
+        pdf.text(display, PAD + colWidth - 3, lineY + 1.5, { align: 'right' });
+
+        lineY += 5.5;
+      });
+
+      // ── Répartition terrain (droite) ──
+      const cx2 = PAD + colWidth + 4;
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(cx2, y, colWidth, colH, 1.5, 1.5, 'F');
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('RÉPARTITION DU TEMPS', cx2 + 3, y + 5);
+
+      const rep = window.lastSimData?.repartition || {};
+      const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+      const terrainColors = {
+        montee_raide: PDF_COLORS.danger,
+        montee_soutenue: PDF_COLORS.warning,
+        montee_douce: PDF_COLORS.leaf,
+        plat: PDF_COLORS.sun,
+        descente_douce: PDF_COLORS.leaf,
+        descente_soutenue: PDF_COLORS.warning,
+        descente_raide: PDF_COLORS.danger,
+      };
+
+      let lineY2 = y + 9;
+      const repBarX = cx2 + 28;
+      const repBarW = colWidth - 50;
+
+      ordreT.forEach(t => {
+        const r = rep[t];
+        if (!r) return;
+
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(labelsT[t], cx2 + 3, lineY2 + 1.5);
+
+        // Track
+        pdf.setFillColor(...PDF_COLORS.bg3);
+        pdf.rect(repBarX, lineY2 - 0.5, repBarW, 1.5, 'F');
+
+        // Fill
+        const fillW = (r.pct / maxPct) * repBarW;
+        const col = terrainColors[t] || PDF_COLORS.sun;
+        pdf.setFillColor(...col);
+        pdf.rect(repBarX, lineY2 - 0.5, fillW, 1.5, 'F');
+
+        // %
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...PDF_COLORS.text);
+        pdf.text(`${r.pct}%`, cx2 + colWidth - 3, lineY2 + 1.5, { align: 'right' });
+
+        lineY2 += 5.5;
+      });
+
+      y += colH + 5;
+    }
+
+    // ═══ TABLEAU RAVITAILLEMENTS ═══
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.sun);
+    pdf.text('TEMPS DE PASSAGE AUX RAVITAILLEMENTS', PAD, y);
+    y += 3;
+
+    // Header tableau
+    pdf.setFillColor(...PDF_COLORS.bg3);
+    pdf.rect(PAD, y, W - 2*PAD, 5, 'F');
+    pdf.setFontSize(6.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.text2);
+    const colsX = [PAD + 2, 45, 75, 105, 135, 175];
+    ['POINT', 'DISTANCE', 'TEMPS', 'TOP', 'DIFFICILE', 'BATTERIE'].forEach((h, i) => {
+      pdf.text(h, colsX[i], y + 3.5);
+    });
     y += 5;
 
+    // Lignes
     const rows = document.querySelectorAll('#ravitoBody tr');
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(50, 50, 50);
     rows.forEach((row, i) => {
       const cells = row.querySelectorAll('td');
       if (cells.length === 6) {
         if (i % 2 === 0) {
-          pdf.setFillColor(245, 248, 250);
-          pdf.rect(12, y, W - 24, 4.5, 'F');
+          pdf.setFillColor(...PDF_COLORS.bg2);
+          pdf.rect(PAD, y, W - 2*PAD, 4.5, 'F');
         }
-        pdf.setFontSize(7);
-        pdf.text(cells[0].textContent.substring(0,20),  14, y+3);
-        pdf.text(cells[1].textContent,  50, y+3);
-        pdf.text(cells[2].textContent,  80, y+3);
-        pdf.text(cells[3].textContent, 110, y+3);
-        pdf.text(cells[4].textContent, 140, y+3);
-        pdf.text(cells[5].textContent, 175, y+3);
+        pdf.setFontSize(6.5);
+
+        // Couleur ligne (arrivée en doré)
+        const isArrivee = cells[0].textContent.includes('Arrivée');
+        if (isArrivee) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...PDF_COLORS.sun);
+        } else {
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...PDF_COLORS.text);
+        }
+
+        pdf.text(cells[0].textContent.substring(0,18), colsX[0], y + 3);
+        pdf.text(cells[1].textContent, colsX[1], y + 3);
+
+        // Temps en doré
+        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.sun);
+        pdf.text(cells[2].textContent, colsX[2], y + 3);
+
+        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(cells[3].textContent, colsX[3], y + 3);
+        pdf.text(cells[4].textContent, colsX[4], y + 3);
+
+        // Batterie : couleur selon valeur
+        const battTxt = cells[5].textContent;
+        const battNum = parseInt(battTxt);
+        if (battNum < 20) pdf.setTextColor(...PDF_COLORS.danger);
+        else if (battNum < 50) pdf.setTextColor(...PDF_COLORS.warning);
+        else pdf.setTextColor(...PDF_COLORS.leaf);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(battTxt, colsX[5], y + 3);
+
         y += 4.5;
       }
     });
 
-    // ── FOOTER en bas de page ──
-    pdf.setFontSize(7);
-    pdf.setTextColor(150, 150, 150);
-    pdf.text("Généré par SUM'IT — Plan your peaks · sumit-web-nine.vercel.app", W/2, H-8, { align: 'center' });
+    // ═══ FOOTER ═══
+    const footerY = H - 8;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.rect(0, footerY - 3, W, 11, 'F');
 
+    // Ligne dégradée
+    const fcolors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
+    const fsegW = W / fcolors.length;
+    fcolors.forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(i * fsegW, footerY - 3, fsegW, 0.4, 'F');
+    });
+
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text("SUM'IT — Plan your peaks", PAD, footerY + 3);
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text('sumit-web-nine.vercel.app', W - PAD, footerY + 3, { align: 'right' });
+
+    // Save
     const filename = `SUMIT_${prenom}_${nomCourse.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
     pdf.save(filename);
 
@@ -1171,98 +1415,6 @@ async function genererPDF() {
     btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Télécharger en PDF';
     btn.disabled = false;
   }
-}
-
-// ── Capture de la carte Leaflet réelle pour le PDF ──
-async function capturerCarteLeaflet() {
-  const mapEl = document.getElementById('leafletMap');
-  if (!mapEl || !leafletMap) return null;
-
-  // Force un rendu propre avant capture
-  leafletMap.invalidateSize();
-  await new Promise(r => setTimeout(r, 500));
-
-  try {
-    const canvas = await html2canvas(mapEl, {
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      scale: 2,
-      backgroundColor: null,
-    });
-    return canvas;
-  } catch(e) {
-    console.warn('Capture Leaflet échouée, fallback canvas simple:', e);
-    return await dessinerCarteSimplePDF();
-  }
-}
-
-// ── Fallback : tracé seul si la carte ne peut pas être capturée ──
-async function dessinerCarteSimplePDF() {
-  if (!trackPoints || trackPoints.length === 0) return null;
-
-  const canvas = document.createElement('canvas');
-  canvas.width  = 800;
-  canvas.height = 380;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#F0F4F7';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const lats = trackPoints.map(p => p[0]);
-  const lons = trackPoints.map(p => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
-
-  const padding = 30;
-  const w = canvas.width - 2 * padding;
-  const h = canvas.height - 2 * padding;
-  const latRange = maxLat - minLat;
-  const lonRange = maxLon - minLon;
-  const scaleX = w / lonRange;
-  const scaleY = h / latRange;
-  const scale  = Math.min(scaleX, scaleY);
-  const offsetX = padding + (w - lonRange * scale) / 2;
-  const offsetY = padding + (h - latRange * scale) / 2;
-
-  const project = (lat, lon) => ({
-    x: offsetX + (lon - minLon) * scale,
-    y: offsetY + (maxLat - lat) * scale,
-  });
-
-  ctx.strokeStyle = '#D8DFE5';
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 10; i++) {
-    const x = padding + (w * i) / 10;
-    ctx.beginPath(); ctx.moveTo(x, padding); ctx.lineTo(x, canvas.height - padding); ctx.stroke();
-  }
-  for (let i = 0; i <= 6; i++) {
-    const y = padding + (h * i) / 6;
-    ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(canvas.width - padding, y); ctx.stroke();
-  }
-
-  ctx.strokeStyle = '#FFC857';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  trackPoints.forEach((pt, i) => {
-    const p = project(pt[0], pt[1]);
-    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
-  });
-  ctx.stroke();
-
-  const start = project(trackPoints[0][0], trackPoints[0][1]);
-  ctx.fillStyle = '#5DCAA5';
-  ctx.beginPath(); ctx.arc(start.x, start.y, 8, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
-
-  const end = project(trackPoints[trackPoints.length-1][0], trackPoints[trackPoints.length-1][1]);
-  ctx.fillStyle = '#E24B4A';
-  ctx.beginPath(); ctx.arc(end.x, end.y, 8, 0, Math.PI*2); ctx.fill();
-  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2; ctx.stroke();
-
-  return canvas;
 }
 
 // ══════════════════════════════════════════════════════════════
