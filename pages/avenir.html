@@ -7,6 +7,109 @@
   <link rel="stylesheet" href="../css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
+    /* === Hero Roadmap === */
+    .coming-hero {
+      position: relative;
+      padding: 68px 0 0;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(255, 200, 87, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(79, 163, 217, 0.08) 0%, transparent 50%);
+    }
+    .coming-hero-bg { display: none; }
+    .coming-hero-content {
+      position: relative;
+      padding: 100px 80px 70px;
+      max-width: 1100px;
+      margin: 0 auto;
+      text-align: center;
+      z-index: 2;
+    }
+    .coming-hero-content .section-tag {
+      margin: 0 auto 28px;
+    }
+    .coming-hero-content h1 {
+      font-family: var(--font-display);
+      font-size: clamp(54px, 7vw, 88px);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 1;
+      margin-bottom: 24px;
+    }
+    .coming-hero-content h1 em {
+      background: var(--gradient-summit);
+      -webkit-background-clip: text; background-clip: text;
+      color: transparent;
+      font-style: italic;
+    }
+    .coming-hero-content p {
+      font-size: 17px;
+      color: var(--text-2);
+      line-height: 1.65;
+      max-width: 680px;
+      margin: 0 auto 36px;
+    }
+    .coming-hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--sun) 25%, var(--leaf) 50%, var(--sky) 75%, transparent 100%);
+      opacity: 0.5;
+    }
+
+    /* === Notification email === */
+    .notify-wrap {
+      display: flex;
+      gap: 10px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .notify-wrap input {
+      flex: 1;
+      padding: 14px 16px;
+    }
+    .notify-wrap button {
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+      white-space: nowrap;
+    }
+    .notify-wrap button:hover { transform: translateY(-1px); opacity: 0.95; }
+    .notify-success {
+      display: none;
+      max-width: 480px;
+      margin: 16px auto 0;
+      padding: 14px 18px;
+      background: var(--leaf-soft);
+      border: 1px solid rgba(107, 179, 107, 0.3);
+      border-radius: 4px;
+      color: var(--leaf);
+      font-size: 14px;
+      text-align: center;
+    }
+    .notify-success.active { display: block; }
+
+    /* === Roadmap timeline === */
+    .roadmap-section {
+      padding: 100px 80px;
+      max-width: 1280px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+    .roadmap-inner { max-width: 1100px; margin: 0 auto; }
+
     body { padding-top: 64px; }
 
     /* ── Hero plein écran avec montagnes ── */
@@ -31,10 +134,10 @@
     }
     .notify-wrap input {
       flex: 1; border-right: none;
-      font-family: var(--font-body);
+      font-family: 'Inter', sans-serif;
     }
     .notify-wrap button {
-      background: var(--cyan); color: var(--navy);
+      background: var(--sun); color: var(--bg);
       font-family: var(--font-display); font-size: 11px;
       font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
       padding: 0 22px; border: none; cursor: pointer; white-space: nowrap;
@@ -45,15 +148,15 @@
     .notify-success {
       display: none;
       font-family: var(--font-display);
-      font-size: 13px; color: var(--green);
+      font-size: 13px; color: var(--leaf);
       letter-spacing: 0.06em; margin-top: 10px;
     }
 
     /* ── Roadmap ── */
     .roadmap-section {
       padding: 80px;
-      background: var(--navy2);
-      border-top: 0.5px solid var(--border);
+      background: var(--bg-2);
+      border-top: 1px solid var(--line);
     }
 
     .roadmap-inner { max-width: 1120px; margin: 0 auto; }
@@ -70,7 +173,7 @@
       left: 28px;
       top: 0; bottom: 0;
       width: 0.5px;
-      background: var(--border);
+      background: var(--line);
     }
 
     .roadmap-version {
@@ -88,8 +191,8 @@
     .version-dot {
       width: 56px;
       height: 56px;
-      border: 0.5px solid var(--cyan);
-      background: var(--navy2);
+      border: 1px solid var(--sun);
+      background: var(--bg-2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -98,24 +201,24 @@
       z-index: 1;
     }
 
-    .version-dot.gold { border-color: var(--gold); }
-    .version-dot.slate { border-color: var(--slate); }
+    .version-dot.gold { border-color: var(--sun); }
+    .version-dot.slate { border-color: var(--text-2); }
 
     .version-dot-text {
       font-family: var(--font-display);
       font-size: 16px;
       font-weight: 500;
-      color: var(--cyan);
+      color: var(--sun);
       letter-spacing: 0.06em;
     }
-    .version-dot.gold  .version-dot-text { color: var(--gold); }
-    .version-dot.slate .version-dot-text { color: var(--slate); }
+    .version-dot.gold  .version-dot-text { color: var(--sun); }
+    .version-dot.slate .version-dot-text { color: var(--text-2); }
 
     .version-info h3 {
       font-family: var(--font-display);
       font-size: 22px;
       font-weight: 500;
-      color: var(--white);
+      color: var(--text);
       letter-spacing: 0.02em;
       margin-bottom: 4px;
     }
@@ -123,7 +226,7 @@
     .version-subtitle {
       font-size: 13px;
       font-weight: 300;
-      color: var(--slate);
+      color: var(--text-2);
     }
 
     .version-tag {
@@ -132,12 +235,12 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       padding: 3px 10px;
-      border: 0.5px solid;
+      border: 1px solid;
       margin-left: 12px;
     }
-    .tag-current  { border-color: var(--cyan);  color: var(--cyan);  }
-    .tag-soon     { border-color: var(--gold);  color: var(--gold);  }
-    .tag-future   { border-color: var(--slate); color: var(--slate); }
+    .tag-current  { border-color: var(--sun);  color: var(--sun);  }
+    .tag-soon     { border-color: var(--sun);  color: var(--sun);  }
+    .tag-future   { border-color: var(--text-2); color: var(--text-2); }
 
     /* Cards features */
     .features-grid {
@@ -148,59 +251,91 @@
     }
 
     .feature-card {
-      background: var(--navy3);
-      border: 0.5px solid var(--border);
-      padding: 20px 22px;
-      transition: border-color 0.2s;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
     }
-    .feature-card:hover { border-color: var(--border2); }
-    .feature-card.cyan-card  { border-left: 2px solid var(--cyan);  }
-    .feature-card.gold-card  { border-left: 2px solid var(--gold);  }
-    .feature-card.slate-card { border-left: 2px solid var(--slate); }
+    .feature-card:hover { border-color: var(--line-2); transform: translateY(-2px); }
+    .feature-card.cyan-card  { border-left: 3px solid var(--sun);  }
+    .feature-card.gold-card  { border-left: 3px solid var(--leaf);  }
+    .feature-card.slate-card { border-left: 3px solid var(--sky); }
+
+    /* Lueur décorative en haut à droite */
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .cyan-card::before { background: radial-gradient(circle, rgba(255, 200, 87, 0.10) 0%, transparent 70%); }
+    .gold-card::before { background: radial-gradient(circle, rgba(107, 179, 107, 0.10) 0%, transparent 70%); }
+    .slate-card::before { background: radial-gradient(circle, rgba(79, 163, 217, 0.10) 0%, transparent 70%); }
 
     .feature-card-tag {
       font-family: var(--font-display);
       font-size: 10px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 10px;
+      letter-spacing: 0.16em;
+      margin-bottom: 18px;
+      position: relative; z-index: 1;
     }
-    .cyan-card  .feature-card-tag { color: var(--cyan);  }
-    .gold-card  .feature-card-tag { color: var(--gold);  }
-    .slate-card .feature-card-tag { color: var(--slate); }
+    .cyan-card  .feature-card-tag { color: var(--sun);  }
+    .gold-card  .feature-card-tag { color: var(--leaf);  }
+    .slate-card .feature-card-tag { color: var(--sky); }
 
     .feature-card-icon {
-      width: 36px; height: 36px;
-      border: 0.5px solid var(--border);
+      width: 56px; height: 56px;
+      border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 14px;
-      background: rgba(255,255,255,0.02);
+      margin-bottom: 20px;
+      position: relative; z-index: 1;
     }
-    .feature-card-icon svg { width: 18px; height: 18px; fill: none; stroke-width: 1.5; }
-    .cyan-card  .feature-card-icon svg { stroke: var(--cyan);  }
-    .gold-card  .feature-card-icon svg { stroke: var(--gold);  }
-    .slate-card .feature-card-icon svg { stroke: var(--slate); }
+    .cyan-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(255, 200, 87, 0.22) 0%, rgba(255, 200, 87, 0.05) 100%);
+      border: 1px solid rgba(255, 200, 87, 0.35);
+    }
+    .gold-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(107, 179, 107, 0.22) 0%, rgba(107, 179, 107, 0.05) 100%);
+      border: 1px solid rgba(107, 179, 107, 0.35);
+    }
+    .slate-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(79, 163, 217, 0.22) 0%, rgba(79, 163, 217, 0.05) 100%);
+      border: 1px solid rgba(79, 163, 217, 0.35);
+    }
+    .feature-card-icon svg { width: 26px; height: 26px; fill: none; stroke-width: 1.8; }
+    .cyan-card  .feature-card-icon svg { stroke: var(--sun);  }
+    .gold-card  .feature-card-icon svg { stroke: var(--leaf);  }
+    .slate-card .feature-card-icon svg { stroke: var(--sky); }
 
     .feature-card h4 {
       font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 8px;
-      letter-spacing: 0.02em;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+      position: relative; z-index: 1;
     }
 
     .feature-card p {
       font-size: 13px;
-      font-weight: 300;
-      color: var(--slate);
-      line-height: 1.65;
+      font-weight: 400;
+      color: var(--text-2);
+      line-height: 1.7;
+      position: relative; z-index: 1;
     }
 
     /* ── CTA final ── */
     .cta-section {
-      background: var(--navy3);
-      border-top: 0.5px solid var(--border);
+      background: var(--bg-3);
+      border-top: 1px solid var(--line);
       padding: 80px;
       text-align: center;
     }
@@ -209,16 +344,16 @@
       font-family: var(--font-display);
       font-size: 36px;
       font-weight: 500;
-      color: var(--white);
+      color: var(--text);
       margin-bottom: 12px;
       letter-spacing: 0.02em;
     }
-    .cta-section h2 em { color: var(--cyan); font-style: normal; }
+    .cta-section h2 em { color: var(--sun); font-style: normal; }
 
     .cta-section p {
       font-size: 15px;
       font-weight: 300;
-      color: var(--slate);
+      color: var(--text-2);
       margin-bottom: 32px;
       line-height: 1.7;
     }
@@ -451,7 +586,7 @@
     <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
   </div>
   <div style="display:flex; gap:24px; align-items:center;">
-    <a href="../index.html#questionnaire" style="font-size:12px; color:var(--slate);">Donner mon avis</a>
+    <a href="../index.html#questionnaire" style="font-size:12px; color:var(--text-2);">Donner mon avis</a>
     <div class="footer-copy">© 2026 SUM'IT</div>
   </div>
 </footer>
