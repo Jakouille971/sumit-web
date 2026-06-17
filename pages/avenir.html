@@ -10,48 +10,20 @@
     body { padding-top: 64px; }
 
     /* ── Hero plein écran avec montagnes ── */
-    .coming-hero {
-      position: relative;
-      overflow: hidden;
-      min-height: 420px;
-      display: flex;
-      align-items: flex-end;
-    }
+    
 
-    .coming-hero-bg {
-      position: absolute; inset: 0;
-      background:linear-gradient(180deg,#9DBDD4 0%,#7AA5C0 35%,#3F6383 70%,#0D2A40 100%);
-    }
+    
 
-    .coming-hero-bg::after {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 60% 35%, rgba(0,200,224,0.06) 0%, transparent 60%),
-                  radial-gradient(ellipse at 20% 70%, rgba(17,34,54,0.8) 0%, transparent 50%);
-    }
+    
 
-    .coming-hero-mountain { position: absolute; bottom: 0; left: 0; right: 0; }
+    
 
-    .coming-hero-content {
-      position: relative; z-index: 2;
-      padding: 0 80px 60px; max-width: 700px;
-    }
+    
 
-    .coming-hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(42px, 6vw, 72px);
-      font-weight: 500;
-      color: var(--white);
-      line-height: 1.0;
-      letter-spacing: -0.01em;
-      margin-bottom: 16px;
-    }
-    .coming-hero h1 em { color: var(--cyan); font-style: normal; display: block; }
+    
+    
 
-    .coming-hero p {
-      font-size: 15px; font-weight: 300;
-      color: var(--mist); line-height: 1.7;
-      max-width: 480px; margin-bottom: 32px;
-    }
+    
 
     /* ── Notification email ── */
     .notify-wrap {
@@ -252,7 +224,7 @@
     }
 
     @media (max-width: 900px) {
-      .coming-hero-content { padding: 0 24px 48px; }
+      
       .roadmap-section { padding: 48px 24px; }
       .features-grid { grid-template-columns: 1fr; margin-left: 44px; }
       .roadmap-timeline::before { left: 20px; }
@@ -285,84 +257,7 @@
   <div class="coming-hero-bg"></div>
 
   <!-- Montagnes style illustration -->
-  <svg class="coming-hero-mountain" viewBox="0 0 1440 320"
-       xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet"
-       style="display:block; width:100%; height:320px;">
-    <defs>
-      <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#2A4A6A" stop-opacity="0.5"/>
-        <stop offset="100%" stop-color="#1A3050" stop-opacity="0.7"/>
-      </linearGradient>
-      <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1E3D5C" stop-opacity="0.8"/>
-        <stop offset="100%" stop-color="#132840" stop-opacity="0.95"/>
-      </linearGradient>
-      <linearGradient id="cg3" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0E2030" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="#091820" stop-opacity="1"/>
-      </linearGradient>
-      <linearGradient id="cgsnow" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#C8DCE8" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#2A4A6A" stop-opacity="0"/>
-      </linearGradient>
-      <linearGradient id="cgfade" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
-      </linearGradient>
-    </defs>
-
-    <!-- Couche lointaine -->
-    <path d="M0,320 L0,180 C120,155 240,165 360,145 C480,125 600,108 720,102
-             C840,96 960,112 1080,98 C1200,84 1320,70 1440,75 L1440,320 Z"
-          fill="url(#cg1)"/>
-
-    <!-- Couche intermédiaire -->
-    <path d="M0,320 L0,220 C80,205 160,215 240,198 C320,181 400,162 480,155
-             C560,148 640,165 720,155 C800,145 880,128 960,122
-             C1040,116 1120,130 1200,122 C1280,114 1360,100 1440,96
-             L1440,320 Z"
-          fill="url(#cg2)"/>
-    <ellipse cx="720" cy="152" rx="50" ry="20" fill="url(#cgsnow)" opacity="0.45"/>
-    <ellipse cx="960" cy="120" rx="40" ry="16" fill="url(#cgsnow)" opacity="0.4"/>
-
-    <!-- Couche sapins -->
-    <path d="M0,320 L0,258 C60,245 120,252 180,242 C240,232 300,218 360,212
-             C420,206 480,218 540,210 C600,202 660,188 720,182
-             C780,176 840,190 900,182 C960,174 1020,160 1080,155
-             C1140,150 1200,162 1260,156 C1320,150 1380,138 1440,135
-             L1440,320 Z"
-          fill="url(#cg3)"/>
-
-    <!-- Sapins silhouette -->
-    <g fill="#060F18" opacity="0.95">
-      <polygon points="40,258  48,238  56,258"/>
-      <polygon points="55,260  65,236  75,260"/>
-      <polygon points="75,256  88,230  101,256"/>
-      <polygon points="105,258 120,232 135,258"/>
-      <polygon points="140,254 158,226 176,254"/>
-      <polygon points="182,256 203,228 224,256"/>
-      <polygon points="232,252 256,222 280,252"/>
-      <polygon points="290,254 318,223 346,254"/>
-      <polygon points="358,250 390,218 422,250"/>
-      <polygon points="432,252 468,219 504,252"/>
-      <polygon points="516,248 556,214 596,248"/>
-      <polygon points="608,250 652,215 696,250"/>
-      <polygon points="710,246 758,210 806,246"/>
-      <polygon points="820,248 872,212 924,248"/>
-      <polygon points="938,244 994,207 1050,244"/>
-      <polygon points="1065,246 1125,208 1185,246"/>
-      <polygon points="1200,242 1264,204 1328,242"/>
-      <polygon points="1340,244 1390,210 1440,244"/>
-    </g>
-
-    <!-- Avant-plan très sombre -->
-    <path d="M0,320 L0,290 C120,278 240,284 360,279 C480,274 600,265 720,262
-             C840,259 960,268 1080,264 C1200,260 1320,250 1440,248
-             L1440,320 Z"
-          fill="#060F18" opacity="0.98"/>
-
-    <rect x="0" y="268" width="1440" height="52" fill="url(#cgfade)"/>
-  </svg>
+  
 
   <div class="coming-hero-content">
     <div class="section-tag" style="margin-bottom:20px;">Roadmap SUM'IT</div>
