@@ -73,7 +73,7 @@
     .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--text-2); margin-bottom:8px; letter-spacing:0.04em; }
     .empty-sub { font-size:13px; color:var(--text-2); opacity:0.5; line-height:1.6; }
 
-    .result-kpis { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line); margin-bottom:20px; }
+    .result-kpis { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); margin-bottom:20px; }
     .result-kpi { padding:20px; border-right:1px solid var(--line); text-align:center; }
     .result-kpi:last-child { border-right:none; }
     .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
@@ -217,6 +217,39 @@
       font-size: 11px; color: var(--text-2); transition: color 0.2s;
     }
     .chart-toggle input:checked ~ .toggle-label { color: var(--text); }
+
+    /* ── Tooltip curseur graphique ── */
+    .chart-tooltip {
+      display: none;
+      position: absolute;
+      pointer-events: none;
+      z-index: 100;
+      background: var(--bg);
+      border: 1px solid var(--sun);
+      border-radius: 6px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 4px rgba(255, 200, 87, 0.10);
+      min-width: 200px;
+      font-family: 'Inter', sans-serif;
+    }
+    .chart-tooltip .tt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 3px 0;
+      font-size: 12px;
+    }
+    .chart-tooltip .tt-row span {
+      color: var(--text-3);
+      font-size: 11px;
+    }
+    .chart-tooltip .tt-row strong {
+      color: var(--text);
+      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: 13px;
+    }
 
     #leafletMap { height: 320px; width: 100%; }
 
@@ -392,7 +425,6 @@
       <div class="result-kpis">
         <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
         <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Batterie finale<span class="info-icon" data-tooltip="État de ta réserve énergétique à l'arrivée. Calculée depuis ton drain horaire et la durée de la course. Sous 50% tu commences à ralentir, à 0% tu es au bout du rouleau."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resBatterie">—</div></div>
         <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div></div>
       </div>
       <div class="fourch-row">
@@ -414,9 +446,9 @@
         <div style="padding:8px 20px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
           <span style="font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
           <label class="chart-toggle">
-            <input type="checkbox" id="toggleBatt" onchange="dessinerProfilChart(window.lastSimData)">
+            <input type="checkbox" id="toggleAllure" onchange="dessinerProfilChart(window.lastSimData)">
             <span class="toggle-dot" style="background:#FFD93D"></span>
-            <span class="toggle-label">Batterie énergétique</span>
+            <span class="toggle-label">Allure (min/km)</span>
           </label>
           <label class="chart-toggle">
             <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
@@ -424,8 +456,9 @@
             <span class="toggle-label">Fréquence cardiaque (estimée)</span>
           </label>
         </div>
-        <div class="chart-body">
+        <div class="chart-body" style="position:relative;">
           <svg id="profilChart" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+          <div id="chartTooltip" class="chart-tooltip"></div>
         </div>
       </div>
 
@@ -675,10 +708,6 @@ function afficherResultats(data) {
   const cat = data.categorie || {};
   document.getElementById('resCat').textContent = `${cat.emoji || ''} ${cat.nom || '—'}`;
 
-  const battEl = document.getElementById('resBatterie');
-  battEl.textContent = data.batt_finale != null ? `${data.batt_finale}%` : '—';
-  battEl.className = `result-kpi-val ${data.batt_finale < 20 ? 'red' : data.batt_finale < 50 ? 'grn' : 'cyan'}`;
-
   // Mise à jour info fichier
   document.getElementById('fileDist').textContent  = `${data.distance_km.toFixed(1)} km`;
   document.getElementById('fileDplus').textContent = `${Math.round(data.dplus_m)} m`;
@@ -752,7 +781,17 @@ function afficherResultats(data) {
   }, 100);
 }
 
-// ── Graphique profil SVG avec courbes optionnelles ────────────
+// ── Graphique profil SVG avec courbes optionnelles + tooltip ───
+const TERRAIN_LABELS_TT = {
+  montee_raide: 'Montée raide',
+  montee_soutenue: 'Montée soutenue',
+  montee_douce: 'Montée douce',
+  plat: 'Plat',
+  descente_douce: 'Descente douce',
+  descente_soutenue: 'Descente soutenue',
+  descente_raide: 'Descente raide',
+};
+
 function dessinerProfilChart(data) {
   if (!data) return;
   window.lastSimData = data;
@@ -761,8 +800,8 @@ function dessinerProfilChart(data) {
   const pts = data.profil_chart || [];
   if (pts.length === 0) return;
 
-  const showBatt = document.getElementById('toggleBatt')?.checked || false;
-  const showFC   = document.getElementById('toggleFC')?.checked || false;
+  const showAllure = document.getElementById('toggleAllure')?.checked || false;
+  const showFC     = document.getElementById('toggleFC')?.checked || false;
 
   const W=680, H=200, padL=44, padR=44, padT=20, padB=40;
   const cW=W-padL-padR, cH=H-padT-padB;
@@ -778,34 +817,57 @@ function dessinerProfilChart(data) {
   const couleur = v => {
     const a = 60 / Math.max(v, 0.1);
     if (a < 10) return '#FFC857';
-    if (a < 13) return '#5DCAA5';
-    if (a < 18) return '#EF9F27';
-    return '#E24B4A';
+    if (a < 13) return '#6BB36B';
+    if (a < 18) return '#F39237';
+    return '#E55B5B';
   };
   const x = km => padL + (km / dist) * cW;
   const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
-  // Axe Y droit pour batterie / FC (0-100%)
   const yPct = pct => padT + cH - (pct / 100) * cH;
+
+  // Calcul de D+ / D- cumulés et pente par point (pour le tooltip)
+  const pointsEnriched = pts.map((p, i) => {
+    let dplus = 0, dmoins = 0, pente = 0;
+    if (i > 0) {
+      // D+/- cumulés depuis le début
+      for (let k = 1; k <= i; k++) {
+        const dz = pts[k].altitude - pts[k-1].altitude;
+        if (dz > 0) dplus += dz;
+        else dmoins += -dz;
+      }
+      // Pente locale entre ce point et le précédent
+      const dx_m = (p.dist_km - pts[i-1].dist_km) * 1000;
+      const dz   = p.altitude - pts[i-1].altitude;
+      pente = dx_m > 0 ? (dz / dx_m) * 100 : 0;
+    }
+    return { ...p, dplus_cum: dplus, dmoins_cum: dmoins, pente };
+  });
 
   let c = '';
 
   // Grille verticale + labels distance
   [0, 0.25, 0.5, 0.75, 1].forEach(p => {
     const xp = padL + p * cW;
-    c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(100,180,210,0.08)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
-    c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#7A9AAA" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
+    c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(244,241,232,0.06)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
+    c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#6E6A5E" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
   });
   // Axe Y gauche : altitude
   [minA, (minA+maxA)/2, maxA].forEach(a => {
     const yp = y(a);
-    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(100,180,210,0.07)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
-    c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#7A9AAA" text-anchor="end">${Math.round(a)}m</text>`;
+    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(244,241,232,0.05)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
+    c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="end">${Math.round(a)}m</text>`;
   });
-  // Axe Y droit (uniquement si batt ou FC affichées)
-  if (showBatt || showFC) {
+  // Axe Y droit
+  if (showAllure || showFC) {
     [0, 50, 100].forEach(p => {
       const yp = yPct(p);
-      c += `<text x="${W-padR+4}" y="${yp+3}" font-size="7.5" fill="#7A9AAA" text-anchor="start">${p}%</text>`;
+      let label = `${p}%`;
+      if (showAllure && !showFC) {
+        // Allure entre 5'/km (100%) et 30'/km (0%)
+        const allure = 5 + (100 - p) * 0.25;
+        label = `${allure.toFixed(0)}'`;
+      }
+      c += `<text x="${W-padR+4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="start">${label}</text>`;
     });
   }
 
@@ -817,36 +879,34 @@ function dessinerProfilChart(data) {
     c += `<line x1="${x(p1.dist_km)}" y1="${y(p1.altitude)}" x2="${x(p2.dist_km)}" y2="${y(p2.altitude)}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
   }
 
-  // ── Courbe batterie ──
-  if (showBatt) {
+  // ── Courbe allure (min/km) ──
+  if (showAllure) {
     let path = '';
     pts.forEach((p, i) => {
-      const px = x(p.dist_km), py = yPct(p.batterie_pct);
+      // Allure en min/km
+      const allure = 60 / Math.max(p.vitesse_kmh, 0.1);
+      // Mapping 5'/km (rapide) → 100%, 30'/km (très lent) → 0%
+      const ratio = Math.max(0, Math.min(100, 100 - (allure - 5) / 0.25));
+      const px = x(p.dist_km), py = yPct(ratio);
       path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
     });
     c += `<path d="${path}" fill="none" stroke="#FFD93D" stroke-width="2" stroke-dasharray="4,3" opacity="0.9"/>`;
-    c += `<text x="${W-padR+4}" y="${padT+8}" font-size="8" fill="#FFD93D" text-anchor="start" font-weight="bold">⚡ Batt.</text>`;
+    c += `<text x="${W-padR+4}" y="${padT+8}" font-size="8" fill="#FFD93D" text-anchor="start" font-weight="bold">⏱ Allure</text>`;
   }
 
   // ── Courbe FC estimée ──
-  // Estimation simple : FC = FC_repos + (FCmax - FC_repos) × intensité
-  // Intensité approximée à partir de la vitesse et de la pente
   if (showFC) {
-    // Hypothèse : FC évolue de 65% FCmax (départ) à 90% FCmax (effort max)
-    // selon l'intensité (vitesse réelle / vitesse max théorique du segment)
     let path = '';
     const vepGlobale = profil?.vep_globale || 9;
     pts.forEach((p, i) => {
-      // Intensité basée sur l'écart entre vitesse réelle et VEP globale
-      // Plus le terrain est dur, plus la FC monte
       const intensite = Math.min(1.0, p.vitesse_kmh / (vepGlobale * 1.3));
-      const fcRatio = 0.65 + 0.30 * intensite;  // 65% à 95%
-      const fcEstimee = fcRatio * 100;  // en % FCmax
+      const fcRatio = 0.65 + 0.30 * intensite;
+      const fcEstimee = fcRatio * 100;
       const px = x(p.dist_km), py = yPct(fcEstimee);
       path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
     });
     c += `<path d="${path}" fill="none" stroke="#FF6B9D" stroke-width="2" stroke-dasharray="2,2" opacity="0.9"/>`;
-    const yLabel = showBatt ? padT + 18 : padT + 8;
+    const yLabel = showAllure ? padT + 18 : padT + 8;
     c += `<text x="${W-padR+4}" y="${yLabel}" font-size="8" fill="#FF6B9D" text-anchor="start" font-weight="bold">♥ FC</text>`;
   }
 
@@ -857,13 +917,107 @@ function dessinerProfilChart(data) {
     const yR = Math.max(padT + 18, y(closest.altitude));
     c += `
       <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#FFC857" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
-      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0D1B2A" stroke="#FFC857" stroke-width="1.2"/>
+      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0A0A0A" stroke="#FFC857" stroke-width="1.2"/>
       <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#FFC857" stroke-width="1"/>
       <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#FFC857" stroke-width="0.8"/>
       <text x="${xR}" y="${yR+4}" font-size="7" fill="#FFC857" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
   });
 
+  // ── Curseur invisible pour interaction (ligne verticale + groupe tooltip) ──
+  c += `
+    <line id="chartCursor" x1="0" y1="${padT}" x2="0" y2="${padT+cH}"
+          stroke="#FFC857" stroke-width="1" stroke-dasharray="3,3" opacity="0" pointer-events="none"/>
+    <circle id="chartCursorDot" cx="0" cy="0" r="4" fill="#FFC857" stroke="#0A0A0A" stroke-width="1.5" opacity="0" pointer-events="none"/>
+    <rect id="chartHotzone" x="${padL}" y="${padT}" width="${cW}" height="${cH}" fill="transparent" pointer-events="all" style="cursor:crosshair"/>
+  `;
+
   svg.innerHTML = c;
+
+  // Stocker les données enrichies pour le tooltip
+  window.chartPointsEnriched = pointsEnriched;
+  window.chartConfig = { padL, padR, padT, padB, cW, cH, W, H, dist };
+
+  // Attacher les interactions tooltip
+  attacherTooltipGraphique();
+}
+
+// ── Tooltip curseur au survol du graphique ──────────────────
+function attacherTooltipGraphique() {
+  const svg = document.getElementById('profilChart');
+  const hotzone = document.getElementById('chartHotzone');
+  const cursor = document.getElementById('chartCursor');
+  const cursorDot = document.getElementById('chartCursorDot');
+  const tooltip = document.getElementById('chartTooltip');
+  if (!hotzone || !cursor || !tooltip) return;
+
+  const cfg = window.chartConfig;
+  const pts = window.chartPointsEnriched;
+  if (!cfg || !pts) return;
+
+  hotzone.addEventListener('mousemove', e => {
+    // Position de la souris dans le SVG
+    const rect = svg.getBoundingClientRect();
+    const scaleX = cfg.W / rect.width;
+    const mouseX_svg = (e.clientX - rect.left) * scaleX;
+
+    // Distance correspondante
+    const distRatio = (mouseX_svg - cfg.padL) / cfg.cW;
+    const distKm = distRatio * cfg.dist;
+
+    // Trouver le point le plus proche
+    const closest = pts.reduce((best, p) =>
+      Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best,
+      pts[0]
+    );
+
+    // Position du curseur
+    const cursorX = cfg.padL + (closest.dist_km / cfg.dist) * cfg.cW;
+    const cursorY = cfg.padT + cfg.cH - ((closest.altitude - Math.min(...pts.map(p=>p.altitude))) /
+                    (Math.max(...pts.map(p=>p.altitude)) - Math.min(...pts.map(p=>p.altitude)) || 1)) * cfg.cH;
+
+    cursor.setAttribute('x1', cursorX);
+    cursor.setAttribute('x2', cursorX);
+    cursor.setAttribute('opacity', '0.7');
+    cursorDot.setAttribute('cx', cursorX);
+    cursorDot.setAttribute('cy', cursorY);
+    cursorDot.setAttribute('opacity', '1');
+
+    // Contenu du tooltip
+    const terrain = TERRAIN_LABELS_TT[closest.terrain] || closest.terrain;
+    const penteFmt = closest.pente >= 0 ? `+${closest.pente.toFixed(1)}` : closest.pente.toFixed(1);
+
+    tooltip.innerHTML = `
+      <div style="font-family:var(--font-display);font-size:11px;color:var(--sun);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">
+        ${closest.dist_km.toFixed(2)} km
+      </div>
+      <div class="tt-row"><span>Altitude</span><strong>${Math.round(closest.altitude)} m</strong></div>
+      <div class="tt-row"><span>Terrain</span><strong>${terrain}</strong></div>
+      <div class="tt-row"><span>Pente</span><strong style="color:${closest.pente >= 0 ? '#6BB36B' : '#4FA3D9'}">${penteFmt}%</strong></div>
+      <div class="tt-row"><span>D+ cumulé</span><strong>${Math.round(closest.dplus_cum)} m</strong></div>
+      <div class="tt-row"><span>D- cumulé</span><strong>${Math.round(closest.dmoins_cum)} m</strong></div>
+    `;
+
+    // Position du tooltip : à droite si on est dans la moitié gauche, à gauche sinon
+    const chartRect = svg.getBoundingClientRect();
+    const mouseInChart = e.clientX - chartRect.left;
+    const showRight = mouseInChart < chartRect.width / 2;
+
+    tooltip.style.display = 'block';
+    if (showRight) {
+      tooltip.style.left = (e.clientX - chartRect.left + 20) + 'px';
+      tooltip.style.right = 'auto';
+    } else {
+      tooltip.style.left = 'auto';
+      tooltip.style.right = (chartRect.width - (e.clientX - chartRect.left) + 20) + 'px';
+    }
+    tooltip.style.top = (e.clientY - chartRect.top - 10) + 'px';
+  });
+
+  hotzone.addEventListener('mouseleave', () => {
+    cursor.setAttribute('opacity', '0');
+    cursorDot.setAttribute('opacity', '0');
+    tooltip.style.display = 'none';
+  });
 }
 
 // ── Envoi mail simulation ─────────────────────────────────────────
