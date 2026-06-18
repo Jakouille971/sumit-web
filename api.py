@@ -11,6 +11,8 @@ import gpxpy
 import pandas as pd
 import numpy as np
 import json
+import urllib.request
+import urllib.parse
 from datetime import datetime, timezone
 
 app = FastAPI(title="SUM'IT API", version="1.0.0")
@@ -436,18 +438,212 @@ def archetype(profil):
 #  SIMULATION
 # ══════════════════════════════════════════════════════════════
 
-def simuler(df, profil, drain_h, cat, coeff=1.0):
+# ══════════════════════════════════════════════════════════════
+#  TECHNICITÉ DU TERRAIN — via OpenStreetMap (Overpass API)
+# ══════════════════════════════════════════════════════════════
+
+# 5 catégories de terrain avec coefficients d'impact sur la vitesse
+# (1.0 = neutre, < 1.0 = ralentit, > 1.0 = accélère)
+TERRAIN_TYPES = {
+    'route': {
+        'nom': 'Route',
+        'emoji': '🛣',
+        'coef_vitesse': 1.10,   # +10% : roulant, prévisible
+        'desc': 'Asphalte, route goudronnée',
+    },
+    'piste': {
+        'nom': 'Piste',
+        'emoji': '🚵',
+        'coef_vitesse': 1.00,   # neutre : piste 4x4, chemin agricole
+        'desc': 'Piste large, chemin roulant',
+    },
+    'sentier_large': {
+        'nom': 'Sentier large',
+        'emoji': '🥾',
+        'coef_vitesse': 0.92,   # -8% : sentier large mais terrain naturel
+        'desc': 'Sentier confortable, single-track facile',
+    },
+    'sentier_montagne': {
+        'nom': 'Sentier montagne',
+        'emoji': '⛰',
+        'coef_vitesse': 0.78,   # -22% : technique, racines, cailloux
+        'desc': 'Sentier technique de montagne',
+    },
+    'hors_trace': {
+        'nom': 'Hors-trace',
+        'emoji': '🌲',
+        'coef_vitesse': 0.65,   # -35% : crêtes, pierriers, hors-piste
+        'desc': 'Crête, pierrier, hors-sentier balisé',
+    },
+}
+
+ORDRE_TERRAIN_TYPES = ['route', 'piste', 'sentier_large', 'sentier_montagne', 'hors_trace']
+
+def classifier_osm_way(tags):
     """
-    Simulation point par point avec modèle de fatigue scientifique.
+    Classe un way OpenStreetMap dans une des 5 catégories de terrain.
+    Utilise les tags : highway, surface, sac_scale, tracktype, smoothness.
+    """
+    if not tags:
+        return 'sentier_large'  # défaut
 
-    Modèle de fatigue mécanique :
-    - Courbe exponentielle douce (et non plus seuil binaire 50%)
-    - Basée sur dénivelé positif cumulé (D+ destruction musculaire excentrique)
-    - Référence : Giovanelli et al. (2017) sur la fatigue en trail
+    highway = tags.get('highway', '')
+    surface = tags.get('surface', '')
+    sac     = tags.get('sac_scale', '')
+    track   = tags.get('tracktype', '')
 
-    Modèle de batterie énergétique :
-    - Courbe exponentielle accélérée en zone basse
-    - Drain par seconde lié aux zones FC (Karvonen)
+    # 1. SAC scale (échelle suisse de difficulté) — très fiable en montagne
+    if sac in ('mountain_hiking', 'demanding_mountain_hiking'):
+        return 'sentier_montagne'
+    if sac in ('alpine_hiking', 'demanding_alpine_hiking', 'difficult_alpine_hiking'):
+        return 'hors_trace'
+
+    # 2. Routes goudronnées
+    if highway in ('motorway', 'trunk', 'primary', 'secondary', 'tertiary',
+                   'residential', 'unclassified', 'service', 'living_street'):
+        return 'route'
+    if surface in ('asphalt', 'paved', 'concrete'):
+        return 'route'
+
+    # 3. Pistes
+    if highway == 'track':
+        if track in ('grade1', 'grade2'):
+            return 'piste'
+        elif track in ('grade3',):
+            return 'sentier_large'
+        elif track in ('grade4', 'grade5'):
+            return 'sentier_montagne'
+        return 'piste'
+    if highway in ('cycleway', 'bridleway'):
+        return 'piste'
+
+    # 4. Sentiers
+    if highway == 'footway':
+        return 'sentier_large'
+    if highway == 'path':
+        # Path = sentier — précision via surface
+        if surface in ('rock', 'stone', 'pebblestone'):
+            return 'sentier_montagne'
+        if surface in ('ground', 'dirt', 'earth', 'grass'):
+            return 'sentier_large'
+        return 'sentier_large'  # défaut path
+
+    if highway == 'steps':
+        return 'sentier_montagne'
+
+    # 5. Défaut : sentier large
+    return 'sentier_large'
+
+
+def requeter_overpass(bbox, timeout=30):
+    """
+    Récupère tous les ways de type "highway" dans la bounding box.
+    bbox = (south, west, north, east)
+    """
+    south, west, north, east = bbox
+
+    # Requête Overpass QL — récupère tous les highways dans la zone
+    query = f"""
+    [out:json][timeout:{timeout}];
+    (
+      way["highway"]({south},{west},{north},{east});
+    );
+    out tags geom;
+    """
+
+    url = "https://overpass-api.de/api/interpreter"
+    data = urllib.parse.urlencode({'data': query}).encode('utf-8')
+
+    try:
+        req = urllib.request.Request(url, data=data, headers={'User-Agent': 'SUMIT/1.0'})
+        with urllib.request.urlopen(req, timeout=timeout + 5) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            return result.get('elements', [])
+    except Exception as e:
+        print(f"⚠️ Overpass API erreur : {e}")
+        return []
+
+
+def classifier_trace_via_osm(df, marge=0.005):
+    """
+    Pour chaque point de la trace, détermine le type de terrain
+    en cherchant le way OSM le plus proche.
+
+    Renvoie une Series avec le type de terrain par point.
+    """
+    if len(df) < 10:
+        return ['sentier_large'] * len(df)
+
+    # Bounding box avec marge
+    lats = df['lat'].values
+    lons = df['lon'].values
+    bbox = (
+        float(lats.min()) - marge,
+        float(lons.min()) - marge,
+        float(lats.max()) + marge,
+        float(lons.max()) + marge,
+    )
+
+    # Requête Overpass
+    ways = requeter_overpass(bbox)
+
+    if not ways:
+        # Fallback : pas de données OSM
+        return ['sentier_large'] * len(df)
+
+    # Construction d'une structure de recherche rapide
+    # Pour chaque way, on a sa geometry (liste de lat/lon) + ses tags
+    ways_data = []
+    for w in ways:
+        geom = w.get('geometry', [])
+        tags = w.get('tags', {})
+        if len(geom) < 2:
+            continue
+        type_terrain = classifier_osm_way(tags)
+        # Échantillonnage : on garde 1 point sur 2 si geom > 50 points pour perf
+        step = max(1, len(geom) // 50)
+        for pt in geom[::step]:
+            ways_data.append({
+                'lat': pt['lat'],
+                'lon': pt['lon'],
+                'type': type_terrain,
+            })
+
+    if not ways_data:
+        return ['sentier_large'] * len(df)
+
+    # Pour chaque point GPX, trouver le way le plus proche (KDTree pour perf)
+    ways_arr = np.array([(w['lat'], w['lon']) for w in ways_data])
+    ways_types = [w['type'] for w in ways_data]
+
+    types = []
+    # Subsample du GPX si trop dense (1 point tous les ~10m)
+    for i in range(len(df)):
+        lat = float(df['lat'].iloc[i])
+        lon = float(df['lon'].iloc[i])
+        # Distance euclidienne approchée (suffisant pour proximité locale)
+        dist_sq = (ways_arr[:, 0] - lat) ** 2 + (ways_arr[:, 1] - lon) ** 2
+        idx = int(np.argmin(dist_sq))
+        types.append(ways_types[idx])
+
+    # Lissage : on évite les changements brusques en regardant les voisins
+    # Si point isolé d'un type différent entre 2 du même type, on l'aligne
+    smoothed = list(types)
+    for i in range(2, len(types) - 2):
+        # Si les 2 voisins (avant + après) sont du même type, on s'aligne
+        if types[i-1] == types[i+1] and types[i-1] == types[i-2] and types[i-1] == types[i+2]:
+            smoothed[i] = types[i-1]
+
+    return smoothed
+
+
+
+def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
+    """
+    Simulation point par point avec modèle de fatigue + technicité du terrain.
+
+    types_terrain : liste optionnelle des types de terrain par point GPX
+                    (route/piste/sentier_large/sentier_montagne/hors_trace)
     """
     dep_tot=float(df['dep_m'].sum())
     dp_tot =float(df['dp_cum'].max())
@@ -456,21 +652,18 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
     dep=0.0
     t=0.0
     res=[]
-    for _,row in df.iterrows():
+
+    if types_terrain is None or len(types_terrain) != len(df):
+        types_terrain = ['sentier_large'] * len(df)
+
+    for idx, (_, row) in enumerate(df.iterrows()):
         if row['dist_m']==0: continue
         dep+=float(row['dep_m'])
         tr=row['terrain']
         vn=profil.get(tr,{}).get('vep_norm',REF_VEP.get(tr,7.0))
         vr=vn*cat['facteur']*coeff
 
-        # ── Fatigue mécanique : courbe non-linéaire ──────────────
-        # Modèle : impact négligeable jusqu'à 30% du D+, puis montée progressive
-        # cm = 1 - 0.13 × max(0, ratio_dplus - 0.30)^1.5 / 0.7^1.5
-        # → à 30%  : 0%  (pas de fatigue)
-        # → à 50%  : -2.0%
-        # → à 70%  : -5.5%
-        # → à 90%  : -10.0%
-        # → à 100% : -13%
+        # Fatigue mécanique non-linéaire
         rd=float(row['dp_cum'])/dp_tot if dp_tot>0 else 0
         if rd <= 0.30:
             cm = 1.0
@@ -478,20 +671,21 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
             facteur = ((rd - 0.30) / 0.70) ** 1.5
             cm = 1.0 - 0.13 * facteur
 
-        # ── Fatigue batterie : courbe non-linéaire ────────────────
-        # Impact très faible au-dessus de 50%, accélère sous 30%
+        # Fatigue batterie non-linéaire
         br=batt/100
         if br >= 0.50:
             cb = 1.0
         elif br >= 0.30:
-            # Transition douce 50% → 30% mappée sur 1.0 → 0.92
             cb = 0.92 + 0.08 * ((br - 0.30) / 0.20)
         else:
-            # Sous 30% : ralentissement plus marqué
             ratio = max(0, br / 0.30)
             cb = 0.78 + 0.14 * (ratio ** 0.7)
 
-        ct=cm*cb
+        # Technicité du terrain (OSM)
+        type_t = types_terrain[idx] if idx < len(types_terrain) else 'sentier_large'
+        coef_tech = TERRAIN_TYPES.get(type_t, TERRAIN_TYPES['sentier_large'])['coef_vitesse']
+
+        ct=cm*cb*coef_tech
         ve=vr*ct
         vm=(ve/3.6)/float(row['cm'])
         vm=max(vm,0.3)
@@ -502,9 +696,11 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
             'dist_km':    round(float(row['dist_cum']),3),
             'altitude':   round(float(row['alt']),1),
             'terrain':    tr,
+            'type_terrain': type_t,
             'effort_pct': round(dep/dep_tot*100,2) if dep_tot>0 else 0,
             'coef_meca':  round(cm,3),
             'coef_batt':  round(cb,3),
+            'coef_tech':  round(coef_tech,3),
             'coef_total': round(ct,3),
             'batterie_pct':round(batt,1),
             'vitesse_kmh': round(vm*3.6,2),
@@ -512,6 +708,7 @@ def simuler(df, profil, drain_h, cat, coeff=1.0):
             'duree_s':    round(ds,3),
         })
     return res
+
 
 def fourchettes(res, profil):
     tb=th=0.0
@@ -613,8 +810,17 @@ async def api_simuler(
     if not ravs:
         ravs=[round(dist_km*p,1) for p in [0.2,0.4,0.6,0.8]]
 
-    # Simulation
-    res=simuler(df,profil,drain_moy_h,cat,coefficient)
+    # ── Classification du terrain via OpenStreetMap ──
+    # Cette étape peut prendre 5-15 secondes selon la taille de la zone
+    try:
+        types_terrain = classifier_trace_via_osm(df)
+        print(f"✅ OSM : {len(set(types_terrain))} types détectés sur {len(types_terrain)} points")
+    except Exception as e:
+        print(f"⚠️ Échec classification OSM : {e}")
+        types_terrain = ['sentier_large'] * len(df)
+
+    # Simulation avec technicité
+    res=simuler(df,profil,drain_moy_h,cat,coefficient,types_terrain)
     fch=fourchettes(res,profil)
     if not res:
         raise HTTPException(500,detail="Simulation vide")
@@ -654,7 +860,23 @@ async def api_simuler(
     # Graphique
     n=min(150,len(sdf))
     step=max(1,len(sdf)//n)
-    chart=sdf.iloc[::step][['dist_km','altitude','terrain','vitesse_kmh','batterie_pct']].round(2).to_dict('records')
+    chart=sdf.iloc[::step][['dist_km','altitude','terrain','type_terrain','vitesse_kmh','batterie_pct']].round(2).to_dict('records')
+
+    # Répartition par type de terrain (technicité)
+    rep_terrain_type = {}
+    for tt_name in ORDRE_TERRAIN_TYPES:
+        sub_tt = sdf[sdf['type_terrain'] == tt_name]
+        if len(sub_tt) == 0:
+            continue
+        dist_tt = float(sub_tt['dist_km'].max() - sub_tt['dist_km'].min()) if len(sub_tt) > 1 else 0
+        # On compte plutôt en nombre de points pour avoir la part du parcours
+        pct = round(len(sub_tt) / len(sdf) * 100, 1)
+        rep_terrain_type[tt_name] = {
+            'nom': TERRAIN_TYPES[tt_name]['nom'],
+            'emoji': TERRAIN_TYPES[tt_name]['emoji'],
+            'pct': pct,
+            'coef_vitesse': TERRAIN_TYPES[tt_name]['coef_vitesse'],
+        }
 
     return {
         "status":"ok",
@@ -678,6 +900,7 @@ async def api_simuler(
         "ravitos":rvd,
         "repartition":rep,
         "profil_chart":chart,
+        "repartition_terrain_type": rep_terrain_type,
     }
 
 
@@ -694,4 +917,3 @@ if __name__=="__main__":
     print("  Docs    : http://localhost:8000/docs")
     print("="*55+"\n")
     uvicorn.run("api:app",host="0.0.0.0",port=8000,reload=True)
-
