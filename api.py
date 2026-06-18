@@ -1185,6 +1185,334 @@ def strava_disconnect(
 
 
 # ══════════════════════════════════════════════════════════════
+#  ROUTES ACTIVITÉS (traces stockées par utilisateur)
+# ══════════════════════════════════════════════════════════════
+
+def _recalculer_profil_user(db: Session, user: User, profil_type: str):
+    """
+    Recalcule le profil agrégé d'un utilisateur à partir de toutes ses
+    activités sauvegardées en BDD. Sauvegarde le résultat dans Profile.
+    """
+    activities = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.type_profil == profil_type,
+    ).all()
+
+    if not activities:
+        # Pas d'activité → supprime le profil s'il existe
+        existing = db.query(Profile).filter(
+            Profile.user_id == user.id,
+            Profile.type == profil_type
+        ).first()
+        if existing:
+            db.delete(existing)
+            db.commit()
+        return None
+
+    # Reconstruction de la liste "traces" attendue par agreger() et coeff_course()
+    traces = []
+    for a in activities:
+        td = a.trace_data or {}
+        # Chaque activité contient son analyse pré-calculée
+        traces.append(td)
+
+    if not traces:
+        return None
+
+    try:
+        profil, drain = agreger(traces)
+        cc = coeff_course(traces)
+        arch = archetype(profil)
+    except Exception as e:
+        print(f"⚠️ Échec recalcul profil : {e}")
+        return None
+
+    # VEP globale moyenne pondérée
+    vep_glob = sum(t.get('vep_globale', 0) for t in traces) / len(traces) if traces else 0
+
+    # Upsert dans Profile
+    existing = db.query(Profile).filter(
+        Profile.user_id == user.id,
+        Profile.type == profil_type
+    ).first()
+
+    if existing:
+        existing.profil_data        = profil
+        existing.archetype          = arch
+        existing.coefficient_course = cc.get('coefficient', 1.0)
+        existing.drain_moy_h        = drain
+        existing.vep_globale        = vep_glob
+        existing.nb_traces          = len(traces)
+    else:
+        existing = Profile(
+            user_id=user.id, type=profil_type,
+            profil_data=profil, archetype=arch,
+            coefficient_course=cc.get('coefficient', 1.0),
+            drain_moy_h=drain, vep_globale=vep_glob,
+            nb_traces=len(traces),
+        )
+        db.add(existing)
+
+    db.commit()
+    db.refresh(existing)
+    return existing
+
+
+@app.get("/api/activities")
+def list_activities(
+    profil_type: str = "trail",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Liste les activités de l'utilisateur pour un profil donné."""
+    activities = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.type_profil == profil_type,
+    ).order_by(Activity.date_activity.desc().nullslast()).all()
+
+    return {
+        "activities": [
+            {
+                "id":          a.id,
+                "source":      a.source,
+                "external_id": a.external_id,
+                "name":        a.name,
+                "type_sortie": a.type_sortie,
+                "type_profil": a.type_profil,
+                "date":        a.date_activity.isoformat() if a.date_activity else None,
+                "dist_km":     a.dist_km,
+                "dplus_m":     a.dplus_m,
+                "duree_s":     a.duree_s,
+                "vep_globale": a.vep_globale,
+            }
+            for a in activities
+        ]
+    }
+
+
+@app.post("/api/activities/add")
+async def add_activity_gpx(
+    fichier:     UploadFile = File(...),
+    type_sortie: str = Form("entrainement"),
+    profil_type: str = Form("trail"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Ajoute une activité GPX (import classique) et recalcule le profil."""
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+
+    try:
+        data = await fichier.read()
+        df, d0, nfc = charger_gpx(data, user.fcmax)
+        tr = analyser_trace(df, d0, type_sortie, user.fcmax)
+    except Exception as e:
+        raise HTTPException(400, detail=f"GPX invalide : {e}")
+
+    # Stockage en BDD
+    activity = Activity(
+        user_id      = user.id,
+        source       = 'manual',
+        name         = fichier.filename,
+        type_sortie  = type_sortie,
+        type_profil  = profil_type,
+        date_activity= d0,
+        dist_km      = tr.get('dist_km', 0),
+        dplus_m      = tr.get('dplus_m', 0),
+        duree_s      = int(tr.get('duree_h', 0) * 3600),
+        vep_globale  = tr.get('vep_globale', 0),
+        trace_data   = tr,
+    )
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+
+    # Recalcul du profil
+    _recalculer_profil_user(db, user, profil_type)
+
+    return {"status": "ok", "activity_id": activity.id}
+
+
+@app.post("/api/activities/add-strava")
+async def add_activity_strava(
+    strava_id:   str = Form(...),
+    type_sortie: str = Form("entrainement"),
+    profil_type: str = Form("trail"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Importe une activité Strava et l'ajoute au profil."""
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+    if not user.strava_athlete_id:
+        raise HTTPException(401, detail="Compte Strava non connecté")
+
+    # Vérifier si déjà importée
+    existing = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.source == 'strava',
+        Activity.external_id == strava_id,
+    ).first()
+    if existing:
+        raise HTTPException(400, detail="Cette activité Strava est déjà importée")
+
+    # Télécharger le GPX depuis Strava
+    try:
+        gpx_bytes = await telecharger_gpx_strava(db, user, strava_id)
+        df, d0, nfc = charger_gpx(gpx_bytes, user.fcmax)
+        tr = analyser_trace(df, d0, type_sortie, user.fcmax)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, detail=f"Erreur import Strava : {e}")
+
+    activity = Activity(
+        user_id      = user.id,
+        source       = 'strava',
+        external_id  = strava_id,
+        name         = f"Strava {strava_id}",
+        type_sortie  = type_sortie,
+        type_profil  = profil_type,
+        date_activity= d0,
+        dist_km      = tr.get('dist_km', 0),
+        dplus_m      = tr.get('dplus_m', 0),
+        duree_s      = int(tr.get('duree_h', 0) * 3600),
+        vep_globale  = tr.get('vep_globale', 0),
+        trace_data   = tr,
+    )
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+
+    _recalculer_profil_user(db, user, profil_type)
+
+    return {"status": "ok", "activity_id": activity.id}
+
+
+@app.delete("/api/activities/{activity_id}")
+def delete_activity(
+    activity_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Supprime une activité et recalcule le profil."""
+    activity = db.query(Activity).filter(
+        Activity.id == activity_id,
+        Activity.user_id == user.id
+    ).first()
+
+    if not activity:
+        raise HTTPException(404, detail="Activité introuvable")
+
+    profil_type = activity.type_profil
+    db.delete(activity)
+    db.commit()
+
+    _recalculer_profil_user(db, user, profil_type)
+
+    return {"status": "ok"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  ROUTES SIMULATIONS ÉPINGLÉES
+# ══════════════════════════════════════════════════════════════
+
+# On stocke les simulations épinglées dans la table Activity avec source='simulation'
+# C'est un hack léger pour éviter une nouvelle table.
+
+@app.get("/api/simulations")
+def list_simulations(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Liste les simulations épinglées."""
+    sims = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).order_by(Activity.created_at.desc()).all()
+
+    return {
+        "simulations": [
+            {
+                "id":          s.id,
+                "name":        s.name,
+                "type_profil": s.type_profil,
+                "created_at":  s.created_at.isoformat() if s.created_at else None,
+                "dist_km":     s.dist_km,
+                "dplus_m":     s.dplus_m,
+                "duree_s":     s.duree_s,
+                "sim_data":    s.trace_data,
+            }
+            for s in sims
+        ]
+    }
+
+
+@app.post("/api/simulations/pin")
+def pin_simulation(
+    nom_course:  str = Form(...),
+    profil_type: str = Form(...),
+    sim_data:    str = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Épingle une simulation."""
+    # Limite à 20 par user
+    count = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).count()
+
+    if count >= 20:
+        raise HTTPException(400, detail="Limite de 20 simulations épinglées atteinte. Supprime-en avant d'en ajouter.")
+
+    try:
+        sim = json.loads(sim_data)
+    except Exception as e:
+        raise HTTPException(400, detail=f"sim_data invalide : {e}")
+
+    activity = Activity(
+        user_id      = user.id,
+        source       = 'simulation',
+        name         = nom_course,
+        type_profil  = profil_type,
+        type_sortie  = 'course',
+        date_activity= datetime.now(timezone.utc),
+        dist_km      = sim.get('distance_km', 0),
+        dplus_m      = sim.get('dplus_m', 0),
+        duree_s      = sim.get('temps_total_s', 0),
+        vep_globale  = 0,
+        trace_data   = sim,
+    )
+    db.add(activity)
+    db.commit()
+    db.refresh(activity)
+
+    return {"status": "ok", "simulation_id": activity.id}
+
+
+@app.delete("/api/simulations/{simulation_id}")
+def delete_simulation(
+    simulation_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Supprime une simulation épinglée."""
+    sim = db.query(Activity).filter(
+        Activity.id == simulation_id,
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).first()
+
+    if not sim:
+        raise HTTPException(404, detail="Simulation introuvable")
+
+    db.delete(sim)
+    db.commit()
+    return {"status": "ok"}
+
+
+# ══════════════════════════════════════════════════════════════
 #  INITIALISATION DE LA BASE AU DÉMARRAGE
 # ══════════════════════════════════════════════════════════════
 
