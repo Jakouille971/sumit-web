@@ -225,7 +225,18 @@ def charger_gpx(data_bytes, fcmax=193):
 #  ANALYSE D'UNE TRACE
 # ══════════════════════════════════════════════════════════════
 
-def analyser_trace(df, date0, type_sortie, fcmax):
+def analyser_trace(df, date0, type_sortie, fcmax, types_terrain=None):
+    """
+    Analyse d'une trace GPX avec normalisation de la technicité.
+
+    Si types_terrain est fourni (liste de types OSM par point), la VEP
+    de chaque point est NORMALISÉE en équivalent "sentier_large" :
+        VEP_norm = VEP_observée / coef_technicité
+
+    Ainsi, ton profil reflète ta perf "neutre", indépendamment de la
+    technicité moyenne de tes entraînements. En simulation, on applique
+    ensuite le vrai coef de la course → les coefs se compensent.
+    """
     dist_km=float(df['dist_cum'].max())
     dep_km =float(df['dep_cum'].max())
     duree_h=float(df['t_h'].max())
@@ -239,16 +250,43 @@ def analyser_trace(df, date0, type_sortie, fcmax):
     df=df.copy()
     df['eff']=df['dep_m'].cumsum()/dep_tot*100 if dep_tot>0 else 0
 
+    # ── Normalisation technicité ──
+    # On divise la VEP par le coef du terrain pour la ramener à un équivalent
+    # "sentier_large" (qui a un coef de 0.92).
+    # Référence neutre = sentier_large : si tu cours sur route (coef 1.10),
+    # ta VEP_norm est divisée par (1.10/0.92) ≈ 1.20 → ramenée vers le bas.
+    REF_COEF = TERRAIN_TYPES['sentier_large']['coef_vitesse']  # 0.92
+
+    if types_terrain is not None and len(types_terrain) == len(df):
+        # On crée une série de coefs relatifs (1.0 = sentier_large)
+        coefs_rel = []
+        for tt in types_terrain:
+            c_abs = TERRAIN_TYPES.get(tt, TERRAIN_TYPES['sentier_large'])['coef_vitesse']
+            coefs_rel.append(c_abs / REF_COEF)
+        df['coef_tech_rel'] = coefs_rel
+        # VEP normalisée = VEP / coef_tech_relatif
+        df['vep_norm_tech'] = df['vep'] / df['coef_tech_rel']
+
+        # Stats de technicité pour info
+        from collections import Counter
+        tt_counter = Counter(types_terrain)
+        tt_dist = {k: round(v/len(types_terrain)*100, 1) for k, v in tt_counter.items()}
+    else:
+        # Pas de technicité connue → VEP non normalisée
+        df['vep_norm_tech'] = df['vep']
+        tt_dist = {}
+
     scores={}
     for t in ORDRE_TERRAINS:
         sub=df[df['terrain']==t]
         if len(sub)<20: continue
-        vb=float(sub['vep'].median())
+        # ← On utilise vep_norm_tech (normalisée) au lieu de vep
+        vb=float(sub['vep_norm_tech'].median())
         vn=vb/cat['facteur']
         tr=[]
         for s in range(0,100,20):
             tt=sub[(sub['eff']>=s)&(sub['eff']<s+20)]
-            if len(tt)>=5: tr.append(float(tt['vep'].median()))
+            if len(tt)>=5: tr.append(float(tt['vep_norm_tech'].median()))
         cv=float(np.std(tr)/np.mean(tr)) if len(tr)>=2 and np.mean(tr)>0 else 0.10
         scores[t]={
             'vep_brute':round(vb,2),'vep_norm':round(vn,2),
@@ -272,6 +310,8 @@ def analyser_trace(df, date0, type_sortie, fcmax):
         'scores_terrain':scores,'drain_moy_h':round(drain_h,4),
         'fc_ratio_moy':round(fc_med,3) if fc_med else None,
         'zones_fc':zd,'vep_globale':round(dep_km/duree_h,2) if duree_h>0 else 0,
+        'tt_distribution': tt_dist,
+        'technicite_analysee': types_terrain is not None,
     }
 
 # ══════════════════════════════════════════════════════════════
@@ -743,19 +783,55 @@ async def analyser_profil(
     if len(types_list)!=len(fichiers):
         types_list=["entrainement"]*len(fichiers)
 
-    traces=[]
+    # ── Phase 1 : charger tous les GPX (sans OSM) pour avoir les dates ──
+    traces_data=[]  # [(df, d0, nfc, type_sortie, filename), ...]
     erreurs=[]
     for i,f in enumerate(fichiers):
         try:
             data=await f.read()
             df,d0,nfc=charger_gpx(data,fcmax)
             ts=types_list[i] if i<len(types_list) else 'entrainement'
-            tr=analyser_trace(df,d0,ts,fcmax)
-            tr['nom']=f.filename
-            tr['nb_fc']=nfc
-            traces.append(tr)
+            traces_data.append({
+                'df': df, 'd0': d0, 'nfc': nfc,
+                'type_sortie': ts, 'nom': f.filename
+            })
         except Exception as e:
             erreurs.append({'fichier':f.filename,'erreur':str(e)})
+
+    if not traces_data:
+        raise HTTPException(400,detail=f"Aucune trace valide. {erreurs}")
+
+    # ── Phase 2 : déterminer les 5 traces les plus récentes ──
+    # On trie par date décroissante (plus récente en premier)
+    traces_sorted = sorted(
+        traces_data,
+        key=lambda x: x['d0'] if x['d0'] else datetime(1970, 1, 1, tzinfo=timezone.utc),
+        reverse=True
+    )
+    indices_osm = set(id(t) for t in traces_sorted[:5])  # ids des 5 plus récentes
+
+    # ── Phase 3 : analyser chaque trace (avec OSM pour les 5 plus récentes) ──
+    traces=[]
+    nb_osm = 0
+    for td in traces_data:
+        try:
+            df = td['df']
+            # Classification OSM uniquement pour les 5 plus récentes
+            types_terrain = None
+            if id(td) in indices_osm:
+                try:
+                    types_terrain = classifier_trace_via_osm(df)
+                    nb_osm += 1
+                    print(f"✅ OSM trace '{td['nom']}' : {len(set(types_terrain))} types")
+                except Exception as e:
+                    print(f"⚠️ OSM échec pour '{td['nom']}' : {e}")
+
+            tr = analyser_trace(df, td['d0'], td['type_sortie'], fcmax, types_terrain)
+            tr['nom'] = td['nom']
+            tr['nb_fc'] = td['nfc']
+            traces.append(tr)
+        except Exception as e:
+            erreurs.append({'fichier': td['nom'], 'erreur': str(e)})
 
     if not traces:
         raise HTTPException(400,detail=f"Aucune trace valide. {erreurs}")
@@ -769,6 +845,7 @@ async def analyser_profil(
         "profil":profil,"drain_moy_h":drain,
         "coefficient_course":cc,"archetype":arch,
         "endurance_score":85,"erreurs":erreurs,"profil_type":profil_type,
+        "nb_traces_osm_analysees": nb_osm,
     }
 
 
