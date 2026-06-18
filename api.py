@@ -227,15 +227,10 @@ def charger_gpx(data_bytes, fcmax=193):
 
 def analyser_trace(df, date0, type_sortie, fcmax, types_terrain=None):
     """
-    Analyse d'une trace GPX avec normalisation de la technicité.
-
-    Si types_terrain est fourni (liste de types OSM par point), la VEP
-    de chaque point est NORMALISÉE en équivalent "sentier_large" :
-        VEP_norm = VEP_observée / coef_technicité
-
-    Ainsi, ton profil reflète ta perf "neutre", indépendamment de la
-    technicité moyenne de tes entraînements. En simulation, on applique
-    ensuite le vrai coef de la course → les coefs se compensent.
+    Analyse d'une trace GPX.
+    Le paramètre types_terrain est conservé pour compatibilité mais n'est plus
+    utilisé pour normaliser la VEP — la technicité reste une info d'affichage
+    sans impact sur le calcul du profil.
     """
     dist_km=float(df['dist_cum'].max())
     dep_km =float(df['dep_cum'].max())
@@ -250,43 +245,16 @@ def analyser_trace(df, date0, type_sortie, fcmax, types_terrain=None):
     df=df.copy()
     df['eff']=df['dep_m'].cumsum()/dep_tot*100 if dep_tot>0 else 0
 
-    # ── Normalisation technicité ──
-    # On divise la VEP par le coef du terrain pour la ramener à un équivalent
-    # "sentier_large" (qui a un coef de 0.92).
-    # Référence neutre = sentier_large : si tu cours sur route (coef 1.10),
-    # ta VEP_norm est divisée par (1.10/0.92) ≈ 1.20 → ramenée vers le bas.
-    REF_COEF = TERRAIN_TYPES['sentier_large']['coef_vitesse']  # 0.92
-
-    if types_terrain is not None and len(types_terrain) == len(df):
-        # On crée une série de coefs relatifs (1.0 = sentier_large)
-        coefs_rel = []
-        for tt in types_terrain:
-            c_abs = TERRAIN_TYPES.get(tt, TERRAIN_TYPES['sentier_large'])['coef_vitesse']
-            coefs_rel.append(c_abs / REF_COEF)
-        df['coef_tech_rel'] = coefs_rel
-        # VEP normalisée = VEP / coef_tech_relatif
-        df['vep_norm_tech'] = df['vep'] / df['coef_tech_rel']
-
-        # Stats de technicité pour info
-        from collections import Counter
-        tt_counter = Counter(types_terrain)
-        tt_dist = {k: round(v/len(types_terrain)*100, 1) for k, v in tt_counter.items()}
-    else:
-        # Pas de technicité connue → VEP non normalisée
-        df['vep_norm_tech'] = df['vep']
-        tt_dist = {}
-
     scores={}
     for t in ORDRE_TERRAINS:
         sub=df[df['terrain']==t]
         if len(sub)<20: continue
-        # ← On utilise vep_norm_tech (normalisée) au lieu de vep
-        vb=float(sub['vep_norm_tech'].median())
+        vb=float(sub['vep'].median())
         vn=vb/cat['facteur']
         tr=[]
         for s in range(0,100,20):
             tt=sub[(sub['eff']>=s)&(sub['eff']<s+20)]
-            if len(tt)>=5: tr.append(float(tt['vep_norm_tech'].median()))
+            if len(tt)>=5: tr.append(float(tt['vep'].median()))
         cv=float(np.std(tr)/np.mean(tr)) if len(tr)>=2 and np.mean(tr)>0 else 0.10
         scores[t]={
             'vep_brute':round(vb,2),'vep_norm':round(vn,2),
@@ -310,8 +278,6 @@ def analyser_trace(df, date0, type_sortie, fcmax, types_terrain=None):
         'scores_terrain':scores,'drain_moy_h':round(drain_h,4),
         'fc_ratio_moy':round(fc_med,3) if fc_med else None,
         'zones_fc':zd,'vep_globale':round(dep_km/duree_h,2) if duree_h>0 else 0,
-        'tt_distribution': tt_dist,
-        'technicite_analysee': types_terrain is not None,
     }
 
 # ══════════════════════════════════════════════════════════════
@@ -575,7 +541,7 @@ def classifier_osm_way(tags):
     return 'sentier_large'
 
 
-def requeter_overpass(bbox, timeout=30):
+def requeter_overpass(bbox, timeout=15):
     """
     Récupère tous les ways de type "highway" dans la bounding box.
     bbox = (south, west, north, east)
@@ -680,10 +646,11 @@ def classifier_trace_via_osm(df, marge=0.005):
 
 def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
     """
-    Simulation point par point avec modèle de fatigue + technicité du terrain.
+    Simulation point par point avec modèle de fatigue.
 
     types_terrain : liste optionnelle des types de terrain par point GPX
-                    (route/piste/sentier_large/sentier_montagne/hors_trace)
+                    Utilisé UNIQUEMENT pour affichage (tooltip + répartition).
+                    N'impacte plus le calcul du temps de course.
     """
     dep_tot=float(df['dep_m'].sum())
     dp_tot =float(df['dp_cum'].max())
@@ -721,11 +688,10 @@ def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
             ratio = max(0, br / 0.30)
             cb = 0.78 + 0.14 * (ratio ** 0.7)
 
-        # Technicité du terrain (OSM)
+        # Type de terrain (pour affichage uniquement, pas de coef appliqué)
         type_t = types_terrain[idx] if idx < len(types_terrain) else 'sentier_large'
-        coef_tech = TERRAIN_TYPES.get(type_t, TERRAIN_TYPES['sentier_large'])['coef_vitesse']
 
-        ct=cm*cb*coef_tech
+        ct=cm*cb  # ← Coef total SANS la technicité
         ve=vr*ct
         vm=(ve/3.6)/float(row['cm'])
         vm=max(vm,0.3)
@@ -740,7 +706,6 @@ def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
             'effort_pct': round(dep/dep_tot*100,2) if dep_tot>0 else 0,
             'coef_meca':  round(cm,3),
             'coef_batt':  round(cb,3),
-            'coef_tech':  round(coef_tech,3),
             'coef_total': round(ct,3),
             'batterie_pct':round(batt,1),
             'vitesse_kmh': round(vm*3.6,2),
@@ -783,55 +748,19 @@ async def analyser_profil(
     if len(types_list)!=len(fichiers):
         types_list=["entrainement"]*len(fichiers)
 
-    # ── Phase 1 : charger tous les GPX (sans OSM) pour avoir les dates ──
-    traces_data=[]  # [(df, d0, nfc, type_sortie, filename), ...]
+    traces=[]
     erreurs=[]
     for i,f in enumerate(fichiers):
         try:
             data=await f.read()
             df,d0,nfc=charger_gpx(data,fcmax)
             ts=types_list[i] if i<len(types_list) else 'entrainement'
-            traces_data.append({
-                'df': df, 'd0': d0, 'nfc': nfc,
-                'type_sortie': ts, 'nom': f.filename
-            })
-        except Exception as e:
-            erreurs.append({'fichier':f.filename,'erreur':str(e)})
-
-    if not traces_data:
-        raise HTTPException(400,detail=f"Aucune trace valide. {erreurs}")
-
-    # ── Phase 2 : déterminer les 5 traces les plus récentes ──
-    # On trie par date décroissante (plus récente en premier)
-    traces_sorted = sorted(
-        traces_data,
-        key=lambda x: x['d0'] if x['d0'] else datetime(1970, 1, 1, tzinfo=timezone.utc),
-        reverse=True
-    )
-    indices_osm = set(id(t) for t in traces_sorted[:5])  # ids des 5 plus récentes
-
-    # ── Phase 3 : analyser chaque trace (avec OSM pour les 5 plus récentes) ──
-    traces=[]
-    nb_osm = 0
-    for td in traces_data:
-        try:
-            df = td['df']
-            # Classification OSM uniquement pour les 5 plus récentes
-            types_terrain = None
-            if id(td) in indices_osm:
-                try:
-                    types_terrain = classifier_trace_via_osm(df)
-                    nb_osm += 1
-                    print(f"✅ OSM trace '{td['nom']}' : {len(set(types_terrain))} types")
-                except Exception as e:
-                    print(f"⚠️ OSM échec pour '{td['nom']}' : {e}")
-
-            tr = analyser_trace(df, td['d0'], td['type_sortie'], fcmax, types_terrain)
-            tr['nom'] = td['nom']
-            tr['nb_fc'] = td['nfc']
+            tr=analyser_trace(df,d0,ts,fcmax)
+            tr['nom']=f.filename
+            tr['nb_fc']=nfc
             traces.append(tr)
         except Exception as e:
-            erreurs.append({'fichier': td['nom'], 'erreur': str(e)})
+            erreurs.append({'fichier':f.filename,'erreur':str(e)})
 
     if not traces:
         raise HTTPException(400,detail=f"Aucune trace valide. {erreurs}")
@@ -845,7 +774,6 @@ async def analyser_profil(
         "profil":profil,"drain_moy_h":drain,
         "coefficient_course":cc,"archetype":arch,
         "endurance_score":85,"erreurs":erreurs,"profil_type":profil_type,
-        "nb_traces_osm_analysees": nb_osm,
     }
 
 
@@ -887,16 +815,17 @@ async def api_simuler(
     if not ravs:
         ravs=[round(dist_km*p,1) for p in [0.2,0.4,0.6,0.8]]
 
-    # ── Classification du terrain via OpenStreetMap ──
-    # Cette étape peut prendre 5-15 secondes selon la taille de la zone
+    # ── Classification du terrain via OpenStreetMap (info uniquement) ──
+    # Si OSM ne répond pas, on continue avec un terrain neutre.
+    # L'OSM n'impacte pas le calcul, juste l'affichage.
+    types_terrain = ['sentier_large'] * len(df)
     try:
         types_terrain = classifier_trace_via_osm(df)
-        print(f"✅ OSM : {len(set(types_terrain))} types détectés sur {len(types_terrain)} points")
+        print(f"✅ OSM : {len(set(types_terrain))} types détectés")
     except Exception as e:
-        print(f"⚠️ Échec classification OSM : {e}")
-        types_terrain = ['sentier_large'] * len(df)
+        print(f"⚠️ OSM indisponible (utilisation terrain neutre) : {e}")
 
-    # Simulation avec technicité
+    # Simulation (technicité affichée mais sans impact sur le temps)
     res=simuler(df,profil,drain_moy_h,cat,coefficient,types_terrain)
     fch=fourchettes(res,profil)
     if not res:
