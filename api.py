@@ -3,10 +3,11 @@
 #  Lance avec : python api.py
 # ══════════════════════════════════════════════════════════════
 
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from typing import List
+from fastapi.responses import JSONResponse, RedirectResponse
+from sqlalchemy.orm import Session
+from typing import List, Optional
 import gpxpy
 import pandas as pd
 import numpy as np
@@ -14,6 +15,24 @@ import json
 import urllib.request
 import urllib.parse
 from datetime import datetime, timezone
+
+# Auth + BDD
+from db import init_db, get_db, User, Profile, Activity
+from auth import (
+    construire_url_google_auth,
+    echanger_code_google,
+    upsert_user_google,
+    creer_jwt,
+    get_current_user,
+    FRONTEND_URL,
+)
+from strava import (
+    construire_url_strava_auth,
+    echanger_code_strava,
+    sauvegarder_tokens_strava,
+    lister_activites_strava,
+    telecharger_gpx_strava,
+)
 
 app = FastAPI(title="SUM'IT API", version="1.0.0")
 
@@ -908,6 +927,270 @@ async def api_simuler(
         "profil_chart":chart,
         "repartition_terrain_type": rep_terrain_type,
     }
+
+
+# ══════════════════════════════════════════════════════════════
+#  LANCEMENT
+# ══════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════
+#  ROUTES AUTHENTIFICATION GOOGLE
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/auth/google/login")
+def auth_google_login():
+    """Redirige vers Google pour démarrer le flow OAuth."""
+    return RedirectResponse(url=construire_url_google_auth())
+
+
+@app.get("/api/auth/google/callback")
+async def auth_google_callback(code: str, db: Session = Depends(get_db)):
+    """Callback après authentification Google. Crée/met à jour le user et redirige vers le frontend avec le JWT."""
+    try:
+        google_user = await echanger_code_google(code)
+        user = upsert_user_google(db, google_user)
+        token = creer_jwt(user.id, user.email)
+        # Redirige vers le frontend avec le token en paramètre
+        return RedirectResponse(url=f"{FRONTEND_URL}/?token={token}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        return RedirectResponse(url=f"{FRONTEND_URL}/?auth_error={urllib.parse.quote(str(e))}")
+
+
+@app.get("/api/me")
+def api_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retourne les infos de l'utilisateur connecté + ses profils."""
+    profiles = db.query(Profile).filter(Profile.user_id == user.id).all()
+    return {
+        "id":      user.id,
+        "email":   user.email,
+        "name":    user.name,
+        "picture": user.picture,
+        "prenom":  user.prenom,
+        "fcmax":   user.fcmax,
+        "strava_connected": bool(user.strava_athlete_id),
+        "profiles": [
+            {
+                "id":   p.id,
+                "type": p.type,
+                "vep_globale": p.vep_globale,
+                "coefficient_course": p.coefficient_course,
+                "drain_moy_h": p.drain_moy_h,
+                "nb_traces":   p.nb_traces,
+                "updated_at":  p.updated_at.isoformat() if p.updated_at else None,
+                "archetype":   p.archetype,
+                "profil_data": p.profil_data,
+            }
+            for p in profiles
+        ],
+    }
+
+
+@app.post("/api/me/settings")
+def update_user_settings(
+    prenom: Optional[str] = Form(None),
+    fcmax:  Optional[int] = Form(None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Met à jour les paramètres utilisateur (prénom, FCmax)."""
+    if prenom is not None:
+        user.prenom = prenom
+    if fcmax is not None:
+        user.fcmax = fcmax
+    db.commit()
+    return {"status": "ok", "prenom": user.prenom, "fcmax": user.fcmax}
+
+
+# ══════════════════════════════════════════════════════════════
+#  ROUTES PROFILS (Trail/Rando) - persistence
+# ══════════════════════════════════════════════════════════════
+
+@app.post("/api/profil/save")
+def save_profile(
+    profil_type: str = Form(...),  # 'trail' ou 'rando'
+    profil_json: str = Form(...),
+    archetype_json: str = Form(...),
+    drain_moy_h: float = Form(...),
+    coefficient_course: float = Form(...),
+    vep_globale: float = Form(...),
+    nb_traces: int = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Sauvegarde ou met à jour le profil (trail ou rando) de l'utilisateur."""
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+
+    try:
+        profil_data = json.loads(profil_json)
+        archetype   = json.loads(archetype_json)
+    except Exception as e:
+        raise HTTPException(400, detail=f"JSON invalide: {e}")
+
+    # Cherche s'il existe déjà
+    profile = db.query(Profile).filter(
+        Profile.user_id == user.id,
+        Profile.type == profil_type
+    ).first()
+
+    if profile:
+        profile.profil_data = profil_data
+        profile.archetype   = archetype
+        profile.drain_moy_h = drain_moy_h
+        profile.coefficient_course = coefficient_course
+        profile.vep_globale = vep_globale
+        profile.nb_traces   = nb_traces
+    else:
+        profile = Profile(
+            user_id      = user.id,
+            type         = profil_type,
+            profil_data  = profil_data,
+            archetype    = archetype,
+            drain_moy_h  = drain_moy_h,
+            coefficient_course = coefficient_course,
+            vep_globale  = vep_globale,
+            nb_traces    = nb_traces,
+        )
+        db.add(profile)
+
+    db.commit()
+    db.refresh(profile)
+    return {"status": "ok", "profile_id": profile.id, "type": profile.type}
+
+
+@app.get("/api/profil/{profil_type}")
+def get_profile(
+    profil_type: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Récupère le profil trail ou rando de l'utilisateur."""
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+
+    profile = db.query(Profile).filter(
+        Profile.user_id == user.id,
+        Profile.type == profil_type
+    ).first()
+
+    if not profile:
+        raise HTTPException(404, detail="Aucun profil enregistré")
+
+    return {
+        "profil":      profile.profil_data,
+        "archetype":   profile.archetype,
+        "drain_moy_h": profile.drain_moy_h,
+        "coefficient": profile.coefficient_course,
+        "vep_globale": profile.vep_globale,
+        "nb_traces":   profile.nb_traces,
+        "fcmax":       user.fcmax,
+        "prenom":      user.prenom,
+        "type":        profile.type,
+        "updated_at":  profile.updated_at.isoformat() if profile.updated_at else None,
+    }
+
+
+# ══════════════════════════════════════════════════════════════
+#  ROUTES STRAVA
+# ══════════════════════════════════════════════════════════════
+
+@app.get("/api/strava/login")
+def strava_login(token: str):
+    """
+    Démarre la connexion Strava.
+    Le token JWT est passé en query param pour identifier le user au callback.
+    """
+    return RedirectResponse(url=construire_url_strava_auth(state=token))
+
+
+@app.get("/api/strava/callback")
+async def strava_callback(
+    code: str,
+    state: str,  # JWT du user
+    db: Session = Depends(get_db),
+):
+    """Callback Strava : sauvegarde les tokens dans le user."""
+    from auth import decoder_jwt
+    try:
+        payload = decoder_jwt(state)
+        user = db.query(User).filter(User.id == payload["user_id"]).first()
+        if not user:
+            raise HTTPException(401, detail="Utilisateur introuvable")
+
+        token_data = await echanger_code_strava(code)
+        sauvegarder_tokens_strava(db, user, token_data)
+
+        return RedirectResponse(url=f"{FRONTEND_URL}/pages/profil.html?strava_connected=1")
+    except Exception as e:
+        return RedirectResponse(url=f"{FRONTEND_URL}/pages/profil.html?strava_error={urllib.parse.quote(str(e))}")
+
+
+@app.get("/api/strava/activities")
+async def strava_activities(
+    per_page: int = 30,
+    page: int = 1,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Liste les activités Strava du user."""
+    if not user.strava_athlete_id:
+        raise HTTPException(401, detail="Compte Strava non connecté")
+
+    activities = await lister_activites_strava(db, user, per_page=per_page, page=page)
+    return {"activities": activities}
+
+
+@app.post("/api/strava/import/{activity_id}")
+async def strava_import_activity(
+    activity_id: str,
+    type_sortie: str = Form("entrainement"),  # course/entrainement/sortie
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Télécharge une activité Strava sous forme de GPX exploitable.
+    Retourne le GPX en base64 pour que le frontend l'utilise comme un fichier importé.
+    """
+    if not user.strava_athlete_id:
+        raise HTTPException(401, detail="Compte Strava non connecté")
+
+    try:
+        gpx_bytes = await telecharger_gpx_strava(db, user, activity_id)
+        import base64
+        return {
+            "status": "ok",
+            "gpx_base64": base64.b64encode(gpx_bytes).decode("utf-8"),
+            "type_sortie": type_sortie,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, detail=f"Erreur import: {e}")
+
+
+@app.post("/api/strava/disconnect")
+def strava_disconnect(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Déconnecte Strava (efface les tokens)."""
+    user.strava_athlete_id = None
+    user.strava_access_token = None
+    user.strava_refresh_token = None
+    user.strava_token_expires = None
+    db.commit()
+    return {"status": "ok"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  INITIALISATION DE LA BASE AU DÉMARRAGE
+# ══════════════════════════════════════════════════════════════
+
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 
 # ══════════════════════════════════════════════════════════════
