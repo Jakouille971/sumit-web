@@ -224,31 +224,65 @@
       position: absolute;
       pointer-events: none;
       z-index: 100;
-      background: var(--bg);
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(8px);
       border: 1px solid var(--sun);
       border-radius: 6px;
-      padding: 12px 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 4px rgba(255, 200, 87, 0.10);
-      min-width: 200px;
+      padding: 10px 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 3px rgba(255, 200, 87, 0.10);
+      min-width: 180px;
+      max-width: 220px;
       font-family: 'Inter', sans-serif;
+    }
+    .chart-tooltip .tt-header {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: var(--sun);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 200, 87, 0.2);
+      font-weight: 700;
     }
     .chart-tooltip .tt-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 14px;
+      gap: 8px;
       padding: 3px 0;
-      font-size: 12px;
+      font-size: 11.5px;
     }
-    .chart-tooltip .tt-row span {
+    .chart-tooltip .tt-row .tt-ic {
+      width: 14px;
+      text-align: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .chart-tooltip .tt-row .tt-lbl {
       color: var(--text-3);
-      font-size: 11px;
+      font-size: 10.5px;
+      flex: 1;
     }
     .chart-tooltip .tt-row strong {
       color: var(--text);
       font-weight: 600;
       font-family: var(--font-display);
-      font-size: 13px;
+      font-size: 12.5px;
+      text-align: right;
+    }
+    .chart-tooltip .tt-row-split {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 5px;
+      margin-top: 5px;
+      border-top: 1px solid rgba(244, 241, 232, 0.06);
+    }
+    .chart-tooltip .tt-row-split span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
     }
 
     #leafletMap { height: 320px; width: 100%; }
@@ -667,7 +701,7 @@ async function lancerSimulation() {
 
   const ravitos = document.getElementById('ravitos').value.trim();
   const btn     = document.getElementById('btnSimuler');
-  btn.textContent = '⏳ Simulation en cours...';
+  btn.textContent = '⏳ Analyse du terrain en cours (OSM)...';
   btn.disabled = true;
 
   try {
@@ -942,6 +976,14 @@ function dessinerProfilChart(data) {
 }
 
 // ── Tooltip curseur au survol du graphique ──────────────────
+const TERRAIN_TYPE_INFO = {
+  route:             { nom: 'Route',            emoji: '🛣️', color: '#888' },
+  piste:             { nom: 'Piste',            emoji: '🚵', color: '#6BB36B' },
+  sentier_large:     { nom: 'Sentier large',    emoji: '🥾', color: '#FFC857' },
+  sentier_montagne:  { nom: 'Sentier montagne', emoji: '⛰️', color: '#F39237' },
+  hors_trace:        { nom: 'Hors-trace',       emoji: '🌲', color: '#E55B5B' },
+};
+
 function attacherTooltipGraphique() {
   const svg = document.getElementById('profilChart');
   const hotzone = document.getElementById('chartHotzone');
@@ -954,26 +996,26 @@ function attacherTooltipGraphique() {
   const pts = window.chartPointsEnriched;
   if (!cfg || !pts) return;
 
+  const profil = chargerProfil();
+  const vepGlobale = profil?.vep_globale || 9;
+
   hotzone.addEventListener('mousemove', e => {
-    // Position de la souris dans le SVG
     const rect = svg.getBoundingClientRect();
     const scaleX = cfg.W / rect.width;
     const mouseX_svg = (e.clientX - rect.left) * scaleX;
 
-    // Distance correspondante
     const distRatio = (mouseX_svg - cfg.padL) / cfg.cW;
     const distKm = distRatio * cfg.dist;
 
-    // Trouver le point le plus proche
     const closest = pts.reduce((best, p) =>
       Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best,
       pts[0]
     );
 
-    // Position du curseur
     const cursorX = cfg.padL + (closest.dist_km / cfg.dist) * cfg.cW;
-    const cursorY = cfg.padT + cfg.cH - ((closest.altitude - Math.min(...pts.map(p=>p.altitude))) /
-                    (Math.max(...pts.map(p=>p.altitude)) - Math.min(...pts.map(p=>p.altitude)) || 1)) * cfg.cH;
+    const minAlt = Math.min(...pts.map(p => p.altitude));
+    const maxAlt = Math.max(...pts.map(p => p.altitude));
+    const cursorY = cfg.padT + cfg.cH - ((closest.altitude - minAlt) / (maxAlt - minAlt || 1)) * cfg.cH;
 
     cursor.setAttribute('x1', cursorX);
     cursor.setAttribute('x2', cursorX);
@@ -982,22 +1024,66 @@ function attacherTooltipGraphique() {
     cursorDot.setAttribute('cy', cursorY);
     cursorDot.setAttribute('opacity', '1');
 
-    // Contenu du tooltip
-    const terrain = TERRAIN_LABELS_TT[closest.terrain] || closest.terrain;
+    // Type de terrain (technicité OSM) — fallback sur pente classique
+    const typeT = closest.type_terrain || 'sentier_large';
+    const tInfo = TERRAIN_TYPE_INFO[typeT] || TERRAIN_TYPE_INFO['sentier_large'];
+
+    // Pente
     const penteFmt = closest.pente >= 0 ? `+${closest.pente.toFixed(1)}` : closest.pente.toFixed(1);
+    const penteColor = closest.pente >= 0 ? '#6BB36B' : '#4FA3D9';
+
+    // Lignes optionnelles : allure / FC selon coches
+    const showAllure = document.getElementById('toggleAllure')?.checked || false;
+    const showFC     = document.getElementById('toggleFC')?.checked || false;
+
+    let extraRows = '';
+    if (showAllure) {
+      const allure = 60 / Math.max(closest.vitesse_kmh, 0.1);
+      const mins = Math.floor(allure);
+      const secs = Math.round((allure - mins) * 60);
+      extraRows += `
+        <div class="tt-row">
+          <span class="tt-ic">⏱</span>
+          <span class="tt-lbl">Allure</span>
+          <strong style="color:#FFD93D">${mins}'${String(secs).padStart(2,'0')}"/km</strong>
+        </div>`;
+    }
+    if (showFC) {
+      const intensite = Math.min(1.0, closest.vitesse_kmh / (vepGlobale * 1.3));
+      const fcRatio = 0.65 + 0.30 * intensite;
+      const fcBpm = Math.round(fcRatio * (profil?.fcmax || 193));
+      extraRows += `
+        <div class="tt-row">
+          <span class="tt-ic">♥</span>
+          <span class="tt-lbl">FC</span>
+          <strong style="color:#FF6B9D">${fcBpm} bpm</strong>
+        </div>`;
+    }
 
     tooltip.innerHTML = `
-      <div style="font-family:var(--font-display);font-size:11px;color:var(--sun);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;font-weight:700;">
-        ${closest.dist_km.toFixed(2)} km
+      <div class="tt-header">${closest.dist_km.toFixed(2)} km</div>
+      <div class="tt-row">
+        <span class="tt-ic">${tInfo.emoji}</span>
+        <span class="tt-lbl">Terrain</span>
+        <strong style="color:${tInfo.color}">${tInfo.nom}</strong>
       </div>
-      <div class="tt-row"><span>Altitude</span><strong>${Math.round(closest.altitude)} m</strong></div>
-      <div class="tt-row"><span>Terrain</span><strong>${terrain}</strong></div>
-      <div class="tt-row"><span>Pente</span><strong style="color:${closest.pente >= 0 ? '#6BB36B' : '#4FA3D9'}">${penteFmt}%</strong></div>
-      <div class="tt-row"><span>D+ cumulé</span><strong>${Math.round(closest.dplus_cum)} m</strong></div>
-      <div class="tt-row"><span>D- cumulé</span><strong>${Math.round(closest.dmoins_cum)} m</strong></div>
+      <div class="tt-row">
+        <span class="tt-ic">📐</span>
+        <span class="tt-lbl">Pente</span>
+        <strong style="color:${penteColor}">${penteFmt}%</strong>
+      </div>
+      <div class="tt-row">
+        <span class="tt-ic">⛰</span>
+        <span class="tt-lbl">Altitude</span>
+        <strong>${Math.round(closest.altitude)} m</strong>
+      </div>
+      <div class="tt-row tt-row-split">
+        <span><span class="tt-ic">↗</span><strong style="color:#6BB36B">+${Math.round(closest.dplus_cum)}m</strong></span>
+        <span><span class="tt-ic">↘</span><strong style="color:#E55B5B">-${Math.round(closest.dmoins_cum)}m</strong></span>
+      </div>
+      ${extraRows}
     `;
 
-    // Position du tooltip : à droite si on est dans la moitié gauche, à gauche sinon
     const chartRect = svg.getBoundingClientRect();
     const mouseInChart = e.clientX - chartRect.left;
     const showRight = mouseInChart < chartRect.width / 2;
