@@ -3,461 +3,1048 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUM'IT — Mon Profil</title>
+  <title>Mon profil | SUM'IT</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    body { padding-top: 64px; }
-
-    .profil-layout { display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 64px - 240px); }
-    .col-left { border-right: 1px solid var(--line); padding:48px; }
-    .col-right { padding:48px; background:var(--bg-3); }
-
-    .step-header { display:flex; align-items:flex-start; gap:16px; margin-bottom:24px; }
-    .step-num { width:28px; height:28px; border: 1px solid var(--sun); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:13px; color:var(--sun); }
-    .step-title { font-family:var(--font-display); font-size:18px; font-weight:500; color:var(--text); letter-spacing:0.02em; margin-bottom:4px; }
-    .step-desc { font-size:13px; font-weight:300; color:var(--text-2); line-height:1.6; }
-    .step-divider { height:0.5px; background:var(--line); margin:36px 0; }
-
-    .file-list { margin-top:16px; }
-    .file-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom: 1px solid var(--line); }
-    .file-item:last-child { border-bottom:none; }
-    .file-icon { width:32px; height:32px; background:var(--sun-soft); border: 1px solid var(--line-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .file-icon svg { width:14px; height:14px; stroke:var(--sun); fill:none; stroke-width:1.5; }
-    .file-name { font-size:13px; color:var(--text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .file-type-select { width:auto; padding:4px 8px; font-size:11px; background:transparent; border: 1px solid var(--line); color:var(--text-2); flex-shrink:0; }
-    .file-remove { width:20px; height:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0.4; transition:opacity 0.2s; flex-shrink:0; }
-    .file-remove:hover { opacity:1; }
-    .file-remove svg { width:12px; height:12px; stroke:var(--text-2); fill:none; stroke-width:2; }
-
-    .input-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
-    .input-group { margin-bottom:16px; }
-    .input-hint { font-size:11px; color:var(--text-2); margin-top:6px; opacity:0.7; line-height:1.5; }
-
-    .profil-type-toggle { display:flex; border: 1px solid var(--line); margin-bottom:36px; }
-    .toggle-btn { flex:1; padding:14px; text-align:center; cursor:pointer; background:transparent; border:none; border-right: 1px solid var(--line); transition:background 0.2s; }
-    .toggle-btn:last-child { border-right:none; }
-    .toggle-btn.active { background:var(--sun-soft); }
-    .toggle-btn-name { font-family:var(--font-display); font-size:13px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-2); }
-    .toggle-btn.active .toggle-btn-name { color:var(--sun); }
-    .toggle-btn-sub { font-size:11px; color:var(--text-2); margin-top:3px; opacity:0.6; }
-
-    .empty-state { text-align:center; padding:80px 20px; }
-    .empty-icon { width:56px; height:56px; border: 1px solid var(--line-2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-    .empty-icon svg { width:24px; height:24px; stroke:var(--text-2); fill:none; stroke-width:1.5; }
-    .empty-title { font-family:var(--font-display); font-size:18px; font-weight:500; color:var(--text-2); margin-bottom:8px; letter-spacing:0.04em; }
-    .empty-sub { font-size:13px; color:var(--text-2); opacity:0.5; line-height:1.6; }
-
-    .archetype-card { background:rgba(255,200,87,0.04); border: 1px solid var(--line-2); padding:24px; margin-bottom:20px; display:flex; gap:20px; align-items:flex-start; }
-    .archetype-icon-wrap { width:72px; height:72px; border: 1px solid var(--sun); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,200,87,0.06); }
-    .archetype-icon-wrap svg { width:38px; height:38px; }
-    .archetype-info { flex:1; }
-    .archetype-name { font-family:var(--font-display); font-size:26px; font-weight:500; color:var(--sun); letter-spacing:0.04em; margin-bottom:6px; line-height:1; }
-    .archetype-desc { font-size:13px; font-weight:300; color:var(--text-2); line-height:1.65; margin-bottom:12px; }
-    .archetype-tips { display:flex; flex-direction:column; gap:5px; }
-    .archetype-tip { display:flex; align-items:flex-start; gap:8px; font-size:12px; line-height:1.5; }
-    .tip-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .tip-dot.green { background:var(--leaf); }
-    .tip-dot.orange { background:var(--warning); }
-
-    .profil-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-    .profil-kpi { background:var(--bg-2); border: 1px solid var(--line); padding:16px 18px; }
-    .profil-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
-    .profil-kpi-val { font-family:var(--font-display); font-size:26px; font-weight:500; color:var(--sun); }
-    .profil-kpi-sub { font-size:11px; color:var(--text-2); margin-top:3px; }
-
-    .profil-card { background:var(--bg-2); border: 1px solid var(--line); margin-bottom:16px; }
-    .profil-card-header { padding:14px 20px; border-bottom: 1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
-    .profil-card-body { padding:16px 20px; }
-
-    .score-bar { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-    .score-terrain-icon { width:28px; height:28px; border: 1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,0.03); }
-    .score-terrain-icon svg { width:14px; height:14px; fill:none; stroke-width:1.8; }
-    .score-label { font-family:var(--font-display); font-size:12px; color:var(--text-2); width:130px; flex-shrink:0; }
-    .score-track { flex:1; height:3px; background:rgba(255,255,255,0.06); position:relative; }
-    .score-track::before { content:''; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:rgba(180,210,220,0.25); }
-    .score-fill { position:absolute; top:0; bottom:0; transition:width 1s ease, left 1s ease; }
-    .score-fill.positive { background:var(--leaf); left:50%; }
-    .score-fill.negative { background:var(--danger); right:50%; left:auto; }
-    .score-val { font-family:var(--font-display); font-size:13px; width:60px; text-align:right; font-weight:500; }
-    .score-val.positive { color:var(--leaf); }
-    .score-val.negative { color:var(--danger); }
-    .score-val.neutral  { color:var(--text-2); }
-
-    /* ── Tooltip (i) ── */
-    .info-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 16px; height: 16px;
-      cursor: help; margin-left: 6px;
-      vertical-align: middle; transition: all 0.2s;
+    /* ── Layout ── */
+    .profil-section {
+      padding: 50px 80px 100px;
+      max-width: 1400px;
+      margin: 0 auto;
       position: relative;
-      color: var(--text-2);
+      z-index: 2;
     }
-    .info-icon svg { width: 14px; height: 14px; display: block; }
-    .info-icon:hover { color: var(--sun); }
-    .info-icon::after {
-      content: attr(data-tooltip);
-      position: absolute; bottom: calc(100% + 8px); left: 50%;
-      transform: translateX(-50%);
-      width: 280px; padding: 10px 12px;
-      background: var(--bg-3); color: var(--text);
-      border: 1px solid var(--sun); border-radius: 0;
-      font-size: 11px; font-weight: 300; line-height: 1.5;
-      letter-spacing: 0.02em;
-      white-space: normal; text-align: left;
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.2s, visibility 0.2s;
-      z-index: 100;
-      pointer-events: none;
-    }
-    .info-icon:hover::after { opacity: 1; visibility: visible; }
-    .info-icon::before {
-      content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent; border-top-color: var(--sun);
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.2s;
-    }
-    .info-icon:hover::before { opacity: 1; visibility: visible; }
 
-    @media (max-width:900px) {
-      
-      .profil-layout { grid-template-columns:1fr; }
-      .col-left { border-right:none; border-bottom: 1px solid var(--line); padding:32px 24px; }
-      .col-right { padding:32px 24px; }
+    /* ── Toggle Trail/Rando ── */
+    .profil-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--line);
+    }
+    .profil-tab {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      padding: 14px 28px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .profil-tab:hover { color: var(--text-2); }
+    .profil-tab.active {
+      color: var(--sun);
+      border-bottom-color: var(--sun);
+    }
+
+    /* ── Import section ── */
+    .import-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    .import-section h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .import-section .desc {
+      color: var(--text-3);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .import-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .import-card {
+      background: var(--bg);
+      border: 1.5px dashed var(--line-2);
+      border-radius: 6px;
+      padding: 32px 24px;
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .import-card.gpx:hover {
+      border-color: var(--sun);
+      background: rgba(255, 200, 87, 0.03);
+    }
+    .import-card.strava { border-color: rgba(252, 76, 2, 0.3); }
+    .import-card.strava:hover {
+      border-color: #FC4C02;
+      background: rgba(252, 76, 2, 0.03);
+    }
+    .import-card.dragover {
+      border-color: var(--sun) !important;
+      background: rgba(255, 200, 87, 0.08) !important;
+    }
+    .import-card .icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .import-card.gpx .icon { background: rgba(255, 200, 87, 0.12); }
+    .import-card.gpx .icon svg { stroke: var(--sun); }
+    .import-card.strava .icon { background: rgba(252, 76, 2, 0.12); }
+    .import-card.strava .icon svg { stroke: #FC4C02; }
+    .import-card .icon svg {
+      width: 24px; height: 24px;
+      fill: none; stroke-width: 1.8;
+    }
+    .import-card h4 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+    .import-card p {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+    .strava-status {
+      font-size: 11px;
+      color: var(--leaf);
+      margin-top: 6px;
+      display: none;
+    }
+    .strava-status.connected { display: block; }
+
+    /* ── Liste activités ── */
+    .activites-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .activites-header {
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+    .activites-header h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+    .activite-row {
+      display: grid;
+      grid-template-columns: 30px 1fr auto auto auto auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--line);
+      transition: background 0.2s;
+    }
+    .activite-row:last-child { border-bottom: none; }
+    .activite-row:hover { background: var(--bg-3); }
+    .source-badge {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-family: var(--font-display);
+      font-weight: 700;
+    }
+    .source-badge.manual { background: rgba(255, 200, 87, 0.15); color: var(--sun); }
+    .source-badge.strava { background: rgba(252, 76, 2, 0.15); color: #FC4C02; }
+    .activite-name {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .activite-meta {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-2);
+      text-align: right;
+      min-width: 60px;
+    }
+    .activite-type-tag {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 3px;
+      border: 1px solid var(--line-2);
+    }
+    .activite-type-tag.course { color: var(--sun); border-color: rgba(255, 200, 87, 0.4); background: rgba(255, 200, 87, 0.08); }
+    .activite-type-tag.entrainement { color: var(--leaf); border-color: rgba(107, 179, 107, 0.4); background: rgba(107, 179, 107, 0.08); }
+    .activite-type-tag.sortie { color: var(--sky); border-color: rgba(79, 163, 217, 0.4); background: rgba(79, 163, 217, 0.08); }
+    .btn-delete {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text-3);
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-delete svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
+    .activites-empty {
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--text-3);
+      font-size: 13px;
+    }
+
+    /* ── KPIs du profil ── */
+    .profil-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .profil-kpi-card {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+    }
+    .pk-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 8px;
+      display: flex; align-items: center;
+    }
+    .pk-val {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .pk-val.gradient {
+      background: var(--gradient-summit);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .pk-sub {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 6px;
+    }
+
+    /* ── Archétype ── */
+    .archetype-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin-bottom: 28px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .archetype-icon {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255, 200, 87, 0.2) 0%, rgba(79, 163, 217, 0.2) 100%);
+      border: 1.5px solid var(--sun);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .archetype-icon svg { width: 40px; height: 40px; fill: none; stroke: var(--sun); stroke-width: 1.5; }
+    .archetype-info h3 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      margin-bottom: 6px;
+    }
+    .archetype-name {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+    .archetype-desc {
+      color: var(--text-2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Score de pente ── */
+    .terrain-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    .terrain-section h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+    }
+    .terrain-section .desc {
+      color: var(--text-3);
+      font-size: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* ── Modale Strava ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--bg);
+      border: 1px solid var(--line-2);
+      border-radius: 8px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--text);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .modal-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .strava-activity {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .strava-activity:hover { border-color: var(--sun); }
+    .sa-name { font-size: 13px; color: var(--text); font-weight: 500; }
+    .sa-meta { font-family: var(--font-display); font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .sa-stats {
+      font-family: var(--font-display);
+      font-size: 12px;
+      color: var(--text-2);
+      text-align: right;
+    }
+    .btn-import-sa {
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-import-sa:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Modale Type Sortie (pour upload GPX ou import Strava) ── */
+    .type-modal {
+      max-width: 420px;
+      padding: 28px;
+    }
+    .type-modal h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .type-modal p {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-bottom: 20px;
+    }
+    .type-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .type-option {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .type-option:hover { border-color: var(--sun); }
+    .type-option-name {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .type-option-desc {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+    .type-option .tag {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 3px;
+      border: 1px solid;
+    }
+
+    /* ── Loading overlay ── */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .loading-overlay.active { display: flex; }
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid var(--line);
+      border-top-color: var(--sun);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Login required ── */
+    .login-required {
+      text-align: center;
+      padding: 100px 40px;
+    }
+    .login-required h2 {
+      font-family: var(--font-display);
+      font-size: 36px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .login-required p {
+      color: var(--text-2);
+      margin-bottom: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .profil-section { padding: 40px 24px; }
+      .import-grid { grid-template-columns: 1fr; }
+      .profil-kpis { grid-template-columns: 1fr 1fr; }
+      .archetype-section { grid-template-columns: 1fr; text-align: center; }
+      .activite-row {
+        grid-template-columns: 30px 1fr auto;
+        gap: 10px;
+      }
+      .activite-meta:nth-child(4),
+      .activite-meta:nth-child(5),
+      .activite-type-tag { display: none; }
     }
   </style>
 </head>
 <body>
 
-<nav class="nav">
-  <a href="../index.html" class="nav-logo">
-    <div class="nav-logo-icon">S</div>
-    <div class="nav-logo-text">
-      <div class="nav-logo-name">SUM<span>'IT</span></div>
-      <div class="nav-logo-sub">Plan your peaks</div>
+  <!-- ══ Nav ══ -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">
+      <div class="nav-logo-icon">S</div>
+      <div class="nav-logo-text">
+        <div class="nav-logo-name">SUM<span>'IT</span></div>
+        <div class="nav-logo-sub">Plan your peaks</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link active">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
     </div>
-  </a>
-  <div class="nav-links">
-    <a href="../index.html"   class="nav-link">Accueil</a>
-    <a href="profil.html"     class="nav-link active">Mon profil</a>
-    <a href="simulateur.html" class="nav-link">Simulateur</a>
-    <a href="avenir.html"     class="nav-link">À venir</a>
-    <a href="compte.html"    class="nav-link">Mon compte</a>
-  </div>
-  <button class="nav-cta" onclick="window.location.href='simulateur.html'">Simuler une course</button>
-</nav>
+  </nav>
 
-<!-- Bandeau hero -->
-<div class="page-hero">
-  <div class="page-hero-bg"></div>
-  
-  <div class="page-hero-content">
-    <div class="section-tag" style="margin-bottom:10px;">Étape 1 sur 2</div>
-    <h1>Mon profil coureur</h1>
-    <p>Importe tes traces GPX pour construire ton profil personnalisé.</p>
-  </div>
-</div>
-
-<div class="profil-layout">
-  <!-- Colonne gauche -->
-  <div class="col-left">
-    <div class="profil-type-toggle">
-      <button class="toggle-btn active" onclick="setType(this,'trail')">
-        <div class="toggle-btn-name">Trail running</div>
-        <div class="toggle-btn-sub">Courses et entraînements</div>
-      </button>
-      <button class="toggle-btn" onclick="setType(this,'rando')">
-        <div class="toggle-btn-name">Randonnée</div>
-        <div class="toggle-btn-sub">Treks et sorties nature</div>
-      </button>
+  <!-- ══ Page hero ══ -->
+  <section class="page-hero">
+    <div class="page-hero-content">
+      <div class="section-tag">Profil coureur</div>
+      <h1>Mon <em>profil</em></h1>
+      <p>Importe tes activités GPX ou Strava — ton profil se construit et se met à jour automatiquement.</p>
     </div>
+  </section>
 
-    <div class="step-header">
-      <div class="step-num">1</div>
-      <div>
-        <div class="step-title">Ton prénom</div>
-        <div class="step-desc">Pour personnaliser ton rapport PDF.</div>
+  <!-- ══ Contenu ══ -->
+  <section class="profil-section" id="profilSection">
+    <!-- Rempli dynamiquement -->
+  </section>
+
+  <!-- ══ Modale Strava ══ -->
+  <div class="modal-overlay" id="modalStrava">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📥 Importer depuis Strava</h3>
+        <button class="modal-close" onclick="fermerModalStrava()">×</button>
+      </div>
+      <div class="modal-body" id="stravaActivitiesList">
+        <p style="text-align:center;color:var(--text-3)">Chargement des activités...</p>
       </div>
     </div>
-    <div class="input-group">
-      <label class="input-label">Prénom</label>
-      <input type="text" id="prenom" placeholder="Ex : Jake">
-    </div>
-
-    <div class="step-divider"></div>
-
-    <div class="step-header">
-      <div class="step-num">2</div>
-      <div>
-        <div class="step-title">Importe tes traces GPX</div>
-        <div class="step-desc">Garmin, Strava, Komoot, Suunto — plus tu en importes, plus le profil est précis.</div>
-      </div>
-    </div>
-
-    <div class="upload-zone" id="dropzone" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">
-        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-      </div>
-      <div class="upload-title">Glisse-dépose tes fichiers GPX</div>
-      <div class="upload-sub">ou clique pour parcourir · fichiers .gpx acceptés</div>
-    </div>
-    <input type="file" id="fileInput" multiple accept=".gpx" style="display:none" onchange="handleFiles(this.files)">
-    <div class="file-list" id="fileList"></div>
-
-    <div class="step-divider"></div>
-
-    <div class="step-header">
-      <div class="step-num">3</div>
-      <div>
-        <div class="step-title">Fréquence cardiaque maximale</div>
-        <div class="step-desc">Renseigne ta FCmax pour calibrer le modèle énergétique.</div>
-      </div>
-    </div>
-    <div class="input-group">
-      <label class="input-label">FCmax (bpm)</label>
-      <input type="number" id="fcmax" placeholder="Ex : 193" min="120" max="230">
-      <div class="input-hint">Ta FCmax mesurée lors d'un effort maximal — pas une valeur estimée.</div>
-    </div>
-
-    <div class="step-divider"></div>
-
-    <button class="btn-primary" id="btnAnalyser" style="width:100%;padding:16px;" onclick="analyserProfil()">
-      Analyser mon profil
-    </button>
-    <p style="font-size:12px;color:var(--text-2);text-align:center;margin-top:14px;line-height:1.6;">
-      L'analyse se fait via l'API locale.<br>Tes données ne quittent pas ton appareil.
-    </p>
   </div>
 
-  <!-- Colonne droite -->
-  <div class="col-right" id="colRight">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-      </div>
-      <div class="empty-title">Ton profil s'affichera ici</div>
-      <div class="empty-sub">Importe au moins une trace GPX<br>et clique sur "Analyser mon profil"</div>
-    </div>
-
-    <div id="profilResults" style="display:none;">
-      <!-- Archétype -->
-      <div class="archetype-card">
-        <div class="archetype-icon-wrap" id="archetypeIconWrap"></div>
-        <div class="archetype-info">
-          <div class="archetype-name" id="archetypeName">—</div>
-          <div class="archetype-desc" id="archetypeDesc">—</div>
-          <div class="archetype-tips" id="archetypeTips"></div>
+  <!-- ══ Modale Type Sortie ══ -->
+  <div class="modal-overlay" id="modalTypeSortie">
+    <div class="modal-content type-modal">
+      <h3>Type de sortie ?</h3>
+      <p>Cette info permet de pondérer ta perf : une course vaut plus qu'un entraînement.</p>
+      <div class="type-options">
+        <div class="type-option" onclick="confirmerTypeSortie('course')">
+          <div>
+            <div class="type-option-name">🏁 Course</div>
+            <div class="type-option-desc">Compétition (poids ×1.0)</div>
+          </div>
+          <span class="tag" style="color:var(--sun);border-color:rgba(255,200,87,0.4);background:rgba(255,200,87,0.08);">Top intensité</span>
+        </div>
+        <div class="type-option" onclick="confirmerTypeSortie('entrainement')">
+          <div>
+            <div class="type-option-name">🏃 Entraînement</div>
+            <div class="type-option-desc">Sortie tempo, intervalle (poids ×0.7)</div>
+          </div>
+          <span class="tag" style="color:var(--leaf);border-color:rgba(107,179,107,0.4);background:rgba(107,179,107,0.08);">Régulière</span>
+        </div>
+        <div class="type-option" onclick="confirmerTypeSortie('sortie')">
+          <div>
+            <div class="type-option-name">🥾 Sortie</div>
+            <div class="type-option-desc">Footing tranquille, balade (poids ×0.4)</div>
+          </div>
+          <span class="tag" style="color:var(--sky);border-color:rgba(79,163,217,0.4);background:rgba(79,163,217,0.08);">Détendue</span>
         </div>
       </div>
-      <!-- KPIs -->
-      <div class="profil-kpis">
-        <div class="profil-kpi">
-          <div class="profil-kpi-label">VEP globale<span class="info-icon" data-tooltip="Vitesse Équivalente Plat — la vitesse que tu aurais sur du plat à effort comparable. Calculée via les coefficients de Minetti qui pondèrent ta vitesse réelle selon la pente. Plus elle est élevée, plus tu es performant en équivalent plat."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
-          <div class="profil-kpi-val" id="vepGlobale">—</div>
-          <div class="profil-kpi-sub">km/h éq. plat</div>
-        </div>
-        <div class="profil-kpi">
-          <div class="profil-kpi-label">Drain énergie<span class="info-icon" data-tooltip="Pourcentage de batterie énergétique consommé par heure d'effort. Calculé depuis ta FC moyenne et les zones cardiaques (Karvonen). Plus tu cours en zone haute, plus tu drainés vite ta batterie."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
-          <div class="profil-kpi-val" id="drainEnergie">—</div>
-          <div class="profil-kpi-sub">% batterie / heure</div>
-        </div>
-        <div class="profil-kpi">
-          <div class="profil-kpi-label">Traces analysées</div>
-          <div class="profil-kpi-val" id="nbTraces">—</div>
-          <div class="profil-kpi-sub">fichiers GPX</div>
-        </div>
-        <div class="profil-kpi">
-          <div class="profil-kpi-label">Coeff. course<span class="info-icon" data-tooltip="Coefficient de performance entre tes entraînements et tes courses. Calculé via le ratio de FC moyenne : en course tu pousses plus (≈87% FCmax) qu'à l'entraînement (≈75%). Le coefficient ajuste la prédiction pour refléter ton effort réel en compétition."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
-          <div class="profil-kpi-val" id="coeffCourse">—</div>
-          <div class="profil-kpi-sub">vs entraînement</div>
-        </div>
-      </div>
-      <!-- Scores -->
-      <div class="profil-card">
-        <div class="profil-card-header">Score de pente<span class="info-icon" data-tooltip="Écart de performance par rapport à ton plat. Pour chaque type de pente, on compare ta VEP réelle à celle attendue (théorie de Minetti basée sur ton plat). Un + vert = tu surperformes sur ce terrain. Un - rouge = tu sous-performes. Le plat est ta référence à 0%."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
-        <div class="profil-card-body" id="scoresBars"></div>
-      </div>
-      <button class="btn-primary" style="width:100%;padding:16px;" onclick="window.location.href='simulateur.html'">
-        Simuler une course avec ce profil →
-      </button>
+      <button class="btn-ghost" onclick="annulerTypeSortie()" style="width:100%;">Annuler</button>
     </div>
   </div>
-</div>
 
-<footer class="footer">
-  <div><div class="footer-logo">SUM<span>'IT</span></div><div class="footer-sub">Plan your peaks · Trail &amp; Rando</div></div>
-  <div class="footer-copy">© 2026 SUM'IT</div>
-</footer>
+  <!-- ══ Loading ══ -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Analyse en cours...</div>
+  </div>
 
-<script src="../js/main.js"></script>
-<script src="../js/api-client.js"></script>
+  <!-- ══ Footer ══ -->
+  <footer class="footer">
+    <div>
+      <div class="footer-logo">SUM<span>'IT</span></div>
+      <div class="footer-sub">PLAN YOUR PEAKS</div>
+    </div>
+    <div class="footer-copy">© 2025 SUM'IT — Beta</div>
+  </footer>
+
+  <script src="../js/api-client.js"></script>
   <script src="../js/nav-user.js"></script>
-<script>
+  <script>
 
-// ── Icônes archétypes ────────────────────────────────────────
-const ARCHETYPE_ICONS = {
-  grimpeur: `<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="19,4 34,30 4,30" fill="rgba(255,200,87,0.08)"/><polygon points="19,4 24,14 14,14" fill="rgba(255,200,87,0.2)" stroke-width="1"/><line x1="19" y1="34" x2="19" y2="20"/><polyline points="15,24 19,20 23,24"/></svg>`,
-  descendeur:`<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,8 14,22 19,16 24,26 34,8"/><circle cx="26" cy="26" r="3" fill="rgba(255,200,87,0.2)"/><line x1="8" y1="28" x2="28" y2="28"/><polyline points="24,24 28,28 24,32"/></svg>`,
-  explosif:  `<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,4 12,20 18,20 16,34 26,18 20,18" fill="rgba(255,200,87,0.15)"/></svg>`,
-  equilibre: `<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,28 12,14 19,20 26,10 34,28"/><circle cx="4" cy="28" r="2" fill="rgba(255,200,87,0.3)"/><circle cx="19" cy="20" r="2" fill="rgba(255,200,87,0.3)"/><circle cx="34" cy="28" r="2" fill="rgba(255,200,87,0.3)"/></svg>`,
-  tenace:    `<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="22" r="12" fill="rgba(255,200,87,0.06)"/><line x1="19" y1="10" x2="19" y2="6"/><line x1="16" y1="6" x2="22" y2="6"/><line x1="19" y1="22" x2="19" y2="14" stroke-width="2"/><line x1="19" y1="22" x2="25" y2="26" stroke-width="1.4"/><circle cx="19" cy="22" r="2" fill="rgba(255,200,87,0.5)"/></svg>`,
-  combattant:`<svg viewBox="0 0 38 38" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="8" r="3" fill="rgba(255,200,87,0.2)"/><line x1="19" y1="11" x2="19" y2="22"/><line x1="19" y1="15" x2="13" y2="12"/><line x1="19" y1="15" x2="25" y2="19"/><line x1="19" y1="22" x2="13" y2="30"/><line x1="19" y1="22" x2="26" y2="28"/></svg>`,
-};
+    let currentProfilType = 'trail';
+    let currentUser       = null;
+    let currentProfile    = null;
+    let currentActivites  = [];
+    let pendingUpload     = null;  // { source: 'gpx'|'strava', file?: File, stravaId?: string, btn?: HTMLElement }
 
-const TERRAIN_ICONS = {
-  'montee_raide':     `<svg viewBox="0 0 14 14" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round"><polyline points="2,12 7,2 11,7"/><line x1="7" y1="2" x2="7" y2="5"/><line x1="7" y1="2" x2="10" y2="3.5"/></svg>`,
-  'montee_soutenue':  `<svg viewBox="0 0 14 14" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round"><polyline points="2,11 5,7 9,4 11,3"/><line x1="9" y1="3" x2="11" y2="3"/><line x1="11" y1="3" x2="11" y2="5"/></svg>`,
-  'montee_douce':     `<svg viewBox="0 0 14 14" fill="none" stroke="#5DCAA5" stroke-width="1.6" stroke-linecap="round"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
-  'plat':             `<svg viewBox="0 0 14 14" fill="none" stroke="#FFC857" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="7" x2="11" y2="7"/><polyline points="8,4 11,7 8,10"/></svg>`,
-  'descente_douce':   `<svg viewBox="0 0 14 14" fill="none" stroke="#5DCAA5" stroke-width="1.6" stroke-linecap="round"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
-  'descente_soutenue':`<svg viewBox="0 0 14 14" fill="none" stroke="#EF9F27" stroke-width="1.6" stroke-linecap="round"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
-  'descente_raide':   `<svg viewBox="0 0 14 14" fill="none" stroke="#E24B4A" stroke-width="1.6" stroke-linecap="round"><polyline points="6,2 11,9 7,11"/></svg>`,
-};
+    const ARCHETYPES = {
+      'Grimpeur': '🏔',
+      'Descendeur': '⛷',
+      'Explosif': '⚡',
+      'Équilibré': '⚖',
+      'Tenace': '💪',
+      'Combattant': '🥊',
+    };
 
-const TERRAIN_LABELS = {
-  montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
-  montee_douce:'Montée douce', plat:'Plat',
-  descente_douce:'Descente douce', descente_soutenue:'Descente soutenue',
-  descente_raide:'Descente raide',
-};
+    // ── Init ─────────────────────────────────────────────────────
+    (async function init() {
+      const section = document.getElementById('profilSection');
 
-const ORDRE_T = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+      if (!isLoggedIn()) {
+        section.innerHTML = `
+          <div class="login-required">
+            <h2>Connecte-toi pour créer ton profil</h2>
+            <p>Importe tes activités, ton profil se construit automatiquement et persiste.</p>
+            <button class="btn-primary" onclick="loginGoogle()" style="font-size:14px;">
+              Se connecter avec Google
+            </button>
+          </div>
+        `;
+        return;
+      }
 
-// ── État ────────────────────────────────────────────────────
-let profilType = 'trail';
-let filesData  = [];
+      // Gérer retour Strava
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('strava_connected') === '1') {
+        setTimeout(() => alert('✅ Compte Strava connecté !'), 200);
+        cleanURL(['strava_connected']);
+      }
+      const stravaError = params.get('strava_error');
+      if (stravaError) {
+        setTimeout(() => alert(`❌ Erreur Strava : ${stravaError}`), 200);
+        cleanURL(['strava_error']);
+      }
 
-function setType(btn, type) {
-  profilType = type;
-  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
+      try {
+        currentUser = await fetchMe();
+        renderUI();
+        await refreshActivites();
+      } catch (e) {
+        section.innerHTML = `<p style="text-align:center;color:var(--danger)">Erreur : ${e.message}</p>`;
+      }
+    })();
 
-// ── Gestion fichiers ────────────────────────────────────────
-function handleFiles(files) {
-  Array.from(files).forEach(file => {
-    if (file.name.toLowerCase().endsWith('.gpx') && !filesData.find(f => f.name === file.name)) {
-      filesData.push({ name:file.name, file, type:'entrainement' });
+    function cleanURL(paramsToRemove) {
+      const url = new URL(window.location);
+      paramsToRemove.forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url.toString());
     }
-  });
-  renderFileList();
-}
 
-function renderFileList() {
-  const list = document.getElementById('fileList');
-  list.innerHTML = '';
-  filesData.forEach((f, i) => {
-    const item = document.createElement('div');
-    item.className = 'file-item';
-    item.innerHTML = `
-      <div class="file-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <div class="file-name">${f.name}</div>
-      <select class="file-type-select" onchange="filesData[${i}].type=this.value">
-        <option value="course"       ${f.type==='course'?'selected':''}>Course</option>
-        <option value="entrainement" ${f.type==='entrainement'?'selected':''}>Entraînement</option>
-        <option value="sortie"       ${f.type==='sortie'?'selected':''}>Sortie tranquille</option>
-      </select>
-      <div class="file-remove" onclick="removeFile(${i})">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </div>`;
-    list.appendChild(item);
-  });
-}
+    // ── Render principal ────────────────────────────────────────
+    function renderUI() {
+      const profileTrail = currentUser.profiles.find(p => p.type === 'trail');
+      const profileRando = currentUser.profiles.find(p => p.type === 'rando');
+      currentProfile = currentProfilType === 'trail' ? profileTrail : profileRando;
 
-function removeFile(i) { filesData.splice(i,1); renderFileList(); }
+      const section = document.getElementById('profilSection');
+      section.innerHTML = `
+        <!-- Tabs -->
+        <div class="profil-tabs">
+          <div class="profil-tab ${currentProfilType==='trail'?'active':''}" onclick="switchTab('trail')">
+            🏃 Trail / Course
+          </div>
+          <div class="profil-tab ${currentProfilType==='rando'?'active':''}" onclick="switchTab('rando')">
+            🥾 Randonnée
+          </div>
+        </div>
 
-// Drag & drop
-const dz = document.getElementById('dropzone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='rgba(255,200,87,0.6)'; });
-dz.addEventListener('dragleave', () => { dz.style.borderColor=''; });
-dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor=''; handleFiles(e.dataTransfer.files); });
+        <!-- Import section -->
+        <div class="import-section">
+          <h3>➕ Ajouter une activité ${currentProfilType==='trail' ? 'trail/course' : 'randonnée'}</h3>
+          <p class="desc">Chaque ajout met à jour automatiquement ton profil. Tu peux supprimer une activité à tout moment.</p>
+          <div class="import-grid">
+            <div class="import-card gpx" id="gpxDropzone" onclick="document.getElementById('gpxFileInput').click()">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              </div>
+              <h4>Import GPX</h4>
+              <p>Glisse-dépose ou clique pour uploader</p>
+              <input type="file" id="gpxFileInput" accept=".gpx" style="display:none" onchange="handleGPXSelected(event)">
+            </div>
+            <div class="import-card strava" onclick="handleStravaClick()">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M12 1l9 16-9 6-9-6 9-16z"/></svg>
+              </div>
+              <h4>Import Strava</h4>
+              <p>${currentUser.strava_connected ? 'Choisir parmi tes activités Strava' : 'Connecter ton compte Strava'}</p>
+              <p class="strava-status ${currentUser.strava_connected?'connected':''}">✓ Strava connecté</p>
+            </div>
+          </div>
+        </div>
 
-// ── Analyse ─────────────────────────────────────────────────
-async function analyserProfil() {
-  if (filesData.length === 0) { alert('Importe au moins une trace GPX !'); return; }
-  const fcmax = document.getElementById('fcmax').value;
-  if (!fcmax) { alert('Renseigne ta FCmax !'); return; }
+        <!-- Liste activités -->
+        <div class="activites-section">
+          <div class="activites-header">
+            <h3>📂 Mes activités ${currentProfilType==='trail' ? 'trail' : 'randonnée'}</h3>
+            <span style="color:var(--text-3);font-size:12px;font-family:var(--font-display);" id="activitesCount">— activités</span>
+          </div>
+          <div id="activitesContainer">
+            <div class="activites-empty">Chargement...</div>
+          </div>
+        </div>
 
-  const btn = document.getElementById('btnAnalyser');
-  btn.textContent = '⏳ Analyse en cours...';
-  btn.disabled = true;
+        <!-- Profil affiché (si existe) -->
+        ${currentProfile ? renderProfileDetails() : `
+          <div style="text-align:center;padding:40px;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;">
+            <p style="color:var(--text-2);font-size:14px;">Ton profil ${currentProfilType==='trail'?'trail':'rando'} se construira automatiquement après ton premier import.</p>
+          </div>
+        `}
+      `;
 
-  try {
-    const data = await analyserProfilAPI(filesData, parseInt(fcmax), profilType);
-    data.fcmax  = parseInt(fcmax);
-    data.prenom = document.getElementById('prenom').value.trim() || 'Coureur';
-    afficherProfil(data);
-    sauvegarderProfil(data);
-  } catch(err) {
-    alert(`Erreur : ${err.message}\n\nVérifie que l'API tourne (python api.py)`);
-  } finally {
-    btn.textContent = 'Analyser mon profil';
-    btn.disabled = false;
-  }
-}
+      // Drag & drop sur la dropzone
+      attachDragDrop();
+    }
 
-function afficherProfil(data) {
-  document.getElementById('emptyState').style.display    = 'none';
-  document.getElementById('profilResults').style.display = 'block';
+    function renderProfileDetails() {
+      const p = currentProfile;
+      const arch = p.archetype || {};
+      const archIcon = ARCHETYPES[arch.nom] || '🏃';
+      const profilData = p.profil_data || {};
 
-  // KPIs
-  const vepMoy = data.traces.length > 0
-    ? (data.traces.reduce((s,t)=>s+t.vep_globale,0)/data.traces.length).toFixed(1)
-    : '—';
-  document.getElementById('vepGlobale').textContent   = vepMoy;
-  document.getElementById('drainEnergie').textContent = (data.drain_moy_h*100).toFixed(1);
-  document.getElementById('nbTraces').textContent     = data.nb_traces;
-  document.getElementById('coeffCourse').textContent  = `×${data.coefficient_course?.coefficient?.toFixed(2)||'—'}`;
+      return `
+        <!-- KPIs principaux -->
+        <div class="profil-kpis">
+          <div class="profil-kpi-card">
+            <div class="pk-label">VEP Globale</div>
+            <div class="pk-val gradient">${p.vep_globale.toFixed(1)}</div>
+            <div class="pk-sub">km/h éq. plat</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Drain énergie</div>
+            <div class="pk-val">${(p.drain_moy_h*100).toFixed(1)}</div>
+            <div class="pk-sub">% batterie / heure</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Activités</div>
+            <div class="pk-val">${p.nb_traces}</div>
+            <div class="pk-sub">analysées</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Coef course</div>
+            <div class="pk-val">×${p.coefficient_course.toFixed(2)}</div>
+            <div class="pk-sub">vs entraînement</div>
+          </div>
+        </div>
 
-  // Archétype
-  const arch = data.archetype || {};
-  const key  = arch.key || 'combattant';
-  if (ARCHETYPE_ICONS[key]) document.getElementById('archetypeIconWrap').innerHTML = ARCHETYPE_ICONS[key];
-  document.getElementById('archetypeName').textContent = arch.nom || '—';
-  document.getElementById('archetypeDesc').textContent = arch.desc || '';
-  const tipsEl = document.getElementById('archetypeTips');
-  tipsEl.innerHTML = [
-    ...(arch.forces||[]).map(f=>`<div class="archetype-tip"><div class="tip-dot green"></div><span style="font-size:12px;color:var(--text-2);">${f}</span></div>`),
-    ...(arch.faiblesses||[]).map(f=>`<div class="archetype-tip"><div class="tip-dot orange"></div><span style="font-size:12px;color:var(--text-2);">${f}</span></div>`),
-    arch.conseil?`<div class="archetype-tip"><div class="tip-dot" style="background:var(--sun);"></div><span style="font-size:12px;color:var(--sun);">💡 ${arch.conseil}</span></div>`:''
-  ].join('');
+        <!-- Archétype -->
+        <div class="archetype-section">
+          <div class="archetype-icon">
+            <span style="font-size:38px;">${archIcon}</span>
+          </div>
+          <div class="archetype-info">
+            <h3>Ton archétype</h3>
+            <div class="archetype-name">${arch.nom || 'Combattant'}</div>
+            <div class="archetype-desc">${arch.desc || 'Polyvalent, régulier sur tous les terrains.'}</div>
+          </div>
+        </div>
 
-  // Barres scores - écart % vs plat
-  const container = document.getElementById('scoresBars');
-  container.innerHTML = '';
-  ORDRE_T.forEach(t => {
-    const p = data.profil[t];
-    if (!p) return;
-    const ecart = p.ecart_plat_pct || 0;
-    const isPlat = (t === 'plat');
-    const isPositive = ecart >= 0;
-    const valClass = isPlat ? 'neutral' : (isPositive ? 'positive' : 'negative');
-    const fillClass = isPositive ? 'positive' : 'negative';
+        <!-- Score de pente -->
+        <div class="terrain-section">
+          <h3>Score de pente</h3>
+          <p class="desc">Écart de performance par type de terrain par rapport à ton allure sur le plat (référence 0%).</p>
+          ${renderScorePente(profilData)}
+        </div>
+      `;
+    }
 
-    // Largeur de la barre : proportionnelle à |ecart|, max 50% (la moitié de la track)
-    // ecart de ±50% rempli toute la moitié, ±100% dépasserait
-    const widthPct = Math.min(50, Math.abs(ecart));
+    function renderScorePente(profilData) {
+      const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+      const labels = {
+        montee_raide: 'Montée raide',
+        montee_soutenue: 'Montée soutenue',
+        montee_douce: 'Montée douce',
+        plat: 'Plat (référence)',
+        descente_douce: 'Descente douce',
+        descente_soutenue: 'Descente soutenue',
+        descente_raide: 'Descente raide',
+      };
 
-    const sign = ecart > 0 ? '+' : '';
-    const display = isPlat ? '0% (réf)' : `${sign}${ecart.toFixed(1)}%`;
+      let html = '';
+      ordreT.forEach(t => {
+        const data = profilData[t];
+        if (!data) return;
+        const ecart = data.ecart_plat_pct || 0;
+        const isPlat = (t === 'plat');
+        const widthPct = Math.min(50, Math.abs(ecart));
 
-    const bar = document.createElement('div');
-    bar.className = 'score-bar';
-    bar.innerHTML = `
-      <div class="score-terrain-icon">${TERRAIN_ICONS[t]||''}</div>
-      <div class="score-label">${TERRAIN_LABELS[t]}</div>
-      <div class="score-track">
-        ${isPlat ? '' : `<div class="score-fill ${fillClass}" style="width:0%" data-target="${widthPct}"></div>`}
-      </div>
-      <div class="score-val ${valClass}">${display}</div>`;
-    container.appendChild(bar);
-  });
-  setTimeout(() => {
-    document.querySelectorAll('.score-fill[data-target]').forEach(b => { b.style.width = b.dataset.target+'%'; });
-  }, 100);
+        let fillClass = 'positive';
+        let valClass = 'positive';
+        if (isPlat) { valClass = 'neutral'; }
+        else if (ecart < 0) { fillClass = 'negative'; valClass = 'negative'; }
 
-  if (window.innerWidth < 900) document.getElementById('colRight').scrollIntoView({behavior:'smooth'});
-}
-</script>
+        const display = isPlat ? '0%' : `${ecart > 0 ? '+' : ''}${ecart.toFixed(1)}%`;
+
+        html += `
+          <div class="score-bar">
+            <div class="score-label">${labels[t]}</div>
+            <div class="score-track">
+              ${isPlat ? '' : `<div class="score-fill ${fillClass}" style="width:${widthPct}%;"></div>`}
+            </div>
+            <div class="score-val ${valClass}">${display}</div>
+          </div>
+        `;
+      });
+      return html;
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────
+    async function switchTab(type) {
+      currentProfilType = type;
+      renderUI();
+      await refreshActivites();
+    }
+
+    // ── Activités : chargement & affichage ──────────────────────
+    async function refreshActivites() {
+      try {
+        const res = await listerActivites(currentProfilType);
+        currentActivites = res.activities || [];
+        renderActivites();
+      } catch (e) {
+        document.getElementById('activitesContainer').innerHTML =
+          `<div class="activites-empty">Erreur : ${e.message}</div>`;
+      }
+    }
+
+    function renderActivites() {
+      const cont = document.getElementById('activitesContainer');
+      const count = document.getElementById('activitesCount');
+      count.textContent = `${currentActivites.length} activité${currentActivites.length>1?'s':''}`;
+
+      if (currentActivites.length === 0) {
+        cont.innerHTML = `<div class="activites-empty">Aucune activité pour ce profil. Importe ta première activité ci-dessus 👆</div>`;
+        return;
+      }
+
+      cont.innerHTML = currentActivites.map(a => {
+        const dureeMin = Math.round(a.duree_s / 60);
+        const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
+        const date = a.date ? new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
+        return `
+          <div class="activite-row">
+            <div class="source-badge ${a.source}" title="${a.source === 'strava' ? 'Strava' : 'Import manuel'}">
+              ${a.source === 'strava' ? 'S' : '📁'}
+            </div>
+            <div>
+              <div class="activite-name">${a.name || 'Sans nom'}</div>
+              <div style="font-size:11px;color:var(--text-3)">${date}</div>
+            </div>
+            <span class="activite-type-tag ${a.type_sortie}">${a.type_sortie}</span>
+            <div class="activite-meta">${a.dist_km.toFixed(1)} km</div>
+            <div class="activite-meta">${Math.round(a.dplus_m)} m D+</div>
+            <div class="activite-meta">${dureeFmt}</div>
+            <button class="btn-delete" onclick="deleteActivite(${a.id})" title="Supprimer">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function deleteActivite(id) {
+      if (!confirm('Supprimer cette activité ? Ton profil sera recalculé automatiquement.')) return;
+      showLoading('Recalcul du profil...');
+      try {
+        await supprimerActivite(id);
+        await rechargerProfilEtActivites();
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // ── Drag & Drop GPX ─────────────────────────────────────────
+    function attachDragDrop() {
+      const dz = document.getElementById('gpxDropzone');
+      if (!dz) return;
+      ['dragenter','dragover'].forEach(evt => {
+        dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.add('dragover'); });
+      });
+      ['dragleave','drop'].forEach(evt => {
+        dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.remove('dragover'); });
+      });
+      dz.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.toLowerCase().endsWith('.gpx')) {
+          ouvrirModalTypeSortie({ source: 'gpx', file: files[0] });
+        }
+      });
+    }
+
+    function handleGPXSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      ouvrirModalTypeSortie({ source: 'gpx', file });
+      event.target.value = '';  // reset input
+    }
+
+    // ── Type sortie (modale) ────────────────────────────────────
+    function ouvrirModalTypeSortie(upload) {
+      pendingUpload = upload;
+      document.getElementById('modalTypeSortie').classList.add('active');
+    }
+
+    function annulerTypeSortie() {
+      pendingUpload = null;
+      document.getElementById('modalTypeSortie').classList.remove('active');
+    }
+
+    async function confirmerTypeSortie(typeSortie) {
+      document.getElementById('modalTypeSortie').classList.remove('active');
+      if (!pendingUpload) return;
+
+      showLoading('Analyse en cours, ne quitte pas la page...');
+
+      try {
+        if (pendingUpload.source === 'gpx') {
+          await ajouterActiviteGPX(pendingUpload.file, typeSortie, currentProfilType);
+        } else if (pendingUpload.source === 'strava') {
+          await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType);
+          // Reset bouton modal Strava
+          if (pendingUpload.btn) {
+            pendingUpload.btn.textContent = '✓ Importée';
+            pendingUpload.btn.disabled = true;
+          }
+        }
+
+        await rechargerProfilEtActivites();
+
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+        if (pendingUpload.btn) {
+          pendingUpload.btn.disabled = false;
+          pendingUpload.btn.textContent = 'Importer';
+        }
+      } finally {
+        pendingUpload = null;
+        hideLoading();
+      }
+    }
+
+    async function rechargerProfilEtActivites() {
+      currentUser = await fetchMe();
+      renderUI();
+      await refreshActivites();
+    }
+
+    // ── Strava ──────────────────────────────────────────────────
+    async function handleStravaClick() {
+      if (!currentUser.strava_connected) {
+        if (confirm("Tu vas être redirigé vers Strava pour autoriser SUM'IT à lire tes activités. Continuer ?")) {
+          loginStrava();
+        }
+        return;
+      }
+      await ouvrirModalStrava();
+    }
+
+    async function ouvrirModalStrava() {
+      document.getElementById('modalStrava').classList.add('active');
+      const list = document.getElementById('stravaActivitiesList');
+      list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Chargement des activités Strava...</p>`;
+
+      try {
+        const res = await listerActivitesStrava(50);
+        const activities = res.activities || [];
+
+        if (activities.length === 0) {
+          list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Aucune activité de course/rando trouvée sur Strava.</p>`;
+          return;
+        }
+
+        const dejaImportes = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
+
+        list.innerHTML = activities.map(a => {
+          const date = new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
+          const dureeMin = Math.round(a.duree_s / 60);
+          const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
+          const isImported = dejaImportes.has(String(a.id));
+          return `
+            <div class="strava-activity">
+              <div>
+                <div class="sa-name">${a.name}</div>
+                <div class="sa-meta">${a.type} · ${date}</div>
+              </div>
+              <div class="sa-stats">
+                ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
+                <span style="color:var(--text-3)">${dureeFmt}</span>
+              </div>
+              <button class="btn-import-sa" onclick="declencherImportStrava('${a.id}', this)" ${isImported ? 'disabled' : ''}>
+                ${isImported ? '✓ Importée' : 'Importer'}
+              </button>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        list.innerHTML = `<p style="color:var(--danger);text-align:center;">Erreur : ${e.message}</p>`;
+      }
+    }
+
+    function fermerModalStrava() {
+      document.getElementById('modalStrava').classList.remove('active');
+    }
+
+    function declencherImportStrava(stravaId, btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      fermerModalStrava();
+      ouvrirModalTypeSortie({ source: 'strava', stravaId, btn });
+    }
+
+    // ── Loading overlay ────────────────────────────────────────
+    function showLoading(text) {
+      document.getElementById('loadingText').textContent = text || 'Chargement...';
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+  </script>
 </body>
 </html>
