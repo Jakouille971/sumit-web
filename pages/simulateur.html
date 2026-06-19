@@ -767,6 +767,113 @@ async function initSimulateur() {
   }
 
   afficherProfilSidebar();
+
+  // Si on arrive via ?sim_id=XX, on charge la simulation épinglée
+  const params = new URLSearchParams(window.location.search);
+  const simId = params.get('sim_id');
+  if (simId && isLoggedIn()) {
+    await chargerSimulationEpinglee(parseInt(simId));
+  }
+}
+
+// ── Chargement d'une simulation épinglée ──────────────────────
+async function chargerSimulationEpinglee(simId) {
+  try {
+    const sim = await getSimulation(simId);
+
+    // Switch sur le bon profil
+    if (sim.type_profil && sim.type_profil !== currentSimProfilType) {
+      await switchProfilSim(sim.type_profil);
+    }
+
+    // Recharger le GPX original si présent
+    if (sim.gpx_base64) {
+      const bin = atob(sim.gpx_base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reconstitueFile = new File([bytes], `${sim.name}.gpx`, { type: 'application/gpx+xml' });
+      chargerFichier(reconstitueFile);
+    }
+
+    // Restaurer le nom de course + ravitos
+    if (document.getElementById('nomCourse')) {
+      document.getElementById('nomCourse').value = sim.name;
+    }
+    if (sim.ravitos_km && document.getElementById('ravitosKm')) {
+      document.getElementById('ravitosKm').value = sim.ravitos_km;
+    }
+
+    // Restaurer les stats du fichier depuis sim_data
+    if (sim.dist_km && document.getElementById('fileDist')) {
+      document.getElementById('fileDist').textContent  = `${sim.dist_km.toFixed(1)} km`;
+      document.getElementById('fileDplus').textContent = `${Math.round(sim.dplus_m)} m D+`;
+    }
+
+    // Restaurer les résultats si présents (sans recalculer)
+    if (sim.sim_data && Object.keys(sim.sim_data).length > 0) {
+      const data = sim.sim_data;
+      // On reconstruit l'affichage sans appel API
+      window.lastSimData = data;
+      afficherResultats(data);
+    }
+
+    // Bascule en mode édition
+    window.editingSimId = simId;
+    window.editingSimName = sim.name;
+    afficherBandeauEdition();
+
+  } catch (e) {
+    alert('Impossible de charger la simulation : ' + e.message);
+  }
+}
+
+function afficherBandeauEdition() {
+  let bandeau = document.getElementById('editingBanner');
+  if (!bandeau) {
+    bandeau = document.createElement('div');
+    bandeau.id = 'editingBanner';
+    bandeau.style.cssText = `
+      position: sticky; top: 68px; z-index: 50;
+      background: linear-gradient(90deg, var(--sun) 0%, var(--leaf) 100%);
+      color: var(--bg);
+      padding: 10px 24px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    `;
+    document.body.insertBefore(bandeau, document.body.querySelector('.nav').nextSibling);
+  }
+  bandeau.innerHTML = `
+    <div>⭐ Mode édition : <strong>${escapeHTMLSim(window.editingSimName || 'Simulation')}</strong></div>
+    <button onclick="quitterModeEdition()" style="background:rgba(0,0,0,0.2);color:var(--bg);border:none;padding:6px 14px;font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;border-radius:4px;cursor:pointer;font-weight:700;">
+      Quitter le mode édition
+    </button>
+  `;
+
+  // Mettre à jour le label du bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Mettre à jour la sim épinglée';
+}
+
+function quitterModeEdition() {
+  window.editingSimId = null;
+  window.editingSimName = null;
+  const bandeau = document.getElementById('editingBanner');
+  if (bandeau) bandeau.remove();
+  // Reset URL
+  const url = new URL(window.location);
+  url.searchParams.delete('sim_id');
+  window.history.replaceState({}, '', url.toString());
+  // Reset bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Épingler cette simulation';
+}
+
+function escapeHTMLSim(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function switchProfilSim(type) {
@@ -1857,11 +1964,32 @@ async function epinglerSimulationActuelle() {
     return;
   }
 
+  const btn = document.getElementById('btnPin');
+
+  // Mode édition : on met à jour la sim existante
+  if (window.editingSimId) {
+    btn.disabled = true;
+    document.getElementById('btnPinLabel').textContent = 'Mise à jour...';
+    try {
+      await updateSimulation(window.editingSimId, window.lastSimData);
+      btn.classList.add('pinned');
+      document.getElementById('btnPinLabel').textContent = '✓ Mise à jour';
+      setTimeout(() => {
+        document.getElementById('btnPinLabel').textContent = '✓ Simulation à jour';
+      }, 1500);
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+      btn.disabled = false;
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+    }
+    return;
+  }
+
+  // Mode création : nouvelle sim épinglée
   const nomDefault = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
   const nom = prompt('Nom de la simulation à épingler :', nomDefault);
   if (!nom || !nom.trim()) return;
 
-  const btn = document.getElementById('btnPin');
   btn.disabled = true;
   document.getElementById('btnPinLabel').textContent = 'Enregistrement...';
 
@@ -1879,15 +2007,42 @@ async function epinglerSimulationActuelle() {
         bas: data.fourchettes.bas,
         haut: data.fourchettes.haut,
       } : null,
+      // On stocke aussi le profil_chart pour pouvoir réafficher si pas de recalcul
+      profil_chart:  data.profil_chart,
+      ravitos:       data.ravitos,
+      repartition:   data.repartition,
     };
 
-    await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload);
+    // GPX en base64 (pour pouvoir recalculer plus tard)
+    let gpxBase64 = '';
+    if (gpxFile) {
+      try {
+        const arrBuf = await gpxFile.arrayBuffer();
+        const bytes = new Uint8Array(arrBuf);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        gpxBase64 = btoa(bin);
+      } catch (e) {
+        console.warn('Impossible d\'encoder le GPX :', e);
+      }
+    }
+
+    const ravitosKm = document.getElementById('ravitosKm')?.value || '';
+
+    const res = await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload, gpxBase64, ravitosKm);
+
+    // On bascule en mode édition (la sim existe maintenant)
+    window.editingSimId = res.simulation_id;
+    window.editingSimName = nom.trim();
+    afficherBandeauEdition();
 
     btn.classList.add('pinned');
     document.getElementById('btnPinLabel').textContent = '✓ Épinglée';
     setTimeout(() => {
-      document.getElementById('btnPinLabel').textContent = '✓ Épinglée dans Mon compte';
-    }, 800);
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+      btn.classList.remove('pinned');
+      btn.disabled = false;
+    }, 1500);
   } catch (e) {
     alert('Erreur : ' + e.message);
     btn.disabled = false;
