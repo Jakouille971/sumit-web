@@ -1526,10 +1526,12 @@ def pin_simulation(
     nom_course:  str = Form(...),
     profil_type: str = Form(...),
     sim_data:    str = Form(...),
+    gpx_base64:  str = Form(""),  # GPX original encodé en base64 (optionnel)
+    ravitos_km:  str = Form(""),  # Liste des ravitos pour recalcul
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Épingle une simulation."""
+    """Épingle une simulation avec son GPX pour pouvoir la rouvrir/recalculer."""
     # Limite à 20 par user
     count = db.query(Activity).filter(
         Activity.user_id == user.id,
@@ -1544,6 +1546,13 @@ def pin_simulation(
     except Exception as e:
         raise HTTPException(400, detail=f"sim_data invalide : {e}")
 
+    # On stocke le GPX + ravitos + résultats dans trace_data
+    trace_data = {
+        **sim,
+        '_gpx_base64': gpx_base64 or None,
+        '_ravitos_km': ravitos_km or None,
+    }
+
     activity = Activity(
         user_id      = user.id,
         source       = 'simulation',
@@ -1555,13 +1564,83 @@ def pin_simulation(
         dplus_m      = sim.get('dplus_m', 0),
         duree_s      = sim.get('temps_total_s', 0),
         vep_globale  = 0,
-        trace_data   = sim,
+        trace_data   = trace_data,
     )
     db.add(activity)
     db.commit()
     db.refresh(activity)
 
     return {"status": "ok", "simulation_id": activity.id}
+
+
+@app.get("/api/simulations/{simulation_id}")
+def get_simulation(
+    simulation_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Récupère le détail complet d'une simulation épinglée (avec GPX si présent)."""
+    sim = db.query(Activity).filter(
+        Activity.id == simulation_id,
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).first()
+
+    if not sim:
+        raise HTTPException(404, detail="Simulation introuvable")
+
+    td = sim.trace_data or {}
+    return {
+        "id":          sim.id,
+        "name":        sim.name,
+        "type_profil": sim.type_profil,
+        "created_at":  sim.created_at.isoformat() if sim.created_at else None,
+        "dist_km":     sim.dist_km,
+        "dplus_m":     sim.dplus_m,
+        "duree_s":     sim.duree_s,
+        "sim_data":    {k: v for k, v in td.items() if not k.startswith('_')},
+        "gpx_base64":  td.get('_gpx_base64'),
+        "ravitos_km":  td.get('_ravitos_km'),
+    }
+
+
+@app.put("/api/simulations/{simulation_id}")
+def update_simulation(
+    simulation_id: int,
+    sim_data:      str = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Met à jour les résultats d'une simulation épinglée (après recalcul)."""
+    sim = db.query(Activity).filter(
+        Activity.id == simulation_id,
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).first()
+
+    if not sim:
+        raise HTTPException(404, detail="Simulation introuvable")
+
+    try:
+        new_sim = json.loads(sim_data)
+    except Exception as e:
+        raise HTTPException(400, detail=f"sim_data invalide : {e}")
+
+    # On préserve le GPX d'origine + les ravitos
+    old_td = sim.trace_data or {}
+    new_td = {
+        **new_sim,
+        '_gpx_base64': old_td.get('_gpx_base64'),
+        '_ravitos_km': old_td.get('_ravitos_km'),
+    }
+
+    sim.trace_data = new_td
+    sim.dist_km    = new_sim.get('distance_km', sim.dist_km)
+    sim.dplus_m    = new_sim.get('dplus_m', sim.dplus_m)
+    sim.duree_s    = new_sim.get('temps_total_s', sim.duree_s)
+
+    db.commit()
+    return {"status": "ok"}
 
 
 @app.delete("/api/simulations/{simulation_id}")
