@@ -1192,10 +1192,14 @@ def _recalculer_profil_user(db: Session, user: User, profil_type: str):
     """
     Recalcule le profil agrégé d'un utilisateur à partir de toutes ses
     activités sauvegardées en BDD. Sauvegarde le résultat dans Profile.
+
+    Exclut les simulations épinglées (source='simulation') qui ne sont
+    pas de vraies traces GPX d'entraînement.
     """
     activities = db.query(Activity).filter(
         Activity.user_id == user.id,
         Activity.type_profil == profil_type,
+        Activity.source != 'simulation',  # ← exclut les sims
     ).all()
 
     if not activities:
@@ -1264,10 +1268,11 @@ def list_activities(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Liste les activités de l'utilisateur pour un profil donné."""
+    """Liste les activités de l'utilisateur pour un profil donné (hors simulations épinglées)."""
     activities = db.query(Activity).filter(
         Activity.user_id == user.id,
         Activity.type_profil == profil_type,
+        Activity.source != 'simulation',  # ← exclut les sims épinglées
     ).order_by(Activity.date_activity.desc().nullslast()).all()
 
     return {
