@@ -321,6 +321,29 @@
     }
     .btn-delete-sim:hover { border-color: var(--danger); color: var(--danger); }
     .btn-delete-sim svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    .btn-open-sim {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+      margin-top: 14px;
+      width: 100%;
+      justify-content: center;
+    }
+    .btn-open-sim:hover { transform: translateY(-1px); opacity: 0.95; }
+    .btn-open-sim svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
     .sims-empty {
       grid-column: 1 / -1;
       text-align: center;
@@ -619,9 +642,17 @@
               <span>${Math.round(s.dplus_m)} m D+</span>
             </div>
             <span class="sim-card-profile-tag ${profilType}">${profilType==='trail'?'🏃 Trail':'🥾 Rando'}</span>
+            <button class="btn-open-sim" onclick="ouvrirSimulation(${s.id})">
+              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              Ouvrir dans le simulateur
+            </button>
           </div>
         `;
       }).join('');
+    }
+
+    function ouvrirSimulation(id) {
+      window.location.href = `simulateur.html?sim_id=${id}`;
     }
 
     async function deleteSimulation(id) {
