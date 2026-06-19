@@ -365,6 +365,11 @@
       overflow-y: auto;
       flex: 1;
     }
+
+    /* ── Filtres Strava ── */
+    /* ── Filtres Strava (style supplémentaire si besoin) ── */
+    .filter-num { width: 90px; }
+
     .strava-activity {
       display: grid;
       grid-template-columns: 1fr auto auto;
@@ -400,6 +405,100 @@
       cursor: pointer;
     }
     .btn-import-sa:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Édition nom activité ── */
+    .activite-name-wrapper {
+      display: flex; align-items: center; gap: 6px;
+      min-width: 0;
+    }
+    .activite-name-input {
+      background: var(--bg);
+      border: 1px solid var(--sun);
+      color: var(--text);
+      padding: 4px 8px;
+      font-size: 13px;
+      border-radius: 3px;
+      outline: none;
+      width: 100%;
+    }
+
+    /* ── Barre de recherche Strava ── */
+    .strava-search {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .strava-search input,
+    .strava-search select {
+      padding: 9px 12px;
+      font-size: 13px;
+      background: var(--bg);
+    }
+    .strava-search input.search-name { min-width: 100px; }
+    .strava-search .filter-group {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .strava-search .filter-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      white-space: nowrap;
+    }
+    .strava-search input.filter-num {
+      width: 60px;
+      text-align: center;
+    }
+    .strava-search-count {
+      grid-column: 1/-1;
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+
+    /* ── Renommer activité (inline) ── */
+    .btn-rename {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text-3);
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-rename:hover { border-color: var(--sun); color: var(--sun); }
+    .btn-rename svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
+
+    .rename-input {
+      width: 100%;
+      padding: 6px 10px;
+      font-size: 13px;
+      background: var(--bg);
+      border: 1px solid var(--sun);
+      border-radius: 4px;
+      color: var(--text);
+    }
+    .rename-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 200, 87, 0.15);
+    }
+
+    /* Adjusted column count when rename btn is added */
+    .activite-row {
+      grid-template-columns: 30px 1fr auto auto auto auto auto auto;
+    }
+
+    @media (max-width: 900px) {
+      .strava-search { grid-template-columns: 1fr; }
+      .strava-search .filter-group { justify-content: space-between; }
+    }
 
     /* ── Modale Type Sortie (pour upload GPX ou import Strava) ── */
     .type-modal {
@@ -619,7 +718,8 @@
     let currentUser       = null;
     let currentProfile    = null;
     let currentActivites  = [];
-    let pendingUpload     = null;  // { source: 'gpx'|'strava', file?: File, stravaId?: string, btn?: HTMLElement }
+    let pendingUpload     = null;
+    let stravaActivitiesCache = []; // cache pour filtrer sans refetch
 
     const ARCHETYPES = {
       'Grimpeur': '🏔',
@@ -865,24 +965,78 @@
         const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
         const date = a.date ? new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
         return `
-          <div class="activite-row">
+          <div class="activite-row" data-id="${a.id}">
             <div class="source-badge ${a.source}" title="${a.source === 'strava' ? 'Strava' : 'Import manuel'}">
               ${a.source === 'strava' ? 'S' : '📁'}
             </div>
-            <div>
-              <div class="activite-name">${a.name || 'Sans nom'}</div>
+            <div class="activite-name-cell">
+              <div class="activite-name">${escapeHTML(a.name || 'Sans nom')}</div>
               <div style="font-size:11px;color:var(--text-3)">${date}</div>
             </div>
             <span class="activite-type-tag ${a.type_sortie}">${a.type_sortie}</span>
             <div class="activite-meta">${a.dist_km.toFixed(1)} km</div>
             <div class="activite-meta">${Math.round(a.dplus_m)} m D+</div>
             <div class="activite-meta">${dureeFmt}</div>
+            <button class="btn-rename" onclick="lancerRenommage(${a.id})" title="Renommer">
+              <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
             <button class="btn-delete" onclick="deleteActivite(${a.id})" title="Supprimer">
               <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
           </div>
         `;
       }).join('');
+    }
+
+    function escapeHTML(s) {
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    // ── Renommage d'une activité ────────────────────────────────
+    function lancerRenommage(id) {
+      const row = document.querySelector(`.activite-row[data-id="${id}"]`);
+      if (!row) return;
+      const nameCell = row.querySelector('.activite-name-cell');
+      const nameEl = nameCell.querySelector('.activite-name');
+      const dateEl = nameCell.querySelector('div[style*="font-size:11px"]');
+      const currentName = nameEl.textContent;
+
+      nameCell.innerHTML = `
+        <input type="text" class="rename-input" id="renameInput-${id}" value="${escapeHTML(currentName)}"
+               onkeydown="if(event.key==='Enter') validerRenommage(${id}); if(event.key==='Escape') refreshActivites();">
+        ${dateEl ? dateEl.outerHTML : ''}
+      `;
+      const input = document.getElementById(`renameInput-${id}`);
+      input.focus();
+      input.select();
+      // Sur blur, on valide aussi
+      input.addEventListener('blur', () => validerRenommage(id));
+    }
+
+    async function validerRenommage(id) {
+      const input = document.getElementById(`renameInput-${id}`);
+      if (!input) return;
+      const newName = input.value.trim();
+      if (!newName) {
+        await refreshActivites();
+        return;
+      }
+      const activite = currentActivites.find(a => a.id === id);
+      if (activite && activite.name === newName) {
+        await refreshActivites();
+        return;
+      }
+      try {
+        await renommerActivite(id, newName);
+        await refreshActivites();
+      } catch (e) {
+        alert('Erreur renommage : ' + e.message);
+        await refreshActivites();
+      }
     }
 
     async function deleteActivite(id) {
@@ -989,7 +1143,8 @@
       list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Chargement des activités Strava...</p>`;
 
       try {
-        const res = await listerActivitesStrava(50);
+        // On charge 100 activités pour avoir un bon corpus à filtrer
+        const res = await listerActivitesStrava(100);
         const activities = res.activities || [];
 
         if (activities.length === 0) {
@@ -997,32 +1152,111 @@
           return;
         }
 
-        const dejaImportes = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
+        // Stocker pour filtrage
+        window.allStravaActivities = activities;
+        window.dejaImportesStrava = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
 
-        list.innerHTML = activities.map(a => {
-          const date = new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
-          const dureeMin = Math.round(a.duree_s / 60);
-          const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
-          const isImported = dejaImportes.has(String(a.id));
-          return `
-            <div class="strava-activity">
-              <div>
-                <div class="sa-name">${a.name}</div>
-                <div class="sa-meta">${a.type} · ${date}</div>
-              </div>
-              <div class="sa-stats">
-                ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
-                <span style="color:var(--text-3)">${dureeFmt}</span>
-              </div>
-              <button class="btn-import-sa" onclick="declencherImportStrava('${a.id}', this)" ${isImported ? 'disabled' : ''}>
-                ${isImported ? '✓ Importée' : 'Importer'}
-              </button>
+        // Render structure : barre de recherche + liste
+        list.innerHTML = `
+          <div class="strava-search">
+            <input type="text" class="search-name" id="stravaSearchName"
+                   placeholder="🔍 Rechercher par nom..."
+                   oninput="filtrerActivitesStrava()">
+            <div class="filter-group">
+              <span class="filter-label">Dist</span>
+              <input type="number" class="filter-num" id="stravaDistMin" placeholder="min" oninput="filtrerActivitesStrava()">
+              <span style="color:var(--text-3);">-</span>
+              <input type="number" class="filter-num" id="stravaDistMax" placeholder="max" oninput="filtrerActivitesStrava()">
+              <span class="filter-label">km</span>
             </div>
-          `;
-        }).join('');
+            <div class="filter-group">
+              <span class="filter-label">Période</span>
+              <select id="stravaPeriode" onchange="filtrerActivitesStrava()" style="width:120px;">
+                <option value="all">Tout</option>
+                <option value="3m">3 mois</option>
+                <option value="6m">6 mois</option>
+                <option value="1y">1 an</option>
+                <option value="2y">2 ans</option>
+              </select>
+            </div>
+            <button class="btn-ghost" onclick="resetFiltresStrava()" style="padding:8px 14px;font-size:11px;">Reset</button>
+            <div class="strava-search-count" id="stravaFilterCount"></div>
+          </div>
+          <div id="stravaActivitiesItems"></div>
+        `;
+
+        filtrerActivitesStrava();
       } catch (e) {
         list.innerHTML = `<p style="color:var(--danger);text-align:center;">Erreur : ${e.message}</p>`;
       }
+    }
+
+    function filtrerActivitesStrava() {
+      const acts = window.allStravaActivities || [];
+      const dejaImportes = window.dejaImportesStrava || new Set();
+
+      const nameQ = (document.getElementById('stravaSearchName')?.value || '').toLowerCase().trim();
+      const distMin = parseFloat(document.getElementById('stravaDistMin')?.value);
+      const distMax = parseFloat(document.getElementById('stravaDistMax')?.value);
+      const periode = document.getElementById('stravaPeriode')?.value || 'all';
+
+      let dateMin = null;
+      if (periode !== 'all') {
+        const now = new Date();
+        const map = { '3m': 3, '6m': 6, '1y': 12, '2y': 24 };
+        const months = map[periode] || 0;
+        dateMin = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+      }
+
+      const filtered = acts.filter(a => {
+        if (nameQ && !a.name.toLowerCase().includes(nameQ)) return false;
+        if (!isNaN(distMin) && a.distance_km < distMin) return false;
+        if (!isNaN(distMax) && a.distance_km > distMax) return false;
+        if (dateMin && new Date(a.date) < dateMin) return false;
+        return true;
+      });
+
+      const items = document.getElementById('stravaActivitiesItems');
+      const countEl = document.getElementById('stravaFilterCount');
+
+      if (countEl) {
+        countEl.textContent = `${filtered.length} activité${filtered.length>1?'s':''} sur ${acts.length} affichée${filtered.length>1?'s':''}`;
+      }
+
+      if (filtered.length === 0) {
+        items.innerHTML = `<p style="text-align:center;color:var(--text-3);padding:20px;">Aucune activité ne correspond à tes filtres.</p>`;
+        return;
+      }
+
+      items.innerHTML = filtered.map(a => {
+        const date = new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
+        const dureeMin = Math.round(a.duree_s / 60);
+        const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
+        const isImported = dejaImportes.has(String(a.id));
+        return `
+          <div class="strava-activity">
+            <div>
+              <div class="sa-name">${escapeHTML(a.name)}</div>
+              <div class="sa-meta">${a.type} · ${date}</div>
+            </div>
+            <div class="sa-stats">
+              ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
+              <span style="color:var(--text-3)">${dureeFmt}</span>
+            </div>
+            <button class="btn-import-sa" onclick="declencherImportStrava('${a.id}', this)" ${isImported ? 'disabled' : ''}>
+              ${isImported ? '✓ Importée' : 'Importer'}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function resetFiltresStrava() {
+      document.getElementById('stravaSearchName').value = '';
+      document.getElementById('stravaDistMin').value = '';
+      document.getElementById('stravaDistMax').value = '';
+      document.getElementById('stravaPeriode').value = 'all';
+      filtrerActivitesStrava();
     }
 
     function fermerModalStrava() {
