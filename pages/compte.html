@@ -445,6 +445,7 @@
 
   <script src="../js/api-client.js"></script>
   <script src="../js/nav-user.js"></script>
+  <script src="../js/onboarding.js"></script>
   <script>
 
     let currentUser = null;
@@ -550,6 +551,15 @@
               <button type="submit" class="btn-save" id="btnSave">Enregistrer</button>
             </div>
           </form>
+        </div>
+
+        <!-- TUTORIEL -->
+        <div class="compte-card">
+          <h3>🎓 Découvre SUM'IT</h3>
+          <p class="section-desc">Un tour guidé en 5 étapes pour bien démarrer (~2 min).</p>
+          <button class="btn-save" onclick="demarrerOnboarding()" style="background:var(--gradient-summit);">
+            ▶ Voir le tutoriel
+          </button>
         </div>
 
         <!-- STRAVA -->
