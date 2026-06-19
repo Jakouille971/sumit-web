@@ -426,7 +426,7 @@
 
     <div class="roadmap-timeline">
 
-      <!-- ══ V1 — ACTUELLE ══ -->
+      <!-- ══ V1 — EN LIGNE ══ -->
       <div class="roadmap-version">
         <div class="version-header">
           <div class="version-dot">
@@ -437,7 +437,7 @@
               Fondations
               <span class="version-tag tag-current">En ligne</span>
             </h3>
-            <div class="version-subtitle">L'algorithme de base — profil coureur et simulation de course</div>
+            <div class="version-subtitle">L'algorithme de base — profil coureur, simulation et imports</div>
           </div>
         </div>
         <div class="features-grid">
@@ -447,7 +447,7 @@
               <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <h4>Analyse GPX multi-traces</h4>
-            <p>Import de tes traces Garmin, Strava ou Komoot. Calcul de la VEP par terrain avec le modèle Minetti.</p>
+            <p>Import de tes traces avec calcul de la VEP par terrain via le modèle Minetti, et pondération par catégorie de course.</p>
           </div>
           <div class="feature-card cyan-card">
             <div class="feature-card-tag">Profil</div>
@@ -455,7 +455,7 @@
               <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
             <h4>Archétype coureur</h4>
-            <p>Grimpeur, Descendeur, Explosif, Équilibré, Tenace — ton profil type avec forces et axes de progression.</p>
+            <p>Grimpeur, Descendeur, Explosif, Équilibré, Tenace — ton profil type avec score de pente détaillé.</p>
           </div>
           <div class="feature-card cyan-card">
             <div class="feature-card-tag">Simulation</div>
@@ -466,33 +466,57 @@
             <p>Prédiction des temps de passage aux ravitaillements avec fourchette basse/haute et batterie énergétique.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Algorithme</div>
+            <div class="feature-card-tag">Comptes</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-            <h4>Modèle fatigue FC</h4>
-            <p>Coefficient course/entraînement calibré sur ta fréquence cardiaque réelle. Fatigue mécanique + batterie.</p>
+            <h4>Compte Google + persistance</h4>
+            <p>Connexion sécurisée avec Google. Ton profil trail/rando est sauvegardé et restauré à chaque visite.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Graphique</div>
+            <div class="feature-card-tag">Import</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             </div>
-            <h4>Profil de course coloré</h4>
-            <p>Graphique altimétrique coloré par allure, avec bulles ravitaillement et zones de difficulté.</p>
+            <h4>Import GPX & Strava</h4>
+            <p>Dropzone fichier GPX classique ou connexion directe à ton compte Strava avec recherche et filtres avancés.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Profil</div>
+            <div class="feature-card-tag">PDF</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
-            <h4>Double profil Trail / Rando</h4>
-            <p>Un profil trail running et un profil randonnée distincts, avec paramètres adaptés à chaque pratique.</p>
+            <h4>Export PDF</h4>
+            <p>Rapport complet de ta simulation avec graphique altimétrique, ravitos, profil coureur — à imprimer ou partager.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Simu</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <h4>Simulations épinglées</h4>
+            <p>Sauvegarde tes simulations importantes, ré-ouvre-les pour les recalculer avec ton profil mis à jour.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Terrain</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2l-7 11h14L12 2zM12 13l-7 9h14l-7-9z"/></svg>
+            </div>
+            <h4>Technicité OpenStreetMap</h4>
+            <p>Classification automatique du terrain (route, piste, sentier, montagne) affichée dans la tooltip du graphique.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Tour</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.6-8 11.6z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <h4>Onboarding guidé</h4>
+            <p>Un tour en 5 étapes pour découvrir SUM'IT : import → profil → simulation → épinglage. Accessible depuis Mon compte.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══ V2 — BIENTÔT ══ -->
+      <!-- ══ V2 — EN COURS DE DÉVELOPPEMENT ══ -->
       <div class="roadmap-version">
         <div class="version-header">
           <div class="version-dot gold">
@@ -500,63 +524,83 @@
           </div>
           <div class="version-info">
             <h3>
-              Enrichissement
-              <span class="version-tag tag-soon">Bientôt</span>
+              Comparaison & analyse
+              <span class="version-tag tag-soon">En cours</span>
             </h3>
-            <div class="version-subtitle">Plus de données, plus de précision, premiers exports</div>
+            <div class="version-subtitle">Comparer, suivre, analyser ta progression</div>
           </div>
         </div>
         <div class="features-grid">
           <div class="feature-card gold-card">
-            <div class="feature-card-tag">Export</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            </div>
-            <h4>Export PDF</h4>
-            <p>Télécharge un rapport complet de ta simulation — à imprimer le jour J ou partager avec ton coach.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Nutrition</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-            </div>
-            <h4>Conseils nutritionnels</h4>
-            <p>Apports caloriques et hydratation recommandés par tranche horaire selon ta batterie énergétique estimée.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Import</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-            </div>
-            <h4>Import automatique Strava</h4>
-            <p>Connexion directe à ton compte Strava — tes nouvelles activités sont importées automatiquement.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Import</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <h4>Import automatique Garmin</h4>
-            <p>Synchronisation avec Garmin Connect pour récupérer tes traces avec FC, cadence et puissance.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Météo</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/></svg>
-            </div>
-            <h4>Intégration météo</h4>
-            <p>Coefficient météo intégré à la simulation — chaleur, vent et altitude adaptent automatiquement les prédictions.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Analyse</div>
+            <div class="feature-card-tag">Comparaison</div>
             <div class="feature-card-icon">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
             </div>
-            <h4>Suivi de progression</h4>
-            <p>Graphiques d'évolution de tes scores au fil du temps — vois ta progression sur chaque type de terrain.</p>
+            <h4>Comparer mes simulations</h4>
+            <p>Sélectionne 2-3 sims épinglées et affiche-les côte à côte : graphiques superposés, KPIs comparés. Idéal pour planifier la saison.</p>
+          </div>
+          <div class="feature-card gold-card">
+            <div class="feature-card-tag">Statistiques</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            </div>
+            <h4>Stats globales coureur</h4>
+            <p>Évolution de ta VEP, ton drain énergétique et ton coefficient course sur 12 mois. Vois ta progression dans le temps.</p>
+          </div>
+          <div class="feature-card gold-card">
+            <div class="feature-card-tag">Apprentissage</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h4>Réel vs prédit</h4>
+            <p>Importe ta course finie et compare les temps réels avec ceux prédits. L'algo s'auto-calibre pour devenir plus précis.</p>
           </div>
         </div>
       </div>
+
+      <!-- ══ V3 — À VENIR ══ -->
+      <div class="roadmap-version">
+        <div class="version-header">
+          <div class="version-dot slate">
+            <div class="version-dot-text">V3</div>
+          </div>
+          <div class="version-info">
+            <h3>
+              Partage & mobile
+              <span class="version-tag tag-future">À venir</span>
+            </h3>
+            <div class="version-subtitle">Rendre SUM'IT social et utilisable le jour J</div>
+          </div>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card slate-card">
+            <div class="feature-card-tag">Social</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </div>
+            <h4>Partage public d'une simulation</h4>
+            <p>Génère un lien public partageable pour montrer ta simulation à tes amis, ton coach ou sur les réseaux. Pas besoin de compte côté lecteur.</p>
+          </div>
+          <div class="feature-card slate-card">
+            <div class="feature-card-tag">Mobile</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+            <h4>Mode "Race Day" mobile</h4>
+            <p>Le jour J, sors le téléphone : affichage en direct de tes objectifs de passage par km avec batterie restante. Utilisable en course.</p>
+          </div>
+          <div class="feature-card slate-card">
+            <div class="feature-card-tag">App</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="3" ry="3"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+            </div>
+            <h4>Application mobile native</h4>
+            <p>Version iOS et Android pour avoir SUM'IT toujours à portée de main, avec notifications et mode hors-ligne.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
 
 </div>
   </div>
@@ -624,5 +668,6 @@ function sInscrire() {
 
   <script src="/js/api-client.js"></script>
   <script src="/js/nav-user.js"></script>
+  <script src="../js/onboarding.js"></script>
 </body>
 </html>
