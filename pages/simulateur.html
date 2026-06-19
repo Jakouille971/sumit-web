@@ -182,6 +182,51 @@
       display: inline-flex; align-items: center; gap: 10px;
       box-shadow: 0 4px 14px rgba(255, 200, 87, 0.20);
     }
+
+    /* ── Toggle Profil Trail/Rando ── */
+    .profil-toggle-btn {
+      flex: 1;
+      background: var(--bg-3);
+      border: 1px solid var(--line-2);
+      color: var(--text-2);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 9px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .profil-toggle-btn:hover { color: var(--text); border-color: var(--text-3); }
+    .profil-toggle-btn.active {
+      background: var(--sun-soft);
+      border-color: var(--sun);
+      color: var(--sun);
+    }
+
+    /* ── Bouton Épingler simulation ── */
+    .btn-pin {
+      background: transparent;
+      color: var(--sun);
+      font-family: var(--font-display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 14px 22px; border: 1px solid var(--sun); border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      margin-left: 10px;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: all 0.2s;
+    }
+    .btn-pin:hover { background: var(--sun-soft); transform: translateY(-1px); }
+    .btn-pin.pinned {
+      background: var(--gradient-summit);
+      color: var(--bg);
+      border: none;
+    }
+    .btn-pin:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-pin svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
     .btn-pdf:hover { transform: translateY(-1px); opacity: 0.95; box-shadow: 0 6px 20px rgba(255, 200, 87, 0.30); }
     .btn-pdf svg { width: 15px; height: 15px; stroke: var(--bg); fill: none; stroke-width: 2; }
 
@@ -358,6 +403,23 @@
 <div class="sim-layout">
   <!-- Sidebar -->
   <div class="sim-sidebar">
+
+    <!-- Sélecteur profil Trail/Rando -->
+    <div class="step-block" id="profilSelector" style="display:none;">
+      <div class="step-header">
+        <div class="step-num" style="background:var(--sun-soft);color:var(--sun);">★</div>
+        <div>
+          <div class="step-title">Profil utilisé</div>
+          <div class="step-desc">Quel profil veux-tu utiliser pour cette simulation ?</div>
+        </div>
+      </div>
+      <div class="profil-toggle-row" style="display:flex;gap:6px;margin-top:8px;">
+        <button class="profil-toggle-btn active" data-type="trail" onclick="switchProfilSim('trail')">🏃 Trail</button>
+        <button class="profil-toggle-btn" data-type="rando" onclick="switchProfilSim('rando')">🥾 Rando</button>
+      </div>
+      <div id="profilSelectorInfo" style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.5;"></div>
+    </div>
+
     <div class="step-block">
       <div class="step-header">
         <div class="step-num">1</div>
@@ -455,6 +517,11 @@
       <button class="btn-pdf" onclick="genererPDF()">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Télécharger en PDF
+      </button>
+
+      <button class="btn-pin" id="btnPin" onclick="epinglerSimulationActuelle()" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span id="btnPinLabel">Épingler cette simulation</span>
       </button>
 
       <div class="result-kpis">
@@ -655,8 +722,73 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Charger le profil sauvegardé dans la sidebar
-  afficherProfilSidebar();
+  initSimulateur();
 });
+
+// ── Profil utilisé : Trail / Rando ─────────────────────────────────
+let currentSimProfilType = 'trail';
+
+async function initSimulateur() {
+  // Si connecté → afficher le sélecteur de profil et charger les profils
+  if (isLoggedIn()) {
+    document.getElementById('profilSelector').style.display = 'block';
+
+    try {
+      const user = await fetchMe();
+      const trail = user.profiles.find(p => p.type === 'trail');
+      const rando = user.profiles.find(p => p.type === 'rando');
+
+      // Au chargement, on prend trail par défaut (sauf si trail vide et rando OK)
+      if (!trail && rando) currentSimProfilType = 'rando';
+      else currentSimProfilType = 'trail';
+
+      // Mettre à jour les boutons
+      document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === currentSimProfilType);
+      });
+
+      // Indiquer s'il manque un profil
+      const info = document.getElementById('profilSelectorInfo');
+      if (!trail && !rando) {
+        info.innerHTML = '⚠️ Aucun profil. <a href="profil.html" style="color:var(--sun);">Crée-en un</a> pour utiliser le simulateur.';
+      } else if (currentSimProfilType === 'trail' && !trail) {
+        info.innerHTML = '⚠️ Profil Trail vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Rando.';
+      } else if (currentSimProfilType === 'rando' && !rando) {
+        info.innerHTML = '⚠️ Profil Rando vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Trail.';
+      } else {
+        info.innerHTML = '';
+      }
+
+      // Charger le profil depuis BDD
+      await chargerProfilActuel(currentSimProfilType);
+    } catch (e) {
+      console.warn('Erreur chargement profils:', e);
+    }
+  }
+
+  afficherProfilSidebar();
+}
+
+async function switchProfilSim(type) {
+  currentSimProfilType = type;
+  document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  try {
+    await chargerProfilActuel(type);
+
+    // Re-check si le profil a été chargé ou est vide
+    const user = await fetchMe();
+    const p = user.profiles.find(pp => pp.type === type);
+    const info = document.getElementById('profilSelectorInfo');
+    if (!p) {
+      info.innerHTML = `⚠️ Profil ${type === 'trail' ? 'Trail' : 'Rando'} vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a>.`;
+    } else {
+      info.innerHTML = '';
+    }
+  } catch (e) { console.warn(e); }
+  afficherProfilSidebar();
+}
 
 // ── Chargement du fichier ──────────────────────────────────────────
 function chargerFichier(file) {
@@ -736,6 +868,17 @@ async function lancerSimulation() {
 function afficherResultats(data) {
   document.getElementById('emptyStateSim').style.display = 'none';
   document.getElementById('simResults').style.display    = 'block';
+
+  // Bouton Épingler visible seulement si connecté
+  const btnPin = document.getElementById('btnPin');
+  if (isLoggedIn()) {
+    btnPin.style.display = 'inline-flex';
+    btnPin.classList.remove('pinned');
+    btnPin.disabled = false;
+    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+  } else {
+    btnPin.style.display = 'none';
+  }
 
   // KPIs
   document.getElementById('resTemps').textContent  = data.temps_fmt || '—';
@@ -1701,6 +1844,55 @@ function envoyerAvis() {
       setTimeout(fermerModal, 2500);
     })
     .catch(err => alert("Erreur d'envoi : " + err.message));
+}
+
+// ── Épingler la simulation actuelle ──────────────────────────────
+async function epinglerSimulationActuelle() {
+  if (!isLoggedIn()) {
+    alert('Connecte-toi pour épingler des simulations.');
+    return;
+  }
+  if (!window.lastSimData) {
+    alert('Lance une simulation avant.');
+    return;
+  }
+
+  const nomDefault = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+  const nom = prompt('Nom de la simulation à épingler :', nomDefault);
+  if (!nom || !nom.trim()) return;
+
+  const btn = document.getElementById('btnPin');
+  btn.disabled = true;
+  document.getElementById('btnPinLabel').textContent = 'Enregistrement...';
+
+  try {
+    const data = window.lastSimData;
+    const simPayload = {
+      distance_km:   data.distance_km,
+      dplus_m:       data.dplus_m,
+      temps_total_s: data.temps_total_s,
+      temps_fmt:     data.temps_fmt,
+      allure_moy:    data.allure_moy,
+      categorie:     data.categorie,
+      batt_finale:   data.batt_finale,
+      fourchettes:   data.fourchettes ? {
+        bas: data.fourchettes.bas,
+        haut: data.fourchettes.haut,
+      } : null,
+    };
+
+    await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload);
+
+    btn.classList.add('pinned');
+    document.getElementById('btnPinLabel').textContent = '✓ Épinglée';
+    setTimeout(() => {
+      document.getElementById('btnPinLabel').textContent = '✓ Épinglée dans Mon compte';
+    }, 800);
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+    btn.disabled = false;
+    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+  }
 }
 </script>
 
