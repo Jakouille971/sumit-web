@@ -7,329 +7,241 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    /* === Mon Compte === */
+    /* === Layout === */
     .compte-section {
-      padding: 60px 80px 100px;
-      max-width: 1280px;
+      padding: 50px 80px 100px;
+      max-width: 1100px;
       margin: 0 auto;
       position: relative;
       z-index: 2;
     }
 
-    .compte-grid {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 32px;
-      align-items: start;
-    }
-
-    /* Sidebar profil */
-    .compte-sidebar {
-      position: sticky;
-      top: 90px;
-    }
-    .compte-card {
+    /* === Header utilisateur === */
+    .compte-header {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 28px;
       background: var(--bg-2);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 16px;
+      margin-bottom: 28px;
     }
-    .compte-avatar-big {
-      width: 80px; height: 80px;
+    .compte-header-avatar {
+      width: 84px; height: 84px;
       border-radius: 50%;
       background: var(--gradient-summit);
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-display);
       font-size: 32px; font-weight: 700;
       color: var(--bg);
-      margin: 0 auto 16px;
+      flex-shrink: 0;
       overflow: hidden;
     }
-    .compte-avatar-big img { width: 100%; height: 100%; object-fit: cover; }
-
-    .compte-name {
-      font-family: var(--font-display);
-      font-size: 22px; font-weight: 600;
-      color: var(--text);
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .compte-email {
-      font-size: 12px;
-      color: var(--text-3);
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
-    .compte-stat {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-top: 1px solid var(--line);
-      font-size: 12px;
-    }
-    .compte-stat-label { color: var(--text-3); }
-    .compte-stat-val {
-      color: var(--text);
-      font-family: var(--font-display);
-      font-weight: 600;
-    }
-
-    .btn-logout {
-      width: 100%;
-      background: transparent;
-      color: var(--text-2);
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 10px;
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 8px;
-    }
-    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
-
-    /* Onglets Trail/Rando */
-    .profil-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      border-bottom: 1px solid var(--line);
-    }
-    .profil-tab {
-      font-family: var(--font-display);
-      font-size: 14px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--text-3);
-      padding: 12px 24px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-    }
-    .profil-tab:hover { color: var(--text-2); }
-    .profil-tab.active {
-      color: var(--sun);
-      border-bottom-color: var(--sun);
-    }
-
-    /* Section principale */
-    .compte-main h2 {
+    .compte-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .compte-header-info { flex: 1; }
+    .compte-header-name {
       font-family: var(--font-display);
       font-size: 28px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-    .compte-main .section-desc {
-      color: var(--text-2);
-      font-size: 14px;
-      margin-bottom: 24px;
-    }
-
-    /* Cards info profil */
-    .profil-summary {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 32px;
-    }
-    .profil-summary-card {
-      background: var(--bg-2);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 18px;
-    }
-    .ps-label {
-      font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-3);
-      margin-bottom: 6px;
-    }
-    .ps-val {
-      font-family: var(--font-display);
-      font-size: 22px;
       font-weight: 700;
       color: var(--text);
+      letter-spacing: 0.02em;
     }
-    .ps-val.gradient {
-      background: var(--gradient-summit);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .ps-sub {
-      font-size: 11px;
+    .compte-header-email {
+      font-size: 13px;
       color: var(--text-3);
-      margin-top: 2px;
+      margin-top: 4px;
+    }
+    .compte-header-stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 16px;
+    }
+    .compte-header-stat {
+      font-size: 12px;
+      color: var(--text-2);
+    }
+    .compte-header-stat strong {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
     }
 
-    /* Section import */
-    .import-section {
+    /* === Sections === */
+    .compte-card {
       background: var(--bg-2);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 32px;
+      padding: 28px;
+      margin-bottom: 24px;
     }
-    .import-grid {
+    .compte-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .compte-card h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .compte-card .section-desc {
+      font-size: 13px;
+      color: var(--text-3);
+      margin-bottom: 20px;
+    }
+
+    /* === Form réglages === */
+    .settings-form {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    .import-card {
-      background: var(--bg);
-      border: 1.5px dashed var(--line-2);
-      border-radius: 6px;
-      padding: 28px;
-      text-align: center;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    .import-card:hover {
-      border-color: var(--sun);
-      background: rgba(255, 200, 87, 0.03);
-    }
-    .import-card .icon {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 200, 87, 0.12);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 12px;
-    }
-    .import-card .icon svg {
-      width: 22px; height: 22px;
-      stroke: var(--sun); fill: none; stroke-width: 1.8;
-    }
-    .import-card.strava .icon {
-      background: rgba(252, 76, 2, 0.12);
-    }
-    .import-card.strava .icon svg { stroke: #FC4C02; }
-    .import-card h4 {
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+    .form-field label {
       font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-      letter-spacing: 0.02em;
-    }
-    .import-card p {
-      font-size: 12px;
-      color: var(--text-3);
-    }
-    .strava-status {
       font-size: 11px;
-      color: var(--leaf);
-      margin-top: 6px;
-      display: none;
+      color: var(--text-3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
-    .strava-status.connected { display: block; }
-
-    /* Liste activités */
-    .activites-list {
-      background: var(--bg-2);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      overflow: hidden;
+    .form-field input {
+      background: var(--bg);
+      border: 1px solid var(--line-2);
+      color: var(--text);
+      padding: 10px 14px;
+      font-size: 14px;
+      border-radius: 4px;
+      outline: none;
     }
-    .activites-header {
-      padding: 18px 24px;
+    .form-field input:focus {
+      border-color: var(--sun);
+      box-shadow: 0 0 0 2px rgba(255, 200, 87, 0.10);
+    }
+    .form-row-actions {
+      grid-column: 1 / -1;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--line);
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
     }
-    .activites-header h3 {
+    .btn-save {
+      background: var(--gradient-summit);
+      color: var(--bg);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 12px 26px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .btn-save:hover { transform: translateY(-1px); opacity: 0.95; }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .save-feedback {
+      font-size: 12px;
+      color: var(--leaf);
+      align-self: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .save-feedback.show { opacity: 1; }
+
+    /* === Carte Strava === */
+    .strava-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    .strava-logo {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      background: rgba(252, 76, 2, 0.12);
+      border: 1px solid rgba(252, 76, 2, 0.3);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .strava-logo svg {
+      width: 28px; height: 28px;
+      fill: none; stroke: #FC4C02; stroke-width: 1.8;
+    }
+    .strava-info { flex: 1; }
+    .strava-info h4 {
       font-family: var(--font-display);
       font-size: 16px;
       color: var(--text);
-      letter-spacing: 0.04em;
+      letter-spacing: 0.02em;
     }
-    .activite-row {
-      display: grid;
-      grid-template-columns: 30px 1fr auto auto auto auto;
-      gap: 16px;
-      align-items: center;
-      padding: 14px 24px;
-      border-bottom: 1px solid var(--line);
-      transition: background 0.2s;
-    }
-    .activite-row:last-child { border-bottom: none; }
-    .activite-row:hover { background: var(--bg-3); }
-    .source-badge {
-      width: 28px; height: 28px;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px;
-      font-family: var(--font-display);
-      font-weight: 700;
-    }
-    .source-badge.manual { background: rgba(255, 200, 87, 0.15); color: var(--sun); }
-    .source-badge.strava { background: rgba(252, 76, 2, 0.15); color: #FC4C02; }
-    .activite-name {
-      font-size: 13px;
-      color: var(--text);
-      font-weight: 500;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .activite-meta {
-      font-family: var(--font-display);
+    .strava-info p {
       font-size: 12px;
-      color: var(--text-2);
-      min-width: 60px;
-      text-align: right;
+      color: var(--text-3);
+      margin-top: 4px;
     }
-    .activite-type-tag {
+    .strava-status-badge {
       font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 4px 8px;
-      border-radius: 3px;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+    .strava-status-badge.connected {
+      background: rgba(107, 179, 107, 0.15);
+      color: var(--leaf);
+      border: 1px solid rgba(107, 179, 107, 0.4);
+    }
+    .strava-status-badge.disconnected {
+      background: rgba(110, 106, 94, 0.15);
+      color: var(--text-2);
       border: 1px solid var(--line-2);
     }
-    .activite-type-tag.course { color: var(--sun); border-color: rgba(255, 200, 87, 0.4); background: rgba(255, 200, 87, 0.08); }
-    .activite-type-tag.entrainement { color: var(--leaf); border-color: rgba(107, 179, 107, 0.4); background: rgba(107, 179, 107, 0.08); }
-    .activite-type-tag.sortie { color: var(--sky); border-color: rgba(79, 163, 217, 0.4); background: rgba(79, 163, 217, 0.08); }
-    .btn-delete {
-      background: transparent;
-      border: 1px solid var(--line);
-      color: var(--text-3);
-      padding: 6px 8px;
+    .btn-strava-action {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 10px 18px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .btn-delete:hover { border-color: var(--danger); color: var(--danger); }
-    .btn-delete svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
-
-    .activites-empty {
-      padding: 40px 24px;
-      text-align: center;
-      color: var(--text-3);
-      font-size: 13px;
+    .btn-strava-connect {
+      background: #FC4C02;
+      color: white;
+      border: none;
+    }
+    .btn-strava-connect:hover { opacity: 0.9; }
+    .btn-strava-disconnect {
+      background: transparent;
+      color: var(--text-2);
+      border: 1px solid var(--line-2);
+    }
+    .btn-strava-disconnect:hover {
+      border-color: var(--danger);
+      color: var(--danger);
     }
 
-    /* Simulations épinglées */
+    /* === Simulations épinglées === */
     .sims-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 14px;
     }
     .sim-card {
-      background: var(--bg-2);
+      background: var(--bg);
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 20px;
@@ -349,6 +261,7 @@
       font-weight: 600;
       color: var(--text);
       letter-spacing: 0.02em;
+      padding-right: 30px;
     }
     .sim-card-date {
       font-size: 11px;
@@ -373,101 +286,74 @@
       font-family: var(--font-display);
       letter-spacing: 0.04em;
     }
-
-    /* Modale Strava */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-      background: var(--bg);
-      border: 1px solid var(--line-2);
-      border-radius: 8px;
-      max-width: 700px;
-      width: 100%;
-      max-height: 80vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .modal-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-header h3 {
+    .sim-card-profile-tag {
       font-family: var(--font-display);
-      font-size: 20px;
-      color: var(--text);
-    }
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--text-2);
-      cursor: pointer;
-      font-size: 24px;
-      line-height: 1;
-    }
-    .modal-body {
-      padding: 20px 24px;
-      overflow-y: auto;
-      flex: 1;
-    }
-    .strava-activity {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 16px;
-      align-items: center;
-      padding: 14px;
-      background: var(--bg-2);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      margin-bottom: 8px;
-      transition: all 0.2s;
-    }
-    .strava-activity:hover { border-color: var(--sun); }
-    .sa-name {
-      font-size: 13px;
-      color: var(--text);
-      font-weight: 500;
-    }
-    .sa-meta {
-      font-family: var(--font-display);
-      font-size: 12px;
-      color: var(--text-3);
-      margin-top: 2px;
-    }
-    .sa-stats {
-      font-family: var(--font-display);
-      font-size: 12px;
-      color: var(--text-2);
-      text-align: right;
-    }
-    .btn-import-sa {
-      background: var(--gradient-summit);
-      color: var(--bg);
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 8px 14px;
-      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      border: 1px solid;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .sim-card-profile-tag.trail {
+      color: var(--sun);
+      border-color: rgba(255, 200, 87, 0.4);
+      background: rgba(255, 200, 87, 0.08);
+    }
+    .sim-card-profile-tag.rando {
+      color: var(--sky);
+      border-color: rgba(79, 163, 217, 0.4);
+      background: rgba(79, 163, 217, 0.08);
+    }
+    .btn-delete-sim {
+      position: absolute;
+      top: 14px; right: 14px;
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text-3);
+      padding: 6px 8px;
       border-radius: 4px;
       cursor: pointer;
+      transition: all 0.2s;
     }
-    .btn-import-sa:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-delete-sim:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-delete-sim svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
+    .sims-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 32px;
+      color: var(--text-3);
+      font-size: 13px;
+    }
 
-    /* Login required */
+    /* === Zone danger === */
+    .danger-zone {
+      border-color: rgba(229, 91, 91, 0.3) !important;
+    }
+    .danger-zone h3 { color: var(--danger); }
+    .btn-logout {
+      background: transparent;
+      color: var(--text-2);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      border: 1px solid var(--line-2);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* === Login required === */
     .login-required {
       text-align: center;
       padding: 100px 40px;
@@ -483,22 +369,17 @@
       margin-bottom: 32px;
     }
 
-    @media (max-width: 900px) {
-      .compte-grid { grid-template-columns: 1fr; }
-      .compte-sidebar { position: relative; top: 0; }
-      .profil-summary { grid-template-columns: 1fr 1fr; }
-      .import-grid { grid-template-columns: 1fr; }
-      .compte-section { padding: 40px 24px; }
-      .activite-row { grid-template-columns: 30px 1fr auto; gap: 10px; }
-      .activite-meta:nth-child(4), .activite-meta:nth-child(5), .activite-type-tag { display: none; }
+    @media (max-width: 768px) {
+      .compte-section { padding: 30px 24px; }
+      .compte-header { flex-direction: column; text-align: center; }
+      .settings-form { grid-template-columns: 1fr; }
+      .strava-card { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       NAVIGATION
-       ══════════════════════════════════════════════════════════════ -->
+  <!-- ══ Nav ══ -->
   <nav class="nav">
     <a href="/" class="nav-logo">
       <div class="nav-logo-icon">S</div>
@@ -516,42 +397,21 @@
     </div>
   </nav>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       PAGE HERO
-       ══════════════════════════════════════════════════════════════ -->
+  <!-- ══ Hero ══ -->
   <section class="page-hero">
     <div class="page-hero-content">
       <div class="section-tag">Mon espace</div>
       <h1>Mon <em>compte</em></h1>
-      <p>Gère ton profil coureur, tes activités et tes simulations enregistrées.</p>
+      <p>Réglages, connexions et historique de tes simulations.</p>
     </div>
   </section>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       CONTENU PRINCIPAL
-       ══════════════════════════════════════════════════════════════ -->
+  <!-- ══ Contenu ══ -->
   <section class="compte-section" id="compteSection">
-    <!-- Sera rempli dynamiquement -->
+    <!-- Rempli dynamiquement -->
   </section>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       MODALE IMPORT STRAVA
-       ══════════════════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modalStrava">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>📥 Importer depuis Strava</h3>
-        <button class="modal-close" onclick="fermerModalStrava()">×</button>
-      </div>
-      <div class="modal-body" id="stravaActivitiesList">
-        <p style="text-align:center;color:var(--text-3)">Chargement des activités...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       FOOTER
-       ══════════════════════════════════════════════════════════════ -->
+  <!-- ══ Footer ══ -->
   <footer class="footer">
     <div>
       <div class="footer-logo">SUM<span>'IT</span></div>
@@ -560,16 +420,11 @@
     <div class="footer-copy">© 2025 SUM'IT — Beta</div>
   </footer>
 
-  <!-- ══════════════════════════════════════════════════════════════
-       SCRIPTS
-       ══════════════════════════════════════════════════════════════ -->
   <script src="../js/api-client.js"></script>
   <script src="../js/nav-user.js"></script>
   <script>
 
-    let currentProfilType = 'trail';
     let currentUser = null;
-    let currentActivites = [];
     let currentSimulations = [];
 
     // ── Init ────────────────────────────────────────────────────
@@ -580,7 +435,7 @@
         section.innerHTML = `
           <div class="login-required">
             <h2>Connecte-toi pour accéder à ton compte</h2>
-            <p>Sauvegarde ton profil coureur et tes simulations en un clic.</p>
+            <p>Réglages, Strava, et tes simulations épinglées.</p>
             <button class="btn-primary" onclick="loginGoogle()" style="font-size:14px;">
               Se connecter avec Google
             </button>
@@ -589,366 +444,171 @@
         return;
       }
 
-      // Vérifier le retour Strava
+      // Vérifier les retours OAuth Strava
       const params = new URLSearchParams(window.location.search);
       if (params.get('strava_connected') === '1') {
         setTimeout(() => alert('✅ Compte Strava connecté avec succès !'), 200);
-        const url = new URL(window.location);
-        url.searchParams.delete('strava_connected');
-        window.history.replaceState({}, '', url.toString());
+        cleanURL(['strava_connected']);
       }
       const stravaError = params.get('strava_error');
       if (stravaError) {
         setTimeout(() => alert(`❌ Erreur Strava : ${stravaError}`), 200);
-        const url = new URL(window.location);
-        url.searchParams.delete('strava_error');
-        window.history.replaceState({}, '', url.toString());
+        cleanURL(['strava_error']);
       }
 
       try {
         currentUser = await fetchMe();
-        renderUI();
-        await refreshActivites();
         await refreshSimulations();
+        renderUI();
       } catch (e) {
         section.innerHTML = `<p style="text-align:center;color:var(--danger)">Erreur : ${e.message}</p>`;
       }
     })();
 
+    function cleanURL(paramsToRemove) {
+      const url = new URL(window.location);
+      paramsToRemove.forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url.toString());
+    }
+
     // ── Render UI ──────────────────────────────────────────────
     function renderUI() {
       const section = document.getElementById('compteSection');
-      const prenom = currentUser.prenom || 'Coureur';
+      const prenom = currentUser.prenom || currentUser.name?.split(' ')[0] || 'Coureur';
       const initiale = prenom[0]?.toUpperCase() || 'C';
+
       const profilTrail = currentUser.profiles.find(p => p.type === 'trail');
       const profilRando = currentUser.profiles.find(p => p.type === 'rando');
-      const profilActuel = currentProfilType === 'trail' ? profilTrail : profilRando;
+      const nbActivitesTrail = profilTrail?.nb_traces || 0;
+      const nbActivitesRando = profilRando?.nb_traces || 0;
+      const totalActivites = nbActivitesTrail + nbActivitesRando;
 
       section.innerHTML = `
-        <div class="compte-grid">
-          <!-- SIDEBAR -->
-          <aside class="compte-sidebar">
-            <div class="compte-card">
-              <div class="compte-avatar-big">
-                ${currentUser.picture ? `<img src="${currentUser.picture}">` : initiale}
+        <!-- HEADER UTILISATEUR -->
+        <div class="compte-header">
+          <div class="compte-header-avatar">
+            ${currentUser.picture ? `<img src="${currentUser.picture}">` : initiale}
+          </div>
+          <div class="compte-header-info">
+            <div class="compte-header-name">${escapeHTML(prenom)}</div>
+            <div class="compte-header-email">${escapeHTML(currentUser.email)}</div>
+            <div class="compte-header-stats">
+              <div class="compte-header-stat">
+                <strong>${totalActivites}</strong>
+                Activités importées
               </div>
-              <div class="compte-name">${prenom}</div>
-              <div class="compte-email">${currentUser.email}</div>
-
-              <div class="compte-stat">
-                <span class="compte-stat-label">FC max</span>
-                <span class="compte-stat-val">${currentUser.fcmax} bpm</span>
+              <div class="compte-header-stat">
+                <strong>${currentUser.profiles.length}</strong>
+                Profil${currentUser.profiles.length>1?'s':''} actif${currentUser.profiles.length>1?'s':''}
               </div>
-              <div class="compte-stat">
-                <span class="compte-stat-label">Profils</span>
-                <span class="compte-stat-val">${currentUser.profiles.length} / 2</span>
-              </div>
-              <div class="compte-stat">
-                <span class="compte-stat-label">Strava</span>
-                <span class="compte-stat-val" style="color:${currentUser.strava_connected ? 'var(--leaf)' : 'var(--text-3)'}">
-                  ${currentUser.strava_connected ? '✓ Connecté' : 'Non lié'}
-                </span>
-              </div>
-
-              <button class="btn-logout" onclick="logout()">Se déconnecter</button>
-            </div>
-          </aside>
-
-          <!-- MAIN -->
-          <div class="compte-main">
-            <!-- Tabs Trail/Rando -->
-            <div class="profil-tabs">
-              <div class="profil-tab ${currentProfilType==='trail'?'active':''}" onclick="switchTab('trail')">🏃 Trail / Course</div>
-              <div class="profil-tab ${currentProfilType==='rando'?'active':''}" onclick="switchTab('rando')">🥾 Randonnée</div>
-            </div>
-
-            <!-- Résumé profil -->
-            ${profilActuel ? `
-              <div class="profil-summary">
-                <div class="profil-summary-card">
-                  <div class="ps-label">VEP Globale</div>
-                  <div class="ps-val gradient">${profilActuel.vep_globale.toFixed(1)}</div>
-                  <div class="ps-sub">km/h éq. plat</div>
-                </div>
-                <div class="profil-summary-card">
-                  <div class="ps-label">Activités</div>
-                  <div class="ps-val">${profilActuel.nb_traces}</div>
-                  <div class="ps-sub">traces analysées</div>
-                </div>
-                <div class="profil-summary-card">
-                  <div class="ps-label">Drain énergie</div>
-                  <div class="ps-val">${(profilActuel.drain_moy_h*100).toFixed(1)}</div>
-                  <div class="ps-sub">% / heure</div>
-                </div>
-                <div class="profil-summary-card">
-                  <div class="ps-label">Coef course</div>
-                  <div class="ps-val">×${profilActuel.coefficient_course.toFixed(2)}</div>
-                  <div class="ps-sub">vs entraînement</div>
-                </div>
-              </div>
-            ` : `
-              <div class="profil-summary-card" style="text-align:center;padding:32px;margin-bottom:32px;">
-                <p style="color:var(--text-2)">Aucun profil ${currentProfilType==='trail'?'trail':'randonnée'} pour l'instant.</p>
-                <p style="font-size:12px;color:var(--text-3);margin-top:8px;">Importe au moins une activité pour créer ton profil.</p>
-              </div>
-            `}
-
-            <!-- IMPORT -->
-            <div class="import-section">
-              <h3 style="font-family:var(--font-display);font-size:16px;color:var(--text);margin-bottom:14px;letter-spacing:0.04em;">
-                ➕ Ajouter une activité ${currentProfilType==='trail' ? 'trail' : 'randonnée'}
-              </h3>
-              <div class="import-grid">
-                <div class="import-card" onclick="document.getElementById('gpxFileInput').click()">
-                  <div class="icon">
-                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                  </div>
-                  <h4>Import GPX</h4>
-                  <p>Glisse ou clique pour uploader un fichier GPX</p>
-                  <input type="file" id="gpxFileInput" accept=".gpx" style="display:none" onchange="handleGPXUpload(event)">
-                </div>
-                <div class="import-card strava" onclick="handleStravaClick()">
-                  <div class="icon">
-                    <svg viewBox="0 0 24 24"><path d="M12 1l9 16-9 6-9-6 9-16z"/></svg>
-                  </div>
-                  <h4>Import Strava</h4>
-                  <p>${currentUser.strava_connected ? 'Choisir parmi tes activités Strava' : 'Connecter ton compte Strava'}</p>
-                  <p class="strava-status ${currentUser.strava_connected?'connected':''}">✓ Strava connecté</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- LISTE ACTIVITÉS -->
-            <div class="activites-list" style="margin-bottom:32px;">
-              <div class="activites-header">
-                <h3>📂 Mes activités ${currentProfilType==='trail' ? 'trail' : 'randonnée'}</h3>
-                <span style="color:var(--text-3);font-size:12px;font-family:var(--font-display);" id="activitesCount">— activités</span>
-              </div>
-              <div id="activitesContainer">
-                <div class="activites-empty">Chargement...</div>
-              </div>
-            </div>
-
-            <!-- SIMULATIONS ÉPINGLÉES -->
-            <div>
-              <h3 style="font-family:var(--font-display);font-size:16px;color:var(--text);margin-bottom:14px;letter-spacing:0.04em;">
-                ⭐ Mes simulations épinglées
-              </h3>
-              <div id="simsContainer" class="sims-grid">
-                <div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-3);font-size:13px;">Chargement...</div>
+              <div class="compte-header-stat">
+                <strong>${currentSimulations.length}</strong>
+                Simulation${currentSimulations.length>1?'s':''} épinglée${currentSimulations.length>1?'s':''}
               </div>
             </div>
           </div>
         </div>
+
+        <!-- RÉGLAGES -->
+        <div class="compte-card">
+          <h3>⚙️ Réglages du compte</h3>
+          <p class="section-desc">Personnalise ton profil et tes paramètres physiologiques.</p>
+          <form class="settings-form" onsubmit="event.preventDefault(); sauvegarderReglages();">
+            <div class="form-field">
+              <label for="setPrenom">Prénom (utilisé dans les PDFs)</label>
+              <input type="text" id="setPrenom" value="${escapeHTML(currentUser.prenom || '')}" maxlength="50">
+            </div>
+            <div class="form-field">
+              <label for="setFcmax">FC max (battements/min)</label>
+              <input type="number" id="setFcmax" value="${currentUser.fcmax}" min="100" max="250">
+            </div>
+            <div class="form-row-actions">
+              <span class="save-feedback" id="saveFeedback">✓ Enregistré</span>
+              <button type="submit" class="btn-save" id="btnSave">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- STRAVA -->
+        <div class="compte-card">
+          <h3>🔗 Connexions externes</h3>
+          <p class="section-desc">Lie tes comptes pour importer tes activités automatiquement.</p>
+          <div class="strava-card">
+            <div class="strava-logo">
+              <svg viewBox="0 0 24 24"><path d="M12 1l9 16-9 6-9-6 9-16z"/></svg>
+            </div>
+            <div class="strava-info">
+              <h4>Strava</h4>
+              <p>${currentUser.strava_connected
+                ? 'Importe tes activités directement depuis Strava sur la page Profil.'
+                : 'Connecte ton compte Strava pour pouvoir importer tes activités.'}</p>
+              <div style="margin-top:8px;">
+                <span class="strava-status-badge ${currentUser.strava_connected?'connected':'disconnected'}">
+                  ${currentUser.strava_connected ? '✓ Connecté' : 'Non lié'}
+                </span>
+              </div>
+            </div>
+            <div>
+              ${currentUser.strava_connected
+                ? `<button class="btn-strava-action btn-strava-disconnect" onclick="deconnecterStravaAction()">Déconnecter</button>`
+                : `<button class="btn-strava-action btn-strava-connect" onclick="loginStrava()">Connecter Strava</button>`}
+            </div>
+          </div>
+        </div>
+
+        <!-- SIMULATIONS ÉPINGLÉES -->
+        <div class="compte-card">
+          <div class="compte-card-header">
+            <h3>⭐ Simulations épinglées</h3>
+            <span style="color:var(--text-3);font-size:12px;font-family:var(--font-display);">${currentSimulations.length} / 20</span>
+          </div>
+          <p class="section-desc">Tes simulations sauvegardées pour les retrouver facilement.</p>
+          <div id="simsContainer" class="sims-grid">
+            ${renderSimulations()}
+          </div>
+        </div>
+
+        <!-- ZONE DANGER -->
+        <div class="compte-card danger-zone">
+          <h3>⚠️ Zone sensible</h3>
+          <p class="section-desc">Déconnexion ou actions définitives.</p>
+          <button class="btn-logout" onclick="logout()">Se déconnecter</button>
+        </div>
       `;
     }
 
-    // ── Tab switch ──────────────────────────────────────────────
-    async function switchTab(type) {
-      currentProfilType = type;
-      renderUI();
-      await refreshActivites();
-    }
-
-    // ── Activités ───────────────────────────────────────────────
-    async function refreshActivites() {
-      try {
-        const res = await listerActivites(currentProfilType);
-        currentActivites = res.activities || [];
-        renderActivites();
-      } catch (e) {
-        document.getElementById('activitesContainer').innerHTML =
-          `<div class="activites-empty">Erreur : ${e.message}</div>`;
-      }
-    }
-
-    function renderActivites() {
-      const cont = document.getElementById('activitesContainer');
-      const count = document.getElementById('activitesCount');
-      count.textContent = `${currentActivites.length} activité${currentActivites.length>1?'s':''}`;
-
-      if (currentActivites.length === 0) {
-        cont.innerHTML = `<div class="activites-empty">Aucune activité pour ce profil. Importe un GPX pour commencer.</div>`;
-        return;
-      }
-
-      cont.innerHTML = currentActivites.map(a => {
-        const dureeMin = Math.round(a.duree_s / 60);
-        const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
-        const date = a.date ? new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
-        return `
-          <div class="activite-row">
-            <div class="source-badge ${a.source}" title="${a.source === 'strava' ? 'Importé depuis Strava' : 'Import manuel'}">
-              ${a.source === 'strava' ? 'S' : '📁'}
-            </div>
-            <div>
-              <div class="activite-name">${a.name || 'Sans nom'}</div>
-              <div style="font-size:11px;color:var(--text-3)">${date}</div>
-            </div>
-            <span class="activite-type-tag ${a.type_sortie}">${a.type_sortie}</span>
-            <div class="activite-meta">${a.dist_km.toFixed(1)} km</div>
-            <div class="activite-meta">${dureeFmt}</div>
-            <button class="btn-delete" onclick="deleteActivite(${a.id})" title="Supprimer">
-              <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function deleteActivite(id) {
-      if (!confirm('Supprimer cette activité ? Ton profil sera recalculé automatiquement.')) return;
-      try {
-        await supprimerActivite(id);
-        await refreshActivites();
-        // Rafraîchir le profil affiché
-        currentUser = await fetchMe();
-        renderUI();
-        await refreshActivites();
-        await refreshSimulations();
-      } catch (e) {
-        alert('Erreur : ' + e.message);
-      }
-    }
-
-    // ── Upload GPX ──────────────────────────────────────────────
-    async function handleGPXUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const typeSortie = prompt('Type de sortie ? (course / entrainement / sortie)', 'entrainement');
-      if (!typeSortie || !['course','entrainement','sortie'].includes(typeSortie)) {
-        alert('Type invalide. Utilise: course, entrainement, ou sortie');
-        return;
-      }
-
-      try {
-        await ajouterActiviteGPX(file, typeSortie, currentProfilType);
-        // Reset l'input pour permettre re-import du même fichier
-        event.target.value = '';
-        await refreshActivites();
-        currentUser = await fetchMe();
-        renderUI();
-        await refreshActivites();
-        await refreshSimulations();
-      } catch (e) {
-        alert('Erreur import : ' + e.message);
-      }
-    }
-
-    // ── Strava ──────────────────────────────────────────────────
-    async function handleStravaClick() {
-      if (!currentUser.strava_connected) {
-        if (confirm('Tu vas être redirigé vers Strava pour autoriser SUM\\'IT à lire tes activités. Continuer ?')) {
-          loginStrava();
-        }
-        return;
-      }
-      await ouvrirModalStrava();
-    }
-
-    async function ouvrirModalStrava() {
-      document.getElementById('modalStrava').classList.add('active');
-      const list = document.getElementById('stravaActivitiesList');
-      list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Chargement des activités Strava...</p>`;
-
-      try {
-        const res = await listerActivitesStrava(50);
-        const activities = res.activities || [];
-
-        if (activities.length === 0) {
-          list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Aucune activité de course/rando trouvée sur Strava.</p>`;
-          return;
-        }
-
-        // Filtrer celles déjà importées
-        const dejaImportes = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
-
-        list.innerHTML = activities.map(a => {
-          const date = new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
-          const dureeMin = Math.round(a.duree_s / 60);
-          const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
-          const isImported = dejaImportes.has(String(a.id));
-          return `
-            <div class="strava-activity">
-              <div>
-                <div class="sa-name">${a.name}</div>
-                <div class="sa-meta">${a.type} · ${date}</div>
-              </div>
-              <div class="sa-stats">
-                ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
-                <span style="color:var(--text-3)">${dureeFmt}</span>
-              </div>
-              <button class="btn-import-sa" onclick="importerStravaActivity('${a.id}', this)" ${isImported ? 'disabled' : ''}>
-                ${isImported ? '✓ Importée' : 'Importer'}
-              </button>
-            </div>
-          `;
-        }).join('');
-      } catch (e) {
-        list.innerHTML = `<p style="color:var(--danger);text-align:center;">Erreur : ${e.message}</p>`;
-      }
-    }
-
-    function fermerModalStrava() {
-      document.getElementById('modalStrava').classList.remove('active');
-    }
-
-    async function importerStravaActivity(stravaId, btn) {
-      const typeSortie = prompt('Type de sortie ? (course / entrainement / sortie)', 'entrainement');
-      if (!typeSortie || !['course','entrainement','sortie'].includes(typeSortie)) return;
-
-      btn.disabled = true;
-      btn.textContent = '⏳';
-      try {
-        await ajouterActiviteStrava(stravaId, typeSortie, currentProfilType);
-        btn.textContent = '✓ Importée';
-        await refreshActivites();
-        currentUser = await fetchMe();
-        renderUI();
-        await refreshActivites();
-        await refreshSimulations();
-      } catch (e) {
-        alert('Erreur : ' + e.message);
-        btn.disabled = false;
-        btn.textContent = 'Importer';
-      }
-    }
-
-    // ── Simulations ─────────────────────────────────────────────
+    // ── Simulations épinglées ──────────────────────────────────
     async function refreshSimulations() {
       try {
         const res = await listerSimulations();
         currentSimulations = res.simulations || [];
-        renderSimulations();
       } catch (e) {
-        document.getElementById('simsContainer').innerHTML =
-          `<div style="grid-column:1/-1;color:var(--text-3);text-align:center;padding:20px;">Erreur : ${e.message}</div>`;
+        console.warn('Impossible de charger les simulations:', e);
+        currentSimulations = [];
       }
     }
 
     function renderSimulations() {
-      const cont = document.getElementById('simsContainer');
       if (currentSimulations.length === 0) {
-        cont.innerHTML = `<div style="grid-column:1/-1;color:var(--text-3);text-align:center;padding:24px;font-size:13px;">
+        return `<div class="sims-empty">
           Aucune simulation épinglée. Va dans le simulateur et clique sur ⭐ pour en sauvegarder une.
         </div>`;
-        return;
       }
 
-      cont.innerHTML = currentSimulations.map(s => {
+      return currentSimulations.map(s => {
         const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
         const h = Math.floor(s.duree_s / 3600);
         const m = Math.floor((s.duree_s % 3600) / 60);
         const dureeFmt = `${h}h${String(m).padStart(2,'0')}`;
+        const profilType = s.type_profil || 'trail';
         return `
           <div class="sim-card">
-            <button class="btn-delete" style="position:absolute;top:14px;right:14px;" onclick="deleteSimulation(${s.id})" title="Supprimer">
+            <button class="btn-delete-sim" onclick="deleteSimulation(${s.id})" title="Supprimer">
               <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
             <div class="sim-card-header">
               <div>
-                <div class="sim-card-title">${s.name}</div>
+                <div class="sim-card-title">${escapeHTML(s.name)}</div>
                 <div class="sim-card-date">${date}</div>
               </div>
             </div>
@@ -958,19 +618,77 @@
               <span>·</span>
               <span>${Math.round(s.dplus_m)} m D+</span>
             </div>
+            <span class="sim-card-profile-tag ${profilType}">${profilType==='trail'?'🏃 Trail':'🥾 Rando'}</span>
           </div>
         `;
       }).join('');
     }
 
     async function deleteSimulation(id) {
-      if (!confirm('Supprimer cette simulation ?')) return;
+      if (!confirm('Supprimer cette simulation épinglée ?')) return;
       try {
         await supprimerSimulation(id);
         await refreshSimulations();
+        renderUI();
       } catch (e) {
         alert('Erreur : ' + e.message);
       }
+    }
+
+    // ── Réglages ───────────────────────────────────────────────
+    async function sauvegarderReglages() {
+      const btn = document.getElementById('btnSave');
+      const feedback = document.getElementById('saveFeedback');
+      const prenom = document.getElementById('setPrenom').value.trim();
+      const fcmax  = parseInt(document.getElementById('setFcmax').value);
+
+      if (!prenom) {
+        alert('Le prénom ne peut pas être vide');
+        return;
+      }
+      if (!fcmax || fcmax < 100 || fcmax > 250) {
+        alert('FC max doit être entre 100 et 250 bpm');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement...';
+
+      try {
+        await updateSettings({ prenom, fcmax });
+        currentUser.prenom = prenom;
+        currentUser.fcmax = fcmax;
+        setCachedUser(currentUser);
+
+        feedback.classList.add('show');
+        setTimeout(() => feedback.classList.remove('show'), 2000);
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enregistrer';
+      }
+    }
+
+    // ── Strava déconnexion ────────────────────────────────────
+    async function deconnecterStravaAction() {
+      if (!confirm('Déconnecter ton compte Strava ? Tes activités déjà importées seront conservées.')) return;
+      try {
+        await deconnecterStrava();
+        currentUser.strava_connected = false;
+        renderUI();
+        alert('✅ Strava déconnecté');
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      }
+    }
+
+    function escapeHTML(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
     }
 
   </script>
