@@ -184,6 +184,19 @@ async function supprimerActivite(activiteId) {
   return apiFetch(`/api/activities/${activiteId}`, { method: 'DELETE' });
 }
 
+async function renommerActivite(activiteId, nouveauNom) {
+  const fd = new FormData();
+  fd.append('nom', nouveauNom);
+  return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
+}
+
+async function modifierActivite(activiteId, { name, typeSortie }) {
+  const fd = new FormData();
+  if (name !== undefined) fd.append('name', name);
+  if (typeSortie !== undefined) fd.append('type_sortie', typeSortie);
+  return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
+}
+
 
 // ══════════════════════════════════════════════════════════════
 //  STRAVA
