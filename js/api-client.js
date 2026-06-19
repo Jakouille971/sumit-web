@@ -234,12 +234,24 @@ async function listerSimulations() {
   return apiFetch('/api/simulations');
 }
 
-async function epinglerSimulation(nomCourse, profilType, simData) {
+async function getSimulation(simulationId) {
+  return apiFetch(`/api/simulations/${simulationId}`);
+}
+
+async function epinglerSimulation(nomCourse, profilType, simData, gpxBase64, ravitosKm) {
   const fd = new FormData();
   fd.append('nom_course',  nomCourse);
   fd.append('profil_type', profilType);
   fd.append('sim_data',    JSON.stringify(simData));
+  if (gpxBase64) fd.append('gpx_base64', gpxBase64);
+  if (ravitosKm) fd.append('ravitos_km', ravitosKm);
   return apiFetch('/api/simulations/pin', { method: 'POST', body: fd });
+}
+
+async function updateSimulation(simulationId, simData) {
+  const fd = new FormData();
+  fd.append('sim_data', JSON.stringify(simData));
+  return apiFetch(`/api/simulations/${simulationId}`, { method: 'PUT', body: fd });
 }
 
 async function supprimerSimulation(simulationId) {
