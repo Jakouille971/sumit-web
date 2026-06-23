@@ -1429,18 +1429,50 @@
       if (!cont) return;
       try {
         const res = await getEvolution(currentProfilType);
-        // Tri par created_at : ordre d'ajout des activités au système
-        // (et non date de course, sinon une vieille activité importée tardivement
-        // apparaît en début de courbe avec déjà toutes les autres dans son calcul)
-        evolutionData = (res.snapshots || []).sort((a, b) => {
-          const da = new Date(a.created_at).getTime();
-          const db = new Date(b.created_at).getTime();
+        let snapshots = (res.snapshots || []).sort((a, b) => {
+          const da = new Date(a.date_activity || a.created_at).getTime();
+          const db = new Date(b.date_activity || b.created_at).getTime();
           return da - db;
         });
+
+        // Détection d'incohérence : nb_traces doit être croissant chronologiquement.
+        // Si ce n'est pas le cas (snapshots dans le mauvais ordre), on déclenche
+        // automatiquement un rebuild côté backend pour reconstruire correctement.
+        if (detecterIncoherence(snapshots) && snapshots.length >= 2) {
+          console.log('[SUMIT] Snapshots incohérents détectés → rebuild auto');
+          cont.innerHTML = `<div class="evolution-empty">Reconstruction automatique de l'historique...</div>`;
+          try {
+            await rebuildEvolution(currentProfilType);
+            const res2 = await getEvolution(currentProfilType);
+            snapshots = (res2.snapshots || []).sort((a, b) => {
+              const da = new Date(a.date_activity || a.created_at).getTime();
+              const db = new Date(b.date_activity || b.created_at).getTime();
+              return da - db;
+            });
+            console.log('[SUMIT] Rebuild terminé, ' + snapshots.length + ' snapshots');
+          } catch (e) {
+            console.warn('Rebuild auto échoué:', e);
+          }
+        }
+
+        evolutionData = snapshots;
         dessinerEvolutionChart();
       } catch (e) {
         cont.innerHTML = `<div class="evolution-empty">Erreur : ${e.message}</div>`;
       }
+    }
+
+    function detecterIncoherence(snapshots) {
+      if (!snapshots || snapshots.length < 2) return false;
+      // Les nb_traces doivent être croissantes chronologiquement (1, 2, 3, ...)
+      let prevTraces = 0;
+      for (const s of snapshots) {
+        if (s.nb_traces < prevTraces) return true; // décroissance = incohérence
+        prevTraces = s.nb_traces;
+      }
+      // Si le premier snapshot a déjà toutes les activités, c'est suspect
+      if (snapshots[0].nb_traces > 1) return true;
+      return false;
     }
 
     function switchEvolutionMetric(metric) {
@@ -2275,6 +2307,35 @@
     }
     function hideLoading() {
       document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // ── Exposition explicite des fonctions sur window ─────────
+    // Garantit que les onclick inline du HTML peuvent les appeler
+    if (typeof window !== 'undefined') {
+      window.refreshEvolution        = refreshEvolution;
+      window.rafraichirEvolution     = rafraichirEvolution;
+      window.switchEvolutionMetric   = switchEvolutionMetric;
+      window.showEvTooltip           = showEvTooltip;
+      window.hideEvTooltip           = hideEvTooltip;
+      window.lancerRenommage         = lancerRenommage;
+      window.deleteActivite          = deleteActivite;
+      window.ouvrirDetailActivite    = ouvrirDetailActivite;
+      window.fermerDetailActivite    = fermerDetailActivite;
+      window.fermerEditActivite      = fermerEditActivite;
+      window.selectionnerTypeEdit    = selectionnerTypeEdit;
+      window.validerEditActivite     = validerEditActivite;
+      window.switchTab               = switchTab;
+      window.handleStravaClick       = handleStravaClick;
+      window.handleGPXSelected       = handleGPXSelected;
+      window.confirmerTypeSortie     = confirmerTypeSortie;
+      window.annulerTypeSortie       = annulerTypeSortie;
+      window.fermerModalStrava       = fermerModalStrava;
+      window.filtrerActivitesStrava  = filtrerActivitesStrava;
+      window.resetFiltresStrava      = resetFiltresStrava;
+      window.toggleStravaSelection   = toggleStravaSelection;
+      window.toggleStravaSelectAll   = toggleStravaSelectAll;
+      window.setStravaType           = setStravaType;
+      window.lancerImportSelectionStrava = lancerImportSelectionStrava;
     }
 
   </script>
