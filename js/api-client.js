@@ -190,6 +190,10 @@ async function renommerActivite(activiteId, nouveauNom) {
   return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
 }
 
+async function getEvolution(profilType = 'trail') {
+  return apiFetch(`/api/evolution?profil_type=${profilType}`);
+}
+
 async function modifierActivite(activiteId, { name, typeSortie }) {
   const fd = new FormData();
   if (name !== undefined) fd.append('name', name);
