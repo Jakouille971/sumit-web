@@ -547,6 +547,18 @@ select option { background: var(--bg-2); color: var(--text); }
 .batt-o { color: var(--warning); font-weight: 500; }
 .batt-r { color: var(--danger); font-weight: 500; }
 .range-col { color: var(--text-3); font-size: 12px; }
+.dplus-col {
+  color: var(--leaf);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+}
+.dmoins-col {
+  color: var(--sky);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+}
 
 /* ── KPI / Stats blocks ─────────────────────────────────────── */
 .kpi-grid {
