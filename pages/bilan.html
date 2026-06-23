@@ -289,6 +289,60 @@
       display: flex; justify-content: center;
       margin-top: 24px;
     }
+
+    /* Zone commentaire */
+    .bilan-comment-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-top: 28px;
+    }
+    .bilan-comment-label {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 13px; font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text); margin-bottom: 12px;
+    }
+    .bilan-comment-input {
+      width: 100%;
+      min-height: 90px;
+      background: var(--bg);
+      border: 1px solid var(--line-2);
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      border-radius: 6px;
+      outline: none;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .bilan-comment-input:focus { border-color: var(--sun); }
+    .bilan-comment-input::placeholder { color: var(--text-3); }
+
+    /* Commentaire dans les cartes épinglées */
+    .bilan-pinned-comment {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.5;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-style: italic;
+    }
+    .bilan-pinned-comment.empty { color: var(--text-3); opacity: 0.6; }
+    .bilan-comment-edit {
+      background: transparent;
+      border: none;
+      color: var(--text-3);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 8px 0 0;
+      transition: color 0.2s;
+    }
+    .bilan-comment-edit:hover { color: var(--sun); }
     .btn-pin-bilan {
       background: transparent;
       border: 1px solid var(--sun);
@@ -435,7 +489,7 @@
       </div>
 
       <!-- Comparaison par ravito -->
-      <div class="bilan-section-title">📍 Analyse par point de passage</div>
+      <div class="bilan-section-title">📍 Analyse par point de passage <span class="info-i" data-tip="Pour chaque ravitaillement, on compare ton temps de passage prédit à ton temps réel. Vert = tu étais plus rapide que prévu, rouge = plus lent. La comparaison s'arrête au km commun aux deux parcours.">i</span></div>
       <div class="bilan-dist-warn" id="bilanDistWarn" style="display:none;"></div>
       <table class="ravito-compare-table">
         <thead>
@@ -453,7 +507,7 @@
 
       <!-- Calibration -->
       <div class="calibration-card" id="calibrationCard">
-        <h3>🎯 Ajustement suggéré du modèle</h3>
+        <h3>🎯 Ajustement suggéré du modèle <span class="info-i" data-tip="Le coefficient course traduit l'écart entre ton allure d'entraînement et ton allure en compétition. Si tu as été plus lent que prévu, on l'augmente pour des prédictions plus prudentes ; plus rapide, on le baisse. Tu gardes le contrôle : rien n'est appliqué sans ta validation.">i</span></h3>
         <p id="calibText"></p>
         <div class="calib-values">
           <div class="calib-box">
@@ -474,7 +528,15 @@
         </div>
       </div>
 
-      <!-- Épingler le bilan -->
+      <!-- Commentaire personnel + Épingler le bilan -->
+      <div class="bilan-comment-section">
+        <label class="bilan-comment-label">
+          📝 Commentaire personnel
+          <span class="info-i" data-tip="Note le contexte de ta course : météo, état de forme, nutrition, technicité du terrain… Ça t'aidera à comprendre l'écart entre la prédiction et la réalité quand tu reliras ce bilan plus tard.">i</span>
+        </label>
+        <textarea id="bilanCommentaire" class="bilan-comment-input" maxlength="2000"
+          placeholder="Ex : Course très technique en descente, grosse chaleur l'après-midi, mauvaise gestion de la nutrition (pas assez bu avant le km 15)…"></textarea>
+      </div>
       <div class="bilan-pin-bar">
         <button class="btn-pin-bilan" id="btnPinBilan" onclick="pinnerCeBilan()">
           📌 Épingler ce bilan
@@ -517,12 +579,21 @@
       list.innerHTML = bilans.map(b => {
         const cls = b.plus_rapide ? 'faster' : 'slower';
         const date = b.created_at ? new Date(b.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '';
+        const commentHtml = b.commentaire
+          ? `<div class="bilan-pinned-comment">💬 ${escapeHtmlBilan(b.commentaire)}</div>`
+          : `<div class="bilan-pinned-comment empty">Aucun commentaire</div>`;
         return `
-          <div class="bilan-pinned-card" onclick="rouvrirBilan(${b.id})">
+          <div class="bilan-pinned-card">
             <button class="bilan-pinned-del" onclick="event.stopPropagation();supprimerBilanPinne(${b.id})" title="Supprimer">×</button>
-            <h4>${escapeHtmlBilan(b.nom)}</h4>
-            <div class="bilan-pinned-meta">Comparé au km ${b.km_commun.toFixed(1)} · ${date}</div>
-            <div class="bilan-pinned-ecart ${cls}">${b.ecart_fmt}</div>
+            <div onclick="rouvrirBilan(${b.id})" style="cursor:pointer;">
+              <h4>${escapeHtmlBilan(b.nom)}</h4>
+              <div class="bilan-pinned-meta">Comparé au km ${b.km_commun.toFixed(1)} · ${date}</div>
+              <div class="bilan-pinned-ecart ${cls}">${b.ecart_fmt}</div>
+            </div>
+            ${commentHtml}
+            <button class="bilan-comment-edit" onclick="event.stopPropagation();editerCommentaireBilan(${b.id})">
+              ✏️ ${b.commentaire ? 'Modifier' : 'Ajouter'} le commentaire
+            </button>
           </div>`;
       }).join('');
       // Stocker pour réouverture
@@ -537,10 +608,29 @@
     const b = bilans.find(x => x.id === id);
     if (!b || !b.bilan_data) return;
     bilanData = b.bilan_data;
+    window._rouvertureEnCours = true;
     afficherComparaison(b.bilan_data);
+    window._rouvertureEnCours = false;
+    // Pré-remplir le commentaire existant
+    const ta = document.getElementById('bilanCommentaire');
+    if (ta) ta.value = b.commentaire || '';
     // Cacher le bouton épingler (déjà épinglé)
     const btnPin = document.getElementById('btnPinBilan');
     if (btnPin) { btnPin.textContent = '✓ Bilan déjà épinglé'; btnPin.disabled = true; }
+  }
+
+  async function editerCommentaireBilan(id) {
+    const bilans = window._bilansPinnes || [];
+    const b = bilans.find(x => x.id === id);
+    if (!b) return;
+    const nouveau = prompt('Commentaire personnel (contexte de la course) :', b.commentaire || '');
+    if (nouveau === null) return;
+    try {
+      await modifierBilan(id, { commentaire: nouveau.trim() });
+      await chargerBilansPinnes();
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+    }
   }
 
   async function supprimerBilanPinne(id) {
@@ -559,6 +649,8 @@
     const nom = prompt('Nom du bilan :', nomDefaut);
     if (nom === null) return;
 
+    const commentaire = document.getElementById('bilanCommentaire').value.trim();
+
     const btn = document.getElementById('btnPinBilan');
     btn.disabled = true;
     btn.textContent = 'Épinglage…';
@@ -567,7 +659,8 @@
         nom.trim() || nomDefaut,
         bilanData.simulation.id,
         bilanData.resultat.id,
-        bilanData
+        bilanData,
+        commentaire
       );
       btn.textContent = '✓ Bilan épinglé !';
       await chargerBilansPinnes();
@@ -737,6 +830,9 @@
     // Réinitialiser le bouton épingler pour cette nouvelle comparaison
     const btnPin = document.getElementById('btnPinBilan');
     if (btnPin) { btnPin.textContent = '📌 Épingler ce bilan'; btnPin.disabled = false; }
+    // Vider le commentaire (sauf si on rouvre un bilan, géré dans rouvrirBilan)
+    const ta = document.getElementById('bilanCommentaire');
+    if (ta && !window._rouvertureEnCours) ta.value = '';
 
     // Afficher
     document.getElementById('bilanResult').classList.add('show');
@@ -786,6 +882,7 @@
     window.pinnerCeBilan       = pinnerCeBilan;
     window.rouvrirBilan        = rouvrirBilan;
     window.supprimerBilanPinne = supprimerBilanPinne;
+    window.editerCommentaireBilan = editerCommentaireBilan;
   }
 </script>
 </body>
