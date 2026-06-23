@@ -116,6 +116,39 @@ class Activity(Base):
     user = relationship("User", back_populates="activities")
 
 
+class ProfilSnapshot(Base):
+    """
+    Historique du profil après chaque ajout/suppression d'activité.
+    Permet de tracer l'évolution VEP/drain/coef/scores/archétype dans le temps.
+    """
+    __tablename__ = "profil_snapshots"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    user_id       = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    type_profil   = Column(String, nullable=False, index=True)  # 'trail' ou 'rando'
+
+    # Lien optionnel vers l'activité ajoutée qui a déclenché le snapshot
+    activity_id   = Column(Integer, ForeignKey("activities.id"), nullable=True)
+
+    date_activity = Column(DateTime(timezone=True), nullable=True, index=True)
+
+    # Métriques agrégées au moment du snapshot
+    vep_globale       = Column(Float, default=0.0)
+    drain_moy_h       = Column(Float, default=0.0)
+    coefficient_course= Column(Float, default=1.0)
+    nb_traces         = Column(Integer, default=0)
+    dist_moy_km       = Column(Float, default=0.0)
+
+    # Scores de pente
+    score_montee      = Column(Float, default=0.0)  # ecart_plat moyen montées
+    score_descente    = Column(Float, default=0.0)  # ecart_plat moyen descentes
+
+    # Archétype (chaîne pour color-coding)
+    archetype_nom     = Column(String, nullable=True)
+
+    created_at        = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
 # ══════════════════════════════════════════════════════════════
