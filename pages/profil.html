@@ -1022,6 +1022,20 @@
     </div>
   </div>
 
+  <!-- ══ Modale Archétypes ══ -->
+  <div class="modal-overlay" id="modalArchetypes" onclick="if(event.target===this) fermerModalArchetypes()">
+    <div class="archetypes-modal-content">
+      <div class="archetypes-modal-header">
+        <div>
+          <h2>📖 Les 8 archétypes SUM'IT</h2>
+          <p>Ta signature de coureur, déterminée par tes forces selon le terrain.</p>
+        </div>
+        <button class="modal-close" onclick="fermerModalArchetypes()">×</button>
+      </div>
+      <div class="archetypes-grid" id="archetypesGrid"></div>
+    </div>
+  </div>
+
   <!-- ══ Modale Détail Activité ══ -->
   <div class="modal-overlay" id="modalDetailActivite" onclick="if(event.target===this) fermerDetailActivite()">
     <div class="detail-modal-content">
@@ -1333,15 +1347,16 @@
             <span style="font-size:38px;">${archIcon}</span>
           </div>
           <div class="archetype-info">
-            <h3>Ton archétype</h3>
+            <h3>Ton archétype <span class="info-i" data-tip="Ton archétype résume ta signature de coureur : sur quels terrains tu excelles. Il est recalculé à chaque import et peut évoluer avec ta forme.">i</span></h3>
             <div class="archetype-name">${arch.nom || 'Combattant'}</div>
             <div class="archetype-desc">${arch.desc || 'Polyvalent, régulier sur tous les terrains.'}</div>
+            <button class="btn-voir-archetypes" onclick="ouvrirModalArchetypes()">📖 Voir les 8 archétypes</button>
           </div>
         </div>
 
         <!-- Score de pente -->
         <div class="terrain-section">
-          <h3>Score de pente</h3>
+          <h3>Score de pente <span class="info-i" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % par rapport à ton allure sur le plat (référence 0%). Positif = tu es plus performant que sur le plat, négatif = moins.">i</span></h3>
           <p class="desc">Écart de performance par type de terrain par rapport à ton allure sur le plat (référence 0%).</p>
           ${renderScorePente(profilData)}
         </div>
@@ -2220,6 +2235,7 @@
                   <span class="strava-type-label">Type :</span>
                   <select class="strava-type-select" onclick="event.preventDefault();event.stopPropagation();" onchange="setStravaType('${a.id}', this.value); event.stopPropagation();">
                     <option value="course"        ${typeChoisi==='course'?'selected':''}>🏁 Course</option>
+                    <option value="resultat"      ${typeChoisi==='resultat'?'selected':''}>🏅 Résultat</option>
                     <option value="entrainement"  ${typeChoisi==='entrainement'?'selected':''}>🏃 Entraînement</option>
                     <option value="sortie"        ${typeChoisi==='sortie'?'selected':''}>🥾 Sortie</option>
                   </select>
