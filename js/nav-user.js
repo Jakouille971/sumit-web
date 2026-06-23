@@ -1,34 +1,76 @@
 // ══════════════════════════════════════════════════════════════
-//  SUM'IT — nav-user.js
-//  Injecte le bouton "Se connecter" ou l'avatar utilisateur
-//  dans la navigation de chaque page.
+//  SUM'IT — nav-user.js v2
+//  Garantit l'uniformité de la nav sur toutes les pages :
+//   - Liens : Accueil, Mon profil, Simulateur, À venir, Mon compte
+//   - Bouton "Se connecter" OU avatar utilisateur
 // ══════════════════════════════════════════════════════════════
 
-(async function initNavUser() {
-  // Cherche un emplacement pour insérer le bouton dans la nav
+(async function initNavUniforme() {
   const nav = document.querySelector('.nav');
   if (!nav) return;
 
-  // Conteneur dédié : si déjà présent (nav-cta), on le remplace, sinon on l'ajoute
+  injecterStylesNav();
+  uniformiserLiens(nav);
+  await uniformiserUserSlot(nav);
+})();
+
+// ── 1. Uniformiser les liens de navigation ─────────────────────
+function uniformiserLiens(nav) {
+  // Détermine si on est en pages/ ou à la racine
+  const path = window.location.pathname;
+  const inPages = path.includes('/pages/');
+  const prefix = inPages ? '' : 'pages/';
+
+  // Liens attendus, dans l'ordre
+  const LIENS_ATTENDUS = [
+    { label: 'Accueil',    href: inPages ? '../' : '/',         id: 'home' },
+    { label: 'Mon profil', href: `${prefix}profil.html`,        id: 'profil' },
+    { label: 'Simulateur', href: `${prefix}simulateur.html`,    id: 'simulateur' },
+    { label: 'À venir',    href: `${prefix}avenir.html`,        id: 'avenir' },
+    { label: 'Mon compte', href: `${prefix}compte.html`,        id: 'compte' },
+  ];
+
+  // Page active
+  const currentId =
+    path.endsWith('profil.html')     ? 'profil' :
+    path.endsWith('simulateur.html') ? 'simulateur' :
+    path.endsWith('avenir.html')     ? 'avenir' :
+    path.endsWith('compte.html')     ? 'compte' :
+    'home';
+
+  // Trouver ou créer le conteneur .nav-links
+  let navLinks = nav.querySelector('.nav-links');
+  if (!navLinks) {
+    navLinks = document.createElement('div');
+    navLinks.className = 'nav-links';
+    nav.appendChild(navLinks);
+  }
+
+  // Reconstruire complètement les liens dans le bon ordre
+  navLinks.innerHTML = LIENS_ATTENDUS.map(lien => {
+    const activeClass = lien.id === currentId ? ' active' : '';
+    return `<a href="${lien.href}" class="nav-link${activeClass}">${lien.label}</a>`;
+  }).join('');
+}
+
+// ── 2. Slot utilisateur (login button OU avatar) ───────────────
+async function uniformiserUserSlot(nav) {
   let container = document.getElementById('nav-user-container');
   if (!container) {
     container = document.createElement('div');
     container.id = 'nav-user-container';
-    container.style.cssText = 'display:flex;align-items:center;gap:14px;';
-    // S'il y a un nav-cta existant, on l'enlève (sera remplacé)
+    container.style.cssText = 'display:flex;align-items:center;gap:14px;margin-left:14px;';
     const oldCta = nav.querySelector('.nav-cta');
     if (oldCta) oldCta.remove();
     nav.appendChild(container);
   }
 
-  if (isLoggedIn()) {
-    // Tente de charger l'utilisateur depuis le backend
-    let user = getCachedUser();
+  if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+    let user = (typeof getCachedUser === 'function') ? getCachedUser() : null;
     try {
       user = await fetchMe();
     } catch (e) {
-      // Token expiré, on bascule en mode déconnecté
-      clearToken();
+      if (typeof clearToken === 'function') clearToken();
       renderLoggedOut(container);
       return;
     }
@@ -36,7 +78,7 @@
   } else {
     renderLoggedOut(container);
   }
-})();
+}
 
 function renderLoggedOut(container) {
   container.innerHTML = `
@@ -47,15 +89,17 @@ function renderLoggedOut(container) {
       Se connecter
     </button>
   `;
-  injectNavStyles();
 }
 
 function renderLoggedIn(container, user) {
   const prenom = user.prenom || user.name?.split(' ')[0] || 'Coureur';
   const initiale = prenom[0]?.toUpperCase() || 'C';
+  const path = window.location.pathname;
+  const inPages = path.includes('/pages/');
+  const compteHref = inPages ? 'compte.html' : 'pages/compte.html';
 
   container.innerHTML = `
-    <a href="/pages/compte.html" class="nav-user-link" title="Mon compte">
+    <a href="${compteHref}" class="nav-user-link" title="Mon compte">
       <div class="nav-user-avatar">
         ${user.picture
           ? `<img src="${user.picture}" alt="${prenom}">`
@@ -64,10 +108,10 @@ function renderLoggedIn(container, user) {
       <span class="nav-user-name">${prenom}</span>
     </a>
   `;
-  injectNavStyles();
 }
 
-function injectNavStyles() {
+// ── 3. Styles ──────────────────────────────────────────────────
+function injecterStylesNav() {
   if (document.getElementById('nav-user-styles')) return;
   const style = document.createElement('style');
   style.id = 'nav-user-styles';
@@ -87,10 +131,9 @@ function injectNavStyles() {
       transition: transform 0.15s, opacity 0.2s;
     }
     .nav-login-btn:hover { transform: translateY(-1px); opacity: 0.95; }
-
     .nav-user-link {
       display: inline-flex; align-items: center; gap: 10px;
-      padding: 6px 14px 6px 6px;
+      padding: 5px 14px 5px 5px;
       border-radius: 30px;
       border: 1px solid var(--line);
       background: var(--bg-2);
@@ -103,18 +146,17 @@ function injectNavStyles() {
       background: var(--bg-3);
     }
     .nav-user-avatar {
-      width: 32px; height: 32px;
+      width: 30px; height: 30px;
       border-radius: 50%;
       background: var(--gradient-summit);
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-display);
-      font-size: 14px; font-weight: 700;
+      font-size: 13px; font-weight: 700;
       color: var(--bg);
       overflow: hidden;
+      flex-shrink: 0;
     }
-    .nav-user-avatar img {
-      width: 100%; height: 100%; object-fit: cover;
-    }
+    .nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .nav-user-name {
       font-family: var(--font-display);
       font-size: 13px;
