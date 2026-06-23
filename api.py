@@ -226,6 +226,7 @@ def charger_gpx(data_bytes, fcmax=193):
     df['dep_m']=df['dist_m']*df['cm']
     df['dep_cum']=df['dep_m'].cumsum()/1000
     df['dp_cum']=df['dp'].cumsum()
+    df['dm_cum']=df['dm'].cumsum()
 
     nb_fc=int(df['fc'].notna().sum())
     if nb_fc>50:
@@ -720,6 +721,8 @@ def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
         res.append({
             'dist_km':    round(float(row['dist_cum']),3),
             'altitude':   round(float(row['alt']),1),
+            'dplus_cum':  round(float(row.get('dp_cum', 0)), 1),
+            'dmoins_cum': round(float(row.get('dm_cum', 0)), 1),
             'terrain':    tr,
             'type_terrain': type_t,
             'effort_pct': round(dep/dep_tot*100,2) if dep_tot>0 else 0,
@@ -820,6 +823,7 @@ async def api_simuler(
 
     dist_km=float(df['dist_cum'].max())
     dplus_m=float(df['dp_cum'].max())
+    dmoins_m=float(df['dm_cum'].max()) if 'dm_cum' in df.columns else dplus_m
     dep_km =float(df['dep_cum'].max())
     cat=categorie(dist_km)
 
@@ -867,10 +871,14 @@ async def api_simuler(
         tb_=float(fdf.loc[idx,'tb'])
         th_=float(fdf.loc[idx,'th'])
         b_ =float(sdf.loc[idx,'batterie_pct'])
+        dp_=float(sdf.loc[idx,'dplus_cum']) if 'dplus_cum' in sdf.columns else 0
+        dm_=float(sdf.loc[idx,'dmoins_cum']) if 'dmoins_cum' in sdf.columns else 0
         rvd.append({
             'km':round(km,1),
             'temps_s':round(t_,1),'temps_bas_s':round(tb_,1),'temps_haut_s':round(th_,1),
             'batterie_pct':round(b_,1),
+            'dplus_cum':round(dp_,0),
+            'dmoins_cum':round(dm_,0),
             'temps_fmt':fmt(t_),'bas_fmt':fmt(tb_),'haut_fmt':fmt(th_),
         })
 
@@ -907,6 +915,7 @@ async def api_simuler(
         "status":"ok",
         "distance_km":round(dist_km,2),
         "dplus_m":round(dplus_m,0),
+        "dmoins_m":round(dmoins_m,0),
         "dep_km":round(dep_km,2),
         "categorie":{
             "nom":cat["nom"],
