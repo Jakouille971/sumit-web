@@ -1447,6 +1447,7 @@ async def add_activity_strava(
     strava_id:   str = Form(...),
     type_sortie: str = Form("entrainement"),
     profil_type: str = Form("trail"),
+    nom:         str = Form(""),  # Nom de l'activité (sinon récupéré depuis Strava)
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -1465,7 +1466,7 @@ async def add_activity_strava(
     if existing:
         raise HTTPException(400, detail="Cette activité Strava est déjà importée")
 
-    # Télécharger le GPX depuis Strava
+    # Télécharger le GPX depuis Strava (et récupérer le nom si pas fourni)
     try:
         gpx_bytes = await telecharger_gpx_strava(db, user, strava_id)
         df, d0, nfc = charger_gpx(gpx_bytes, user.fcmax)
@@ -1475,11 +1476,31 @@ async def add_activity_strava(
     except Exception as e:
         raise HTTPException(400, detail=f"Erreur import Strava : {e}")
 
+    # Nom final : celui fourni en argument > celui de l'activité Strava > fallback
+    nom_final = (nom or '').strip()
+    if not nom_final:
+        # Récupérer le nom depuis l'activité Strava
+        try:
+            from strava import rafraichir_token_strava, STRAVA_API_BASE
+            import httpx as _httpx
+            access_token = await rafraichir_token_strava(db, user)
+            async with _httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(
+                    f"{STRAVA_API_BASE}/activities/{strava_id}",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+                if r.status_code == 200:
+                    nom_final = (r.json() or {}).get('name', '') or ''
+        except Exception:
+            pass
+    if not nom_final:
+        nom_final = f"Activité Strava du {d0.strftime('%d/%m/%Y') if d0 else '?'}"
+
     activity = Activity(
         user_id      = user.id,
         source       = 'strava',
         external_id  = strava_id,
-        name         = f"Strava {strava_id}",
+        name         = nom_final,
         type_sortie  = type_sortie,
         type_profil  = profil_type,
         date_activity= d0,
