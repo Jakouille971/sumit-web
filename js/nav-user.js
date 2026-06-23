@@ -61,33 +61,51 @@ async function uniformiserUserSlot(nav) {
     nav.appendChild(container);
   }
 
-  // Bouton Tutoriel - toujours présent (même si déconnecté)
-  let tutoBtnHTML = '';
-  if (typeof demarrerOnboarding === 'function') {
-    tutoBtnHTML = `
-      <button class="nav-tuto-btn" onclick="demarrerOnboarding()" title="Voir le tutoriel">
-        <svg viewBox="0 0 24 24" width="16" height="16">
-          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
-          <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z"/>
-        </svg>
-        <span>Tutoriel</span>
-      </button>
-    `;
-  }
+  // Affichage IMMÉDIAT (synchrone) basé sur l'état local (token + cache)
+  // On ne bloque jamais sur fetchMe() qui peut prendre 30s si Render dort
+  const tutoBtnHTML = construireBtnTutoriel();
+  const tokenPresent = (typeof isLoggedIn === 'function') && isLoggedIn();
+  const cachedUser = (typeof getCachedUser === 'function') ? getCachedUser() : null;
 
-  if (typeof isLoggedIn === 'function' && isLoggedIn()) {
-    let user = (typeof getCachedUser === 'function') ? getCachedUser() : null;
-    try {
-      user = await fetchMe();
-    } catch (e) {
-      if (typeof clearToken === 'function') clearToken();
-      renderLoggedOut(container, tutoBtnHTML);
-      return;
-    }
-    renderLoggedIn(container, user, tutoBtnHTML);
+  if (tokenPresent && cachedUser) {
+    // On affiche déjà l'avatar avec les infos en cache (rapide)
+    renderLoggedIn(container, cachedUser, tutoBtnHTML);
+  } else if (tokenPresent) {
+    // Token mais pas de cache : on affiche un avatar générique en attendant
+    renderLoggedIn(container, { prenom: 'Coureur', email: '' }, tutoBtnHTML);
   } else {
+    // Pas connecté → bouton de connexion direct
     renderLoggedOut(container, tutoBtnHTML);
   }
+
+  // Enrichissement async en arrière-plan (sans bloquer)
+  if (tokenPresent && typeof fetchMe === 'function') {
+    fetchMe().then(user => {
+      // Mise à jour du DOM avec les vraies infos
+      renderLoggedIn(container, user, tutoBtnHTML);
+    }).catch(e => {
+      // Si le token est invalide (401), on bascule en mode déconnecté
+      if (e && e.message && e.message.includes('expirée')) {
+        if (typeof clearToken === 'function') clearToken();
+        renderLoggedOut(container, tutoBtnHTML);
+      }
+      // Si c'est juste un timeout réseau / Render down, on garde l'UI actuelle
+      // (l'utilisateur peut toujours utiliser l'app en mode offline-cache)
+    });
+  }
+}
+
+function construireBtnTutoriel() {
+  // Toujours afficher le bouton tutoriel, même si onboarding.js pas encore chargé
+  return `
+    <button class="nav-tuto-btn" onclick="if(typeof demarrerOnboarding==='function'){demarrerOnboarding()}else{alert('Tutoriel en cours de chargement...');}" title="Voir le tutoriel">
+      <svg viewBox="0 0 24 24" width="16" height="16">
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
+        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z"/>
+      </svg>
+      <span>Tutoriel</span>
+    </button>
+  `;
 }
 
 function renderLoggedOut(container, tutoBtnHTML = '') {
