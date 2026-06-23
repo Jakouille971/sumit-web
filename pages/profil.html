@@ -550,6 +550,29 @@
     }
     .strava-check:disabled { cursor: not-allowed; }
     .strava-act-info { min-width: 0; }
+    .strava-type-picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .strava-type-label {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+    }
+    .strava-type-select {
+      background: var(--bg);
+      border: 1px solid var(--sun);
+      color: var(--text);
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      outline: none;
+    }
     .sa-imported-tag {
       font-family: var(--font-display);
       font-size: 10px;
@@ -708,6 +731,24 @@
       align-items: center;
     }
     .type-option:hover { border-color: var(--sun); }
+    .type-option.selected {
+      border-color: var(--sun);
+      background: rgba(255, 200, 87, 0.10);
+    }
+    .btn-save {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 11px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-save:hover { transform: translateY(-1px); opacity: 0.95; }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .type-option-name {
       font-family: var(--font-display);
       font-size: 14px;
@@ -833,6 +874,47 @@
       </div>
       <div class="modal-body" id="stravaActivitiesList">
         <p style="text-align:center;color:var(--text-3)">Chargement des activités...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Modale Édition Activité ══ -->
+  <div class="modal-overlay" id="modalEditActivite">
+    <div class="modal-content type-modal">
+      <h3>✏️ Modifier l'activité</h3>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-family:var(--font-display);font-size:11px;color:var(--text-3);margin-bottom:6px;letter-spacing:0.08em;text-transform:uppercase;">Nom de l'activité</label>
+        <input type="text" id="editActNom" maxlength="200" style="width:100%;background:var(--bg);border:1px solid var(--line-2);color:var(--text);padding:10px 14px;font-size:14px;border-radius:4px;outline:none;">
+      </div>
+      <div>
+        <label style="display:block;font-family:var(--font-display);font-size:11px;color:var(--text-3);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">Type de sortie</label>
+        <div class="type-options" style="margin-bottom:18px;">
+          <div class="type-option" data-type="course" onclick="selectionnerTypeEdit('course')">
+            <div>
+              <div class="type-option-name">🏁 Course</div>
+              <div class="type-option-desc">Compétition (poids ×1.0)</div>
+            </div>
+            <span class="tag" style="color:var(--sun);border-color:rgba(255,200,87,0.4);background:rgba(255,200,87,0.08);">Top intensité</span>
+          </div>
+          <div class="type-option" data-type="entrainement" onclick="selectionnerTypeEdit('entrainement')">
+            <div>
+              <div class="type-option-name">🏃 Entraînement</div>
+              <div class="type-option-desc">Sortie tempo, intervalle (poids ×0.7)</div>
+            </div>
+            <span class="tag" style="color:var(--leaf);border-color:rgba(107,179,107,0.4);background:rgba(107,179,107,0.08);">Régulière</span>
+          </div>
+          <div class="type-option" data-type="sortie" onclick="selectionnerTypeEdit('sortie')">
+            <div>
+              <div class="type-option-name">🥾 Sortie</div>
+              <div class="type-option-desc">Footing tranquille, balade (poids ×0.4)</div>
+            </div>
+            <span class="tag" style="color:var(--sky);border-color:rgba(79,163,217,0.4);background:rgba(79,163,217,0.08);">Détendue</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" onclick="fermerEditActivite()" style="flex:1;">Annuler</button>
+        <button class="btn-save" id="btnValiderEdit" onclick="validerEditActivite()" style="flex:2;background:var(--gradient-summit);color:var(--bg);">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -1135,14 +1217,26 @@
     }
 
     // ── Évolution : couleurs par archétype (palette SUM'IT) ─────
+    // Insensible aux préfixes "Le ", "L'", "La "
     const ARCHETYPE_COLORS = {
-      'Grimpeur':    '#FFC857',  // jaune (sun) - effort montée
-      'Équilibré':   '#6BB36B',  // vert (leaf) - polyvalent
-      'Descendeur':  '#4FA3D9',  // bleu (sky) - effort descente
-      'Tenace':      '#F39237',  // orange - endurance
-      'Explosif':    '#E55B5B',  // rouge - vitesse
-      'Combattant':  '#B388EB',  // violet - mental
+      'Grimpeur':    '#FFC857',  // jaune (sun)
+      'Équilibré':   '#6BB36B',  // vert (leaf)
+      'Descendeur':  '#4FA3D9',  // bleu (sky)
+      'Tenace':      '#F39237',  // orange
+      'Explosif':    '#E55B5B',  // rouge
+      'Combattant':  '#B388EB',  // violet
     };
+
+    // Normalise un nom d'archétype (retire "Le ", "L'", "La ")
+    function normalizeArchetype(nom) {
+      if (!nom) return '';
+      return nom.replace(/^L'/i, '').replace(/^Le /i, '').replace(/^La /i, '').trim();
+    }
+
+    function getArchetypeColor(nom) {
+      const key = normalizeArchetype(nom);
+      return ARCHETYPE_COLORS[key] || '#FFC857';
+    }
 
     let evolutionData = [];
     let currentEvolutionMetric = 'vep_globale';
@@ -1208,8 +1302,13 @@
       yMin -= yRange * 0.1;
       yMax += yRange * 0.1;
 
-      // X = position dans la séquence (ordre chronologique des snapshots)
-      const xScale = i => M.left + (innerW * i / Math.max(evolutionData.length - 1, 1));
+      // X = timestamp de la date de course (échelle proportionnelle)
+      const timestamps = evolutionData.map(s => new Date(s.date_activity || s.created_at).getTime());
+      const tMin = Math.min(...timestamps);
+      const tMax = Math.max(...timestamps);
+      const tRange = Math.max(tMax - tMin, 1);
+
+      const xScale = i => M.left + (innerW * (timestamps[i] - tMin) / tRange);
       const yScale = v => M.top + innerH - ((v - yMin) / Math.max(yMax - yMin, 0.0001)) * innerH;
 
       // Grilles horizontales (5 lignes)
@@ -1219,22 +1318,19 @@
         gridY.push({ y: yScale(v), val: v });
       }
 
-      // Construction des segments de courbe colorés par archétype
-      // Si l'archétype change entre 2 points, on fait un dégradé linéaire
+      // Construction des segments avec dégradé entre couleurs d'archétype
       let gradientDefs = '';
       let pathSegments = '';
       for (let i = 0; i < evolutionData.length - 1; i++) {
         const a = evolutionData[i], b = evolutionData[i + 1];
-        const colorA = ARCHETYPE_COLORS[a.archetype_nom] || '#FFC857';
-        const colorB = ARCHETYPE_COLORS[b.archetype_nom] || '#FFC857';
+        const colorA = getArchetypeColor(a.archetype_nom);
+        const colorB = getArchetypeColor(b.archetype_nom);
         const x1 = xScale(i), y1 = yScale(values[i]);
         const x2 = xScale(i + 1), y2 = yScale(values[i + 1]);
 
         if (colorA === colorB) {
-          // Même couleur : trait simple
           pathSegments += `<line class="ev-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorA}"/>`;
         } else {
-          // Dégradé entre les 2 couleurs
           const gradId = `ev-grad-${i}`;
           gradientDefs += `
             <linearGradient id="${gradId}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" gradientUnits="userSpaceOnUse">
@@ -1245,10 +1341,10 @@
         }
       }
 
-      // Points (cercles)
+      // Points
       let pointsHTML = '';
       evolutionData.forEach((s, i) => {
-        const color = ARCHETYPE_COLORS[s.archetype_nom] || '#FFC857';
+        const color = getArchetypeColor(s.archetype_nom);
         const x = xScale(i), y = yScale(values[i]);
         pointsHTML += `<circle class="ev-point" cx="${x}" cy="${y}" r="5" fill="${color}" stroke="var(--bg)"
           data-idx="${i}"
@@ -1256,15 +1352,17 @@
           onmouseleave="hideEvTooltip()"/>`;
       });
 
-      // Labels axe X (premier, milieu, dernier)
+      // Labels axe X : on choisit ~4-6 dates réparties uniformément dans le temps
       const xLabels = [];
-      const idxLabels = evolutionData.length <= 6
-        ? evolutionData.map((_, i) => i)
-        : [0, Math.floor(evolutionData.length / 2), evolutionData.length - 1];
-      idxLabels.forEach(i => {
-        const s = evolutionData[i];
-        const date = (s.date_activity || s.created_at) ? new Date(s.date_activity || s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) : '—';
-        xLabels.push(`<text class="ev-axis-text" x="${xScale(i)}" y="${M.top + innerH + 18}" text-anchor="middle">${date}</text>`);
+      const nbLabels = Math.min(6, evolutionData.length);
+      const labelTimestamps = [];
+      for (let k = 0; k < nbLabels; k++) {
+        labelTimestamps.push(tMin + (tRange * k / (nbLabels - 1)));
+      }
+      labelTimestamps.forEach(ts => {
+        const x = M.left + (innerW * (ts - tMin) / tRange);
+        const dateStr = new Date(ts).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+        xLabels.push(`<text class="ev-axis-text" x="${x}" y="${M.top + innerH + 18}" text-anchor="middle">${dateStr}</text>`);
       });
 
       // Labels axe Y
@@ -1288,16 +1386,33 @@
         </svg>
       `;
 
-      // Légende : archétypes présents dans l'historique
+      // Légende : archétypes présents (normalisés)
       const archetypesPresents = new Set();
-      evolutionData.forEach(s => { if (s.archetype_nom) archetypesPresents.add(s.archetype_nom); });
+      evolutionData.forEach(s => {
+        const norm = normalizeArchetype(s.archetype_nom);
+        if (norm) archetypesPresents.add(norm);
+      });
       legend.innerHTML = Array.from(archetypesPresents).map(a => {
         const color = ARCHETYPE_COLORS[a] || '#FFC857';
         return `<div class="ev-legend-item">
           <div class="ev-legend-dot" style="background:${color}"></div>
           ${a}
         </div>`;
-      }).join('');
+      }).join('') + `
+        <button class="btn-ghost" onclick="reinitialiserEvolution()" style="margin-left:auto;padding:6px 12px;font-size:11px;">
+          🗑 Réinitialiser l'historique
+        </button>
+      `;
+    }
+
+    async function reinitialiserEvolution() {
+      if (!confirm("Réinitialiser l'historique d'évolution ? Cela supprimera tous les snapshots. Tes activités ne seront pas touchées.")) return;
+      try {
+        await resetEvolution(currentProfilType);
+        await refreshEvolution();
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      }
     }
 
     function showEvTooltip(event, idx) {
@@ -1305,12 +1420,13 @@
       const s = evolutionData[idx];
       const config = METRIC_CONFIG[currentEvolutionMetric];
       const date = (s.date_activity || s.created_at) ? new Date(s.date_activity || s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
+      const archNorm = normalizeArchetype(s.archetype_nom);
       const tt = document.createElement('div');
       tt.className = 'ev-tooltip';
       tt.id = 'ev-tooltip-active';
       tt.innerHTML = `
         <div class="ev-tooltip-title">${config.fmt(s[currentEvolutionMetric] || 0)} ${config.unit}</div>
-        <div>${s.archetype_nom || '—'} · ${s.nb_traces} activité${s.nb_traces>1?'s':''}</div>
+        <div>${archNorm || '—'} · ${s.nb_traces} activité${s.nb_traces>1?'s':''}</div>
         <div class="ev-tooltip-meta">${date}</div>
       `;
       document.body.appendChild(tt);
@@ -1384,44 +1500,56 @@
 
     // ── Renommage d'une activité ────────────────────────────────
     function lancerRenommage(id) {
-      const row = document.querySelector(`.activite-row[data-id="${id}"]`);
-      if (!row) return;
-      const nameCell = row.querySelector('.activite-name-cell');
-      const nameEl = nameCell.querySelector('.activite-name');
-      const dateEl = nameCell.querySelector('div[style*="font-size:11px"]');
-      const currentName = nameEl.textContent;
+      // Ouvre la modale d'édition complète (nom + type)
+      const activite = currentActivites.find(a => a.id === id);
+      if (!activite) return;
 
-      nameCell.innerHTML = `
-        <input type="text" class="rename-input" id="renameInput-${id}" value="${escapeHTML(currentName)}"
-               onkeydown="if(event.key==='Enter') validerRenommage(${id}); if(event.key==='Escape') refreshActivites();">
-        ${dateEl ? dateEl.outerHTML : ''}
-      `;
-      const input = document.getElementById(`renameInput-${id}`);
-      input.focus();
-      input.select();
-      // Sur blur, on valide aussi
-      input.addEventListener('blur', () => validerRenommage(id));
+      const modal = document.getElementById('modalEditActivite');
+      document.getElementById('editActNom').value = activite.name || '';
+      // Set le bouton du type actif
+      document.querySelectorAll('#modalEditActivite .type-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.type === activite.type_sortie);
+      });
+      window.editActiviteId = id;
+      modal.classList.add('active');
+      setTimeout(() => document.getElementById('editActNom').focus(), 50);
     }
 
-    async function validerRenommage(id) {
-      const input = document.getElementById(`renameInput-${id}`);
-      if (!input) return;
-      const newName = input.value.trim();
-      if (!newName) {
-        await refreshActivites();
+    function fermerEditActivite() {
+      document.getElementById('modalEditActivite').classList.remove('active');
+      window.editActiviteId = null;
+    }
+
+    function selectionnerTypeEdit(type) {
+      document.querySelectorAll('#modalEditActivite .type-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.type === type);
+      });
+    }
+
+    async function validerEditActivite() {
+      const id = window.editActiviteId;
+      if (!id) return;
+      const nom = document.getElementById('editActNom').value.trim();
+      const typeEl = document.querySelector('#modalEditActivite .type-option.selected');
+      const type_sortie = typeEl ? typeEl.dataset.type : null;
+
+      if (!nom) {
+        alert('Le nom ne peut pas être vide');
         return;
       }
-      const activite = currentActivites.find(a => a.id === id);
-      if (activite && activite.name === newName) {
-        await refreshActivites();
-        return;
-      }
+
+      const btn = document.getElementById('btnValiderEdit');
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement...';
+
       try {
-        await renommerActivite(id, newName);
-        await refreshActivites();
+        await modifierActivite(id, { nom, typeSortie: type_sortie });
+        fermerEditActivite();
+        await rechargerProfilEtActivites();
       } catch (e) {
-        alert('Erreur renommage : ' + e.message);
-        await refreshActivites();
+        alert('Erreur : ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Enregistrer';
       }
     }
 
@@ -1486,39 +1614,11 @@
 
         } else if (pendingUpload.source === 'strava') {
           showLoading('Analyse Strava en cours...');
-          // On retrouve le nom de l'activité (depuis le cache Strava)
           const acts = window.allStravaActivities || [];
           const a = acts.find(x => String(x.id) === String(pendingUpload.stravaId));
           const nom = a ? a.name : '';
           await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType, nom);
           await rechargerProfilEtActivites();
-
-        } else if (pendingUpload.source === 'strava-batch') {
-          // Import multiple : on enchaîne les imports avec un compteur visible
-          const ids = pendingUpload.stravaIds || [];
-          const total = ids.length;
-          const acts = window.allStravaActivities || [];
-          let ok = 0, fail = 0;
-          for (let i = 0; i < total; i++) {
-            const sid = ids[i];
-            const a = acts.find(x => String(x.id) === String(sid));
-            const nom = a ? a.name : '';
-            showLoading(`Import en cours ${i + 1} / ${total}... (${ok} OK${fail>0 ? ` · ${fail} erreur${fail>1?'s':''}` : ''})`);
-            try {
-              await ajouterActiviteStrava(sid, typeSortie, currentProfilType, nom);
-              ok++;
-            } catch (e) {
-              console.warn(`Erreur import Strava ${sid} :`, e.message);
-              fail++;
-            }
-          }
-          await rechargerProfilEtActivites();
-          if (fail > 0) {
-            alert(`Import terminé : ${ok} activités importées, ${fail} en erreur (déjà importées ou problème API).`);
-          } else {
-            // Petit feedback succès discret
-            console.log(`✅ ${ok} activités importées`);
-          }
         }
 
       } catch (e) {
@@ -1663,6 +1763,7 @@
         const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
         const isImported = dejaImportes.has(String(a.id));
         const isSelected = window.stravaSelected && window.stravaSelected.has(String(a.id));
+        const typeChoisi = (window.stravaTypeMap && window.stravaTypeMap[a.id]) || 'entrainement';
         return `
           <label class="strava-activity strava-activity-checkable ${isImported?'is-imported':''} ${isSelected?'is-selected':''}">
             <input type="checkbox" class="strava-check"
@@ -1671,16 +1772,27 @@
               onchange="toggleStravaSelection('${a.id}', this)">
             <div class="strava-act-info">
               <div class="sa-name">${escapeHTML(a.name)}</div>
-              <div class="sa-meta">${a.type} · ${date}</div>
-            </div>
-            <div class="sa-stats">
-              ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
-              <span style="color:var(--text-3)">${dureeFmt}</span>
+              <div class="sa-meta">${a.type} · ${date} · ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+ · ${dureeFmt}</div>
+              ${isSelected && !isImported ? `
+                <div class="strava-type-picker">
+                  <span class="strava-type-label">Type :</span>
+                  <select class="strava-type-select" onclick="event.preventDefault();event.stopPropagation();" onchange="setStravaType('${a.id}', this.value); event.stopPropagation();">
+                    <option value="course"        ${typeChoisi==='course'?'selected':''}>🏁 Course</option>
+                    <option value="entrainement"  ${typeChoisi==='entrainement'?'selected':''}>🏃 Entraînement</option>
+                    <option value="sortie"        ${typeChoisi==='sortie'?'selected':''}>🥾 Sortie</option>
+                  </select>
+                </div>
+              ` : ''}
             </div>
             ${isImported ? '<span class="sa-imported-tag">✓ Importée</span>' : ''}
           </label>
         `;
       }).join('');
+    }
+
+    function setStravaType(stravaId, type) {
+      if (!window.stravaTypeMap) window.stravaTypeMap = {};
+      window.stravaTypeMap[stravaId] = type;
     }
 
     function toggleStravaSelection(stravaId, checkbox) {
@@ -1723,12 +1835,36 @@
       window.stravaSelected = new Set();
     }
 
-    // Lancer l'import de la sélection : on demande UNE SEULE FOIS le type de sortie
-    function lancerImportSelectionStrava() {
+    // Lancer l'import direct : chaque activité utilise son type choisi
+    async function lancerImportSelectionStrava() {
       const ids = Array.from(window.stravaSelected || []);
       if (ids.length === 0) return;
+
       fermerModalStrava();
-      ouvrirModalTypeSortie({ source: 'strava-batch', stravaIds: ids });
+      showLoading(`Import 0 / ${ids.length}...`);
+
+      const acts = window.allStravaActivities || [];
+      const typeMap = window.stravaTypeMap || {};
+      let ok = 0, fail = 0;
+      for (let i = 0; i < ids.length; i++) {
+        const sid = ids[i];
+        const a = acts.find(x => String(x.id) === String(sid));
+        const nom = a ? a.name : '';
+        const typeSortie = typeMap[sid] || 'entrainement';
+        showLoading(`Import ${i + 1} / ${ids.length}... (${ok} OK${fail>0 ? ` · ${fail} erreur${fail>1?'s':''}` : ''})`);
+        try {
+          await ajouterActiviteStrava(sid, typeSortie, currentProfilType, nom);
+          ok++;
+        } catch (e) {
+          console.warn(`Erreur import Strava ${sid} :`, e.message);
+          fail++;
+        }
+      }
+      await rechargerProfilEtActivites();
+      hideLoading();
+      if (fail > 0) {
+        alert(`Import terminé : ${ok} activités importées, ${fail} en erreur.`);
+      }
     }
 
     // ── Loading overlay ────────────────────────────────────────
