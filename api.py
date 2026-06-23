@@ -1654,25 +1654,105 @@ def delete_activity(
     return {"status": "ok"}
 
 
-@app.delete("/api/evolution/reset")
-def reset_evolution(
+@app.post("/api/evolution/rebuild")
+def rebuild_evolution(
     profil_type: str = "trail",
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Réinitialise l'historique d'évolution (supprime tous les snapshots).
-    Utile si l'historique est devenu incohérent après suppressions multiples.
+    Reconstruit proprement l'historique d'évolution :
+    1. Supprime tous les snapshots existants du profil
+    2. Trie les activités par date d'activité (date de la course)
+    3. Pour chaque activité, calcule le profil cumulé et crée un snapshot
+    Résultat : une courbe d'évolution chronologiquement cohérente.
+       - Premier snapshot = première course (chronologiquement) seule
+       - Dernier snapshot = moyenne de toutes les activités
     """
     if profil_type not in ("trail", "rando"):
         raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
 
-    n = db.query(ProfilSnapshot).filter(
+    # 1. Suppression des snapshots existants
+    db.query(ProfilSnapshot).filter(
         ProfilSnapshot.user_id == user.id,
         ProfilSnapshot.type_profil == profil_type,
     ).delete()
     db.commit()
-    return {"status": "ok", "supprimes": n}
+
+    # 2. Récup activités triées par date_activity ASC (date de la course)
+    # Avec fallback sur created_at pour les activités sans date
+    activities = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.type_profil == profil_type,
+        Activity.source != 'simulation',
+    ).order_by(Activity.date_activity.asc().nullslast(), Activity.created_at.asc()).all()
+
+    if not activities:
+        return {"status": "ok", "snapshots_crees": 0}
+
+    montees   = ['montee_raide', 'montee_soutenue', 'montee_douce']
+    descentes = ['descente_douce', 'descente_soutenue', 'descente_raide']
+
+    # 3. Reconstruction snapshot par snapshot (cumulatif chronologique)
+    nb = 0
+    for i, act in enumerate(activities):
+        traces_cumul = []
+        for j in range(i + 1):
+            td = activities[j].trace_data or {}
+            if td:
+                traces_cumul.append(td)
+
+        if not traces_cumul:
+            continue
+
+        try:
+            profil, drain = agreger(traces_cumul)
+            cc = coeff_course(traces_cumul)
+            arch = archetype(profil)
+
+            vep_glob = sum(t.get('vep_globale', 0) for t in traces_cumul) / len(traces_cumul)
+            dist_moy = sum(t.get('dist_km', 0) for t in traces_cumul) / len(traces_cumul)
+
+            # Scores montée / descente
+            score_montee = 0.0
+            score_descente = 0.0
+            nb_m, nb_d = 0, 0
+            for t in montees:
+                if t in profil and 'ecart_plat_pct' in profil[t]:
+                    score_montee += profil[t]['ecart_plat_pct']
+                    nb_m += 1
+            for t in descentes:
+                if t in profil and 'ecart_plat_pct' in profil[t]:
+                    score_descente += profil[t]['ecart_plat_pct']
+                    nb_d += 1
+            if nb_m > 0: score_montee /= nb_m
+            if nb_d > 0: score_descente /= nb_d
+
+            # Normaliser le nom d'archétype
+            arch_nom_brut = (arch or {}).get('nom', None) or ''
+            arch_nom = arch_nom_brut.replace("L'", "").replace("Le ", "").replace("La ", "").strip()
+
+            snap = ProfilSnapshot(
+                user_id            = user.id,
+                type_profil        = profil_type,
+                activity_id        = act.id,
+                date_activity      = act.date_activity,
+                vep_globale        = vep_glob,
+                drain_moy_h        = drain,
+                coefficient_course = cc.get('coefficient', 1.0),
+                nb_traces          = len(traces_cumul),
+                dist_moy_km        = dist_moy,
+                score_montee       = score_montee,
+                score_descente     = score_descente,
+                archetype_nom      = arch_nom,
+            )
+            db.add(snap)
+            nb += 1
+        except Exception as e:
+            print(f"⚠️ Erreur rebuild snapshot pour activité {act.id} : {e}")
+
+    db.commit()
+    return {"status": "ok", "snapshots_crees": nb}
 
 
 @app.get("/api/activities/{activity_id}")
