@@ -407,58 +407,137 @@ def agreger(traces):
 #  ARCHÉTYPE
 # ══════════════════════════════════════════════════════════════
 
+def extraire_trackpoints(df, max_points=200):
+    """
+    Échantillonne les trackpoints du DataFrame pour stockage léger
+    (carte Leaflet + altimétrie). Conserve dist, lat, lon, alt.
+    """
+    if df is None or len(df) == 0:
+        return []
+
+    n = len(df)
+    step = max(1, n // max_points)
+    sample = df.iloc[::step].copy()
+
+    # On ajoute toujours le dernier point
+    if sample.index[-1] != df.index[-1]:
+        sample = pd.concat([sample, df.iloc[[-1]]])
+
+    cols = {'lat', 'lon', 'alt', 'dist_cum'}
+    if not cols.issubset(sample.columns):
+        return []
+
+    pts = []
+    for _, row in sample.iterrows():
+        pts.append({
+            'lat':  round(float(row['lat']), 6),
+            'lon':  round(float(row['lon']), 6),
+            'alt':  round(float(row['alt']), 1),
+            'dist': round(float(row['dist_cum']), 3),
+        })
+    return pts
+
+
 def archetype(profil):
+    """
+    Classifie le coureur en 8 archétypes distincts basés sur :
+    - em : écart moyen en montée (positif = à l'aise)
+    - ed : écart moyen en descente (positif = à l'aise)
+    - sr : régularité (écart-type des écarts → faible = homogène)
+    - em_raide / em_douce : profil dans les montées
+    - ed_raide / ed_douce : profil dans les descentes
+    """
     if not profil:
         return {'key':'combattant','nom':'Le Combattant','desc':'Profil en construction.',
                 'forces':[],'faiblesses':[],'conseil':'Ajoute plus de traces GPX.'}
 
-    # On utilise les écarts vs plat (positifs = points forts, négatifs = points faibles)
-    tm=[t for t in ['montee_raide','montee_soutenue','montee_douce'] if t in profil]
-    td=[t for t in ['descente_douce','descente_soutenue','descente_raide'] if t in profil]
+    # Écarts par type de terrain
+    def ep(t): return profil[t]['ecart_plat_pct'] if t in profil and 'ecart_plat_pct' in profil[t] else None
 
-    em=float(np.mean([profil[t]['ecart_plat_pct'] for t in tm])) if tm else 0
-    ed=float(np.mean([profil[t]['ecart_plat_pct'] for t in td])) if td else 0
+    em_raide    = ep('montee_raide')
+    em_soutenue = ep('montee_soutenue')
+    em_douce    = ep('montee_douce')
+    ed_douce    = ep('descente_douce')
+    ed_soutenue = ep('descente_soutenue')
+    ed_raide    = ep('descente_raide')
 
-    # Régularité = faible écart-type entre tous les terrains
-    ecarts=[profil[t]['ecart_plat_pct'] for t in profil]
-    sr=float(np.std(ecarts)) if ecarts else 100
+    tm = [v for v in [em_raide, em_soutenue, em_douce] if v is not None]
+    td = [v for v in [ed_douce, ed_soutenue, ed_raide] if v is not None]
 
-    # Logique de classification
-    # Note: les écarts sont souvent négatifs (le plat reste généralement le plus rapide)
-    # On compare donc les écarts RELATIFS entre montée et descente
-    if em > ed + 5 and em > -10:
-        # Montagne marquée au-dessus de la descente
+    em = float(np.mean(tm)) if tm else 0
+    ed = float(np.mean(td)) if td else 0
+
+    ecarts = [profil[t]['ecart_plat_pct'] for t in profil if 'ecart_plat_pct' in profil[t]]
+    sr = float(np.std(ecarts)) if ecarts else 100
+
+    # Spécialisation : monté raide >> douce → puissance en haute pente
+    delta_raide_mont = (em_raide - em_douce) if em_raide is not None and em_douce is not None else 0
+    delta_raide_desc = (ed_raide - ed_douce) if ed_raide is not None and ed_douce is not None else 0
+
+    # ═══ Classification (ordre = priorité) ═══
+
+    # 1. Le Cabri — puissant en montée raide (>> douce)
+    if em > 0 and delta_raide_mont > 8:
+        return {'key':'cabri','nom':'Le Cabri',
+                'desc':"Tu attaques les pentes raides comme un cabri. Plus ça monte, plus tu accélères.",
+                'forces':['Pentes raides courtes','Explosivité musculaire','Sections techniques montantes'],
+                'faiblesses':['Longues montées régulières','Gestion de l\'effort sur ultra'],
+                'conseil':'Travaille des montées longues à allure constante pour ajouter du diesel à ton explosivité.'}
+
+    # 2. Le Grimpeur — excellent en montée (général), particulièrement soutenu/douce
+    if em > 0 and em > ed + 5:
         return {'key':'grimpeur','nom':'Le Grimpeur',
                 'desc':"Tu avales les D+ comme personne. Les montées sont ton terrain de jeu.",
-                'forces':['Montées raides et soutenues',"Résistance à l'accumulation de D+"],
+                'forces':['Montées soutenues et longues',"Résistance à l'accumulation de D+",'Économie d\'énergie en côte'],
                 'faiblesses':['Descentes techniques','Manque de vitesse sur plat'],
-                'conseil':'Travaille tes descentes en fractionné technique.'}
-    elif ed > em + 5 and ed > -10:
+                'conseil':'Travaille tes descentes en fractionné technique pour ne pas perdre ce que tu gagnes en montée.'}
+
+    # 3. Le Funambule — descente raide >> descente douce (technicien)
+    if ed > 0 and delta_raide_desc > 8:
+        return {'key':'funambule','nom':'Le Funambule',
+                'desc':"Tu danses sur les descentes techniques. Plus ça plonge, plus tu vas vite.",
+                'forces':['Descentes raides et techniques','Pieds véloces','Lecture du terrain'],
+                'faiblesses':['Montées prolongées','Plat monotone'],
+                'conseil':'Renforce le travail spécifique en côte pour équilibrer ton profil.'}
+
+    # 4. Le Descendeur — excellent en descente (général)
+    if ed > 0 and ed > em + 5:
         return {'key':'descendeur','nom':'Le Descendeur',
                 'desc':"Tu récupères dans les descentes ce que tu perds à la montée.",
-                'forces':['Descentes rapides et fluides','Technique sur terrain varié'],
+                'forces':['Descentes rapides et fluides','Technique sur terrain varié','Gestion impact'],
                 'faiblesses':['Montées longues','Accumulation de D+'],
-                'conseil':'Intègre des montées spécifiques à tes entraînements.'}
-    elif sr < 8:
-        # Très faible variabilité = équilibré
+                'conseil':'Intègre des montées spécifiques à tes entraînements (côtes courtes intenses).'}
+
+    # 5. L'Équilibré — variabilité très faible
+    if sr < 7:
         return {'key':'equilibre','nom':"L'Équilibré",
-                'desc':'Profil homogène sur tous les terrains.',
-                'forces':['Polyvalence',"Régularité de l'allure"],
-                'faiblesses':['Pas de point fort dominant','Surclassé par des spécialistes'],
-                'conseil':'Choisis des parcours variés. Travaille un point fort.'}
-    elif em < -25 and ed < -25:
-        # Sous-performance importante en montée ET descente vs plat
-        return {'key':'explosif','nom':"L'Explosif",
-                'desc':"Tu es à l'aise sur le plat et les sections roulantes.",
-                'forces':['Sections rapides','Vitesse de base élevée'],
-                'faiblesses':["Fatigue sur longs D+","Manque d'efficacité en altitude"],
-                'conseil':'Développe ta puissance en côte.'}
-    else:
-        return {'key':'tenace','nom':'Le Tenace',
-                'desc':"Tu ne lâches jamais. Ta force c'est la régularité dans la durée.",
-                'forces':["Gestion de l'effort",'Mental et régularité'],
-                'faiblesses':['Vitesse de pointe limitée',"Moins à l'aise sur les courts"],
-                'conseil':'Fais-toi plaisir sur les ultras.'}
+                'desc':'Profil homogène sur tous les terrains. Pas de point faible, pas de point fort dominant.',
+                'forces':['Polyvalence','Régularité de l\'allure','Adaptable à tous parcours'],
+                'faiblesses':['Surclassé par des spécialistes sur leur terrain','Pas de signature'],
+                'conseil':'Choisis des parcours variés. Travaille un point fort pour te démarquer.'}
+
+    # 6. Le Diesel — modérément performant partout, mais régulier
+    if sr < 12 and -15 < em < 5 and -15 < ed < 5:
+        return {'key':'diesel','nom':'Le Diesel',
+                'desc':"Tu démarres calmement et tu finis fort. Ton truc, c'est la durée.",
+                'forces':['Endurance sur très longue distance','Régularité','Gestion énergétique'],
+                'faiblesses':['Accélérations courtes','Démarrage'],
+                'conseil':'Ajoute des séances de seuil pour gagner en puissance maximale.'}
+
+    # 7. Le Rouleur — sous-performance en relief mais plat fort (ex-Explosif)
+    if em < -20 and ed < -20:
+        return {'key':'rouleur','nom':'Le Rouleur',
+                'desc':"Tu es à l'aise sur le plat et les sections roulantes. Le relief te freine.",
+                'forces':['Sections rapides','Vitesse de base élevée','Plat et faux-plat'],
+                'faiblesses':["Fatigue sur longs D+","Difficulté en altitude",'Descentes techniques'],
+                'conseil':'Développe ta puissance en côte avec du fractionné montée 1\'/1\'.'}
+
+    # 8. Le Tenace — par défaut, profil endurant
+    return {'key':'tenace','nom':'Le Tenace',
+            'desc':"Tu ne lâches jamais. Ta force c'est la régularité dans la durée.",
+            'forces':["Gestion de l'effort",'Mental et régularité','Constance sur ultra'],
+            'faiblesses':['Vitesse de pointe limitée',"Moins à l'aise sur courte distance"],
+            'conseil':'Fais-toi plaisir sur les ultras. Pour les courses courtes, travaille la VMA.'}
 
 # ══════════════════════════════════════════════════════════════
 #  SIMULATION
@@ -1423,6 +1502,15 @@ async def add_activity_gpx(
         data = await fichier.read()
         df, d0, nfc = charger_gpx(data, user.fcmax)
         tr = analyser_trace(df, d0, type_sortie, user.fcmax)
+        # Enrichissement : trackpoints + alt min/max pour visualisation
+        tr['_trackpoints'] = extraire_trackpoints(df, max_points=200)
+        if 'alt' in df.columns:
+            tr['alt_min'] = round(float(df['alt'].min()), 1)
+            tr['alt_max'] = round(float(df['alt'].max()), 1)
+        if 'dm_cum' in df.columns:
+            tr['dmoins_m'] = round(float(df['dm_cum'].max()), 0)
+        if 'vitesse_kmh' in df.columns and df['duree_s'].sum() > 0:
+            tr['allure_moy_kmh'] = round(float((df['dist_m'].sum() / 1000) / (df['duree_s'].sum() / 3600)), 2)
     except Exception as e:
         raise HTTPException(400, detail=f"GPX invalide : {e}")
 
@@ -1479,6 +1567,14 @@ async def add_activity_strava(
         gpx_bytes = await telecharger_gpx_strava(db, user, strava_id)
         df, d0, nfc = charger_gpx(gpx_bytes, user.fcmax)
         tr = analyser_trace(df, d0, type_sortie, user.fcmax)
+        tr['_trackpoints'] = extraire_trackpoints(df, max_points=200)
+        if 'alt' in df.columns:
+            tr['alt_min'] = round(float(df['alt'].min()), 1)
+            tr['alt_max'] = round(float(df['alt'].max()), 1)
+        if 'dm_cum' in df.columns:
+            tr['dmoins_m'] = round(float(df['dm_cum'].max()), 0)
+        if 'vitesse_kmh' in df.columns and df['duree_s'].sum() > 0:
+            tr['allure_moy_kmh'] = round(float((df['dist_m'].sum() / 1000) / (df['duree_s'].sum() / 3600)), 2)
     except HTTPException:
         raise
     except Exception as e:
@@ -1558,50 +1654,6 @@ def delete_activity(
     return {"status": "ok"}
 
 
-@app.patch("/api/activities/{activity_id}")
-def update_activity(
-    activity_id: int,
-    nom:         Optional[str] = Form(None),
-    type_sortie: Optional[str] = Form(None),
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Modifie une activité : nom et/ou type de sortie."""
-    activity = db.query(Activity).filter(
-        Activity.id == activity_id,
-        Activity.user_id == user.id
-    ).first()
-
-    if not activity:
-        raise HTTPException(404, detail="Activité introuvable")
-
-    if nom is not None:
-        nom = nom.strip()
-        if not nom or len(nom) > 200:
-            raise HTTPException(400, detail="Nom invalide (1-200 caractères)")
-        activity.name = nom
-
-    type_change = False
-    if type_sortie is not None:
-        if type_sortie not in ('course', 'entrainement', 'sortie'):
-            raise HTTPException(400, detail="type_sortie doit être course/entrainement/sortie")
-        if activity.type_sortie != type_sortie:
-            activity.type_sortie = type_sortie
-            # Mise à jour de trace_data pour conserver la cohérence (le coefficient_course en dépend)
-            td = dict(activity.trace_data or {})
-            td['type_sortie'] = type_sortie
-            activity.trace_data = td
-            type_change = True
-
-    db.commit()
-
-    # Si le type a changé, on recalcule le profil (sans nouveau snapshot)
-    if type_change:
-        _recalculer_profil_user(db, user, activity.type_profil)
-
-    return {"status": "ok", "name": activity.name, "type_sortie": activity.type_sortie}
-
-
 @app.delete("/api/evolution/reset")
 def reset_evolution(
     profil_type: str = "trail",
@@ -1621,6 +1673,48 @@ def reset_evolution(
     ).delete()
     db.commit()
     return {"status": "ok", "supprimes": n}
+
+
+@app.get("/api/activities/{activity_id}")
+def get_activity_detail(
+    activity_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Détail complet d'une activité : trackpoints + KPIs."""
+    activity = db.query(Activity).filter(
+        Activity.id == activity_id,
+        Activity.user_id == user.id
+    ).first()
+
+    if not activity:
+        raise HTTPException(404, detail="Activité introuvable")
+
+    td = activity.trace_data or {}
+    trackpoints = td.get('_trackpoints', [])
+
+    # Allure moyenne en km/h (fallback)
+    allure_moy = td.get('allure_moy_kmh', 0)
+    if not allure_moy and activity.duree_s > 0 and activity.dist_km > 0:
+        allure_moy = round(activity.dist_km / (activity.duree_s / 3600), 2)
+
+    return {
+        "id":            activity.id,
+        "name":          activity.name,
+        "source":        activity.source,
+        "type_sortie":   activity.type_sortie,
+        "type_profil":   activity.type_profil,
+        "date":          activity.date_activity.isoformat() if activity.date_activity else None,
+        "dist_km":       activity.dist_km,
+        "dplus_m":       activity.dplus_m,
+        "dmoins_m":      td.get('dmoins_m', activity.dplus_m),
+        "duree_s":       activity.duree_s,
+        "vep_globale":   activity.vep_globale,
+        "allure_moy_kmh": allure_moy,
+        "alt_min":       td.get('alt_min', 0),
+        "alt_max":       td.get('alt_max', 0),
+        "trackpoints":   trackpoints,
+    }
 
 
 @app.patch("/api/activities/{activity_id}")
