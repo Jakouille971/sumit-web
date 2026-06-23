@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mon profil | SUM'IT</title>
+  <title>SUM'IT — Mon profil</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
   <!-- Leaflet pour la carte de détail activité -->
@@ -298,6 +298,115 @@
       color: var(--text-2);
       font-size: 14px;
       line-height: 1.6;
+    }
+    .btn-voir-archetypes {
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid var(--line-2);
+      color: var(--text-2);
+      font-family: var(--font-display);
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-voir-archetypes:hover { border-color: var(--sun); color: var(--sun); }
+
+    /* ── Modale Archétypes ── */
+    .archetypes-modal-content {
+      background: var(--bg);
+      border: 1px solid var(--line-2);
+      border-radius: 12px;
+      max-width: 980px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+    }
+    .archetypes-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 26px 30px 20px;
+      border-bottom: 1px solid var(--line);
+      position: sticky; top: 0;
+      background: var(--bg);
+      z-index: 2;
+    }
+    .archetypes-modal-header h2 {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+      color: var(--text); margin: 0 0 4px;
+    }
+    .archetypes-modal-header p { color: var(--text-3); font-size: 13px; margin: 0; }
+    .archetypes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      padding: 24px 30px 30px;
+    }
+    .archetype-card {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--arch-color, var(--sun));
+      border-radius: 8px;
+      padding: 18px 20px;
+      position: relative;
+    }
+    .archetype-card.is-mine {
+      background: var(--bg-3);
+      border-color: var(--arch-color);
+      box-shadow: inset 0 0 0 100px rgba(255, 200, 87, 0.04);
+    }
+    .archetype-card-badge {
+      position: absolute; top: 14px; right: 14px;
+      font-family: var(--font-display);
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--bg);
+      background: var(--arch-color);
+      padding: 3px 8px; border-radius: 3px;
+    }
+    .archetype-card-head {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .archetype-card-icon { font-size: 26px; }
+    .archetype-card-name {
+      font-family: var(--font-display);
+      font-size: 17px; font-weight: 700;
+      color: var(--arch-color);
+    }
+    .archetype-card-desc {
+      font-size: 13px; color: var(--text-2);
+      line-height: 1.55; margin-bottom: 14px;
+    }
+    .archetype-card-forces-label {
+      font-family: var(--font-display);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 6px;
+    }
+    .archetype-card-forces {
+      list-style: none; padding: 0; margin: 0 0 14px;
+    }
+    .archetype-card-forces li {
+      font-size: 12px; color: var(--text-2);
+      padding: 2px 0 2px 16px; position: relative;
+    }
+    .archetype-card-forces li::before {
+      content: '▸'; position: absolute; left: 0;
+      color: var(--arch-color);
+    }
+    .archetype-card-conseil {
+      font-size: 12px; color: var(--text-3);
+      line-height: 1.5;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+    @media (max-width: 768px) {
+      .archetypes-grid { grid-template-columns: 1fr; }
     }
 
     /* ── Score de pente ── */
@@ -1192,13 +1301,22 @@
     let stravaActivitiesCache = []; // cache pour filtrer sans refetch
 
     const ARCHETYPES = {
-      'Grimpeur': '🏔',
-      'Descendeur': '⛷',
-      'Explosif': '⚡',
-      'Équilibré': '⚖',
-      'Tenace': '💪',
+      'Cabri': '🐐',
+      'Grimpeur': '⛰️',
+      'Funambule': '🤸',
+      'Descendeur': '🏂',
+      'Équilibré': '⚖️',
+      'Diesel': '🚂',
+      'Rouleur': '🛼',
+      'Tenace': '🔥',
       'Combattant': '🥊',
     };
+
+    // Icône d'un archétype, insensible au préfixe "Le "/"L'"/"La "
+    function iconeArchetype(nom) {
+      const key = (nom || '').replace(/^L'/i, '').replace(/^Le\s+/i, '').replace(/^La\s+/i, '').trim();
+      return ARCHETYPES[key] || '🏃';
+    }
 
     // ── Init ─────────────────────────────────────────────────────
     (async function init() {
@@ -1313,7 +1431,7 @@
     function renderProfileDetails() {
       const p = currentProfile;
       const arch = p.archetype || {};
-      const archIcon = ARCHETYPES[arch.nom] || '🏃';
+      const archIcon = iconeArchetype(arch.nom);
       const profilData = p.profil_data || {};
 
       return `
@@ -1454,6 +1572,70 @@
 
     function getArchetypeColor(nom) {
       return ARCHETYPE_COLORS[normalizeArchetype(nom)] || '#FFC857';
+    }
+
+    // ── Données des 8 archétypes (cohérent backend) ─────────────
+    const ARCHETYPES_DATA = [
+      { nom: 'Le Cabri', icon: '🐐', color: '#A8E063',
+        desc: "Tu attaques les pentes raides comme un cabri. Plus ça monte fort, plus tu accélères.",
+        forces: ['Pentes raides courtes', 'Explosivité musculaire', 'Sections techniques montantes'],
+        conseil: "Travaille des montées longues à allure constante pour ajouter du diesel à ton explosivité." },
+      { nom: 'Le Grimpeur', icon: '⛰️', color: '#FFC857',
+        desc: "Tu avales les D+ comme personne. Les longues montées sont ton terrain de jeu.",
+        forces: ['Montées soutenues et longues', "Résistance à l'accumulation de D+", "Économie d'énergie en côte"],
+        conseil: "Travaille tes descentes en fractionné technique pour ne pas perdre ce que tu gagnes en montée." },
+      { nom: 'Le Funambule', icon: '🤸', color: '#9B7BE0',
+        desc: "Tu danses sur les descentes techniques. Plus ça plonge et c'est cassant, plus tu vas vite.",
+        forces: ['Descentes raides et techniques', 'Pieds véloces', 'Lecture du terrain'],
+        conseil: "Renforce le travail spécifique en côte pour équilibrer ton profil." },
+      { nom: 'Le Descendeur', icon: '🏂', color: '#4FA3D9',
+        desc: "Tu récupères dans les descentes ce que tu perds à la montée. Fluide et rapide en descente.",
+        forces: ['Descentes rapides et fluides', 'Technique sur terrain varié', 'Gestion des impacts'],
+        conseil: "Intègre des montées spécifiques (côtes courtes intenses) à tes entraînements." },
+      { nom: "L'Équilibré", icon: '⚖️', color: '#6BB36B',
+        desc: "Profil homogène sur tous les terrains. Pas de point faible, pas de point fort dominant.",
+        forces: ['Polyvalence', "Régularité de l'allure", 'Adaptable à tous parcours'],
+        conseil: "Choisis des parcours variés. Travaille un point fort pour te démarquer." },
+      { nom: 'Le Diesel', icon: '🚂', color: '#8B6F47',
+        desc: "Tu démarres calmement et tu finis fort. Ton truc, c'est la durée et la régularité.",
+        forces: ['Endurance sur très longue distance', 'Régularité', 'Gestion énergétique'],
+        conseil: "Ajoute des séances de seuil pour gagner en puissance maximale." },
+      { nom: 'Le Rouleur', icon: '🛼', color: '#E55B5B',
+        desc: "Tu es à l'aise sur le plat et les sections roulantes. Le relief marqué te freine.",
+        forces: ['Sections rapides', 'Vitesse de base élevée', 'Plat et faux-plat'],
+        conseil: "Développe ta puissance en côte avec du fractionné montée 1'/1'." },
+      { nom: 'Le Tenace', icon: '🔥', color: '#F39237',
+        desc: "Tu ne lâches jamais. Ta force, c'est le mental et la régularité dans la durée.",
+        forces: ["Gestion de l'effort", 'Mental et régularité', 'Constance sur ultra'],
+        conseil: "Fais-toi plaisir sur les ultras. Pour les courses courtes, travaille la VMA." },
+    ];
+
+    function ouvrirModalArchetypes() {
+      const grid = document.getElementById('archetypesGrid');
+      const monArch = (currentProfile && currentProfile.archetype && currentProfile.archetype.nom)
+        ? normalizeArchetype(currentProfile.archetype.nom) : null;
+      grid.innerHTML = ARCHETYPES_DATA.map(a => {
+        const estLeMien = normalizeArchetype(a.nom) === monArch;
+        return `
+          <div class="archetype-card ${estLeMien ? 'is-mine' : ''}" style="--arch-color:${a.color};">
+            ${estLeMien ? '<div class="archetype-card-badge">Ton profil</div>' : ''}
+            <div class="archetype-card-head">
+              <span class="archetype-card-icon">${a.icon}</span>
+              <span class="archetype-card-name">${a.nom}</span>
+            </div>
+            <div class="archetype-card-desc">${a.desc}</div>
+            <div class="archetype-card-forces-label">Points forts</div>
+            <ul class="archetype-card-forces">
+              ${a.forces.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+            <div class="archetype-card-conseil">💡 ${a.conseil}</div>
+          </div>`;
+      }).join('');
+      document.getElementById('modalArchetypes').classList.add('active');
+    }
+
+    function fermerModalArchetypes() {
+      document.getElementById('modalArchetypes').classList.remove('active');
     }
 
     let evolutionData = [];
@@ -2345,6 +2527,8 @@
       window.lancerRenommage         = lancerRenommage;
       window.deleteActivite          = deleteActivite;
       window.ouvrirDetailActivite    = ouvrirDetailActivite;
+      window.ouvrirModalArchetypes   = ouvrirModalArchetypes;
+      window.fermerModalArchetypes   = fermerModalArchetypes;
       window.fermerDetailActivite    = fermerDetailActivite;
       window.fermerEditActivite      = fermerEditActivite;
       window.selectionnerTypeEdit    = selectionnerTypeEdit;
