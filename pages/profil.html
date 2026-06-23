@@ -517,6 +517,69 @@
     }
     .btn-import-sa:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ── Checkboxes Strava + batch ── */
+    .strava-activity-checkable {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .strava-activity-checkable:hover { border-color: var(--sun); }
+    .strava-activity-checkable.is-selected {
+      background: rgba(255, 200, 87, 0.08);
+      border-color: var(--sun);
+    }
+    .strava-activity-checkable.is-imported {
+      opacity: 0.6;
+      cursor: default;
+    }
+    .strava-activity-checkable.is-imported:hover { border-color: var(--line); }
+    .strava-check {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--sun);
+      cursor: pointer;
+      margin: 0;
+    }
+    .strava-check:disabled { cursor: not-allowed; }
+    .strava-act-info { min-width: 0; }
+    .sa-imported-tag {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--leaf);
+      padding: 4px 8px;
+      background: rgba(107, 179, 107, 0.10);
+      border: 1px solid rgba(107, 179, 107, 0.3);
+      border-radius: 3px;
+    }
+    .strava-batch-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0 14px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+    .strava-batch-actions .btn-ghost {
+      padding: 8px 14px;
+      font-size: 11px;
+    }
+    .strava-batch-actions .btn-import-sa {
+      padding: 10px 22px;
+      font-size: 12px;
+    }
+
     /* ── Édition nom activité ── */
     .activite-name-wrapper {
       display: flex; align-items: center; gap: 6px;
@@ -1071,14 +1134,14 @@
       await refreshEvolution();
     }
 
-    // ── Évolution : couleurs par archétype ────────────────────
+    // ── Évolution : couleurs par archétype (palette SUM'IT) ─────
     const ARCHETYPE_COLORS = {
-      'Grimpeur':    '#FFC857',  // jaune
-      'Descendeur':  '#4FA3D9',  // bleu
-      'Explosif':    '#E55B5B',  // rouge
-      'Équilibré':   '#6BB36B',  // vert
-      'Tenace':      '#B388EB',  // violet
-      'Combattant':  '#F39237',  // orange
+      'Grimpeur':    '#FFC857',  // jaune (sun) - effort montée
+      'Équilibré':   '#6BB36B',  // vert (leaf) - polyvalent
+      'Descendeur':  '#4FA3D9',  // bleu (sky) - effort descente
+      'Tenace':      '#F39237',  // orange - endurance
+      'Explosif':    '#E55B5B',  // rouge - vitesse
+      'Combattant':  '#B388EB',  // violet - mental
     };
 
     let evolutionData = [];
@@ -1097,7 +1160,11 @@
       if (!cont) return;
       try {
         const res = await getEvolution(currentProfilType);
-        evolutionData = res.snapshots || [];
+        evolutionData = (res.snapshots || []).sort((a, b) => {
+          const da = new Date(a.date_activity || a.created_at).getTime();
+          const db = new Date(b.date_activity || b.created_at).getTime();
+          return da - db;
+        });
         dessinerEvolutionChart();
       } catch (e) {
         cont.innerHTML = `<div class="evolution-empty">Erreur : ${e.message}</div>`;
@@ -1153,13 +1220,29 @@
       }
 
       // Construction des segments de courbe colorés par archétype
+      // Si l'archétype change entre 2 points, on fait un dégradé linéaire
+      let gradientDefs = '';
       let pathSegments = '';
       for (let i = 0; i < evolutionData.length - 1; i++) {
         const a = evolutionData[i], b = evolutionData[i + 1];
-        const color = ARCHETYPE_COLORS[a.archetype_nom] || 'var(--sun)';
+        const colorA = ARCHETYPE_COLORS[a.archetype_nom] || '#FFC857';
+        const colorB = ARCHETYPE_COLORS[b.archetype_nom] || '#FFC857';
         const x1 = xScale(i), y1 = yScale(values[i]);
         const x2 = xScale(i + 1), y2 = yScale(values[i + 1]);
-        pathSegments += `<line class="ev-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}"/>`;
+
+        if (colorA === colorB) {
+          // Même couleur : trait simple
+          pathSegments += `<line class="ev-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${colorA}"/>`;
+        } else {
+          // Dégradé entre les 2 couleurs
+          const gradId = `ev-grad-${i}`;
+          gradientDefs += `
+            <linearGradient id="${gradId}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="${colorA}"/>
+              <stop offset="100%" stop-color="${colorB}"/>
+            </linearGradient>`;
+          pathSegments += `<line class="ev-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="url(#${gradId})"/>`;
+        }
       }
 
       // Points (cercles)
@@ -1180,7 +1263,7 @@
         : [0, Math.floor(evolutionData.length / 2), evolutionData.length - 1];
       idxLabels.forEach(i => {
         const s = evolutionData[i];
-        const date = s.created_at ? new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) : '—';
+        const date = (s.date_activity || s.created_at) ? new Date(s.date_activity || s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) : '—';
         xLabels.push(`<text class="ev-axis-text" x="${xScale(i)}" y="${M.top + innerH + 18}" text-anchor="middle">${date}</text>`);
       });
 
@@ -1192,6 +1275,7 @@
 
       cont.innerHTML = `
         <svg class="evolution-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+          <defs>${gradientDefs}</defs>
           ${yLabels}
           <line class="ev-axis-line" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${M.top + innerH}"/>
           <line class="ev-axis-line" x1="${M.left}" y1="${M.top + innerH}" x2="${M.left + innerW}" y2="${M.top + innerH}"/>
@@ -1220,7 +1304,7 @@
       hideEvTooltip();
       const s = evolutionData[idx];
       const config = METRIC_CONFIG[currentEvolutionMetric];
-      const date = s.created_at ? new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
+      const date = (s.date_activity || s.created_at) ? new Date(s.date_activity || s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
       const tt = document.createElement('div');
       tt.className = 'ev-tooltip';
       tt.id = 'ev-tooltip-active';
@@ -1394,28 +1478,51 @@
       document.getElementById('modalTypeSortie').classList.remove('active');
       if (!pendingUpload) return;
 
-      showLoading('Analyse en cours, ne quitte pas la page...');
-
       try {
         if (pendingUpload.source === 'gpx') {
+          showLoading('Analyse en cours, ne quitte pas la page...');
           await ajouterActiviteGPX(pendingUpload.file, typeSortie, currentProfilType);
+          await rechargerProfilEtActivites();
+
         } else if (pendingUpload.source === 'strava') {
-          await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType);
-          // Reset bouton modal Strava
-          if (pendingUpload.btn) {
-            pendingUpload.btn.textContent = '✓ Importée';
-            pendingUpload.btn.disabled = true;
+          showLoading('Analyse Strava en cours...');
+          // On retrouve le nom de l'activité (depuis le cache Strava)
+          const acts = window.allStravaActivities || [];
+          const a = acts.find(x => String(x.id) === String(pendingUpload.stravaId));
+          const nom = a ? a.name : '';
+          await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType, nom);
+          await rechargerProfilEtActivites();
+
+        } else if (pendingUpload.source === 'strava-batch') {
+          // Import multiple : on enchaîne les imports avec un compteur visible
+          const ids = pendingUpload.stravaIds || [];
+          const total = ids.length;
+          const acts = window.allStravaActivities || [];
+          let ok = 0, fail = 0;
+          for (let i = 0; i < total; i++) {
+            const sid = ids[i];
+            const a = acts.find(x => String(x.id) === String(sid));
+            const nom = a ? a.name : '';
+            showLoading(`Import en cours ${i + 1} / ${total}... (${ok} OK${fail>0 ? ` · ${fail} erreur${fail>1?'s':''}` : ''})`);
+            try {
+              await ajouterActiviteStrava(sid, typeSortie, currentProfilType, nom);
+              ok++;
+            } catch (e) {
+              console.warn(`Erreur import Strava ${sid} :`, e.message);
+              fail++;
+            }
+          }
+          await rechargerProfilEtActivites();
+          if (fail > 0) {
+            alert(`Import terminé : ${ok} activités importées, ${fail} en erreur (déjà importées ou problème API).`);
+          } else {
+            // Petit feedback succès discret
+            console.log(`✅ ${ok} activités importées`);
           }
         }
 
-        await rechargerProfilEtActivites();
-
       } catch (e) {
         alert('Erreur : ' + e.message);
-        if (pendingUpload.btn) {
-          pendingUpload.btn.disabled = false;
-          pendingUpload.btn.textContent = 'Importer';
-        }
       } finally {
         pendingUpload = null;
         hideLoading();
@@ -1445,8 +1552,10 @@
       const list = document.getElementById('stravaActivitiesList');
       list.innerHTML = `<p style="text-align:center;color:var(--text-3)">Chargement des activités Strava...</p>`;
 
+      // Reset sélection
+      window.stravaSelected = new Set();
+
       try {
-        // On charge 100 activités pour avoir un bon corpus à filtrer
         const res = await listerActivitesStrava(100);
         const activities = res.activities || [];
 
@@ -1455,11 +1564,9 @@
           return;
         }
 
-        // Stocker pour filtrage
         window.allStravaActivities = activities;
         window.dejaImportesStrava = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
 
-        // Render structure : barre de recherche + liste
         list.innerHTML = `
           <div class="strava-search">
             <input type="text" class="search-name" id="stravaSearchName"
@@ -1484,6 +1591,14 @@
             </div>
             <button class="btn-ghost" onclick="resetFiltresStrava()" style="padding:8px 14px;font-size:11px;">Reset</button>
             <div class="strava-search-count" id="stravaFilterCount"></div>
+          </div>
+          <div class="strava-batch-actions">
+            <button class="btn-ghost" id="stravaSelectAll" onclick="toggleStravaSelectAll()">
+              ☑ Tout sélectionner / désélectionner
+            </button>
+            <button class="btn-import-sa" id="stravaImportSelected" onclick="lancerImportSelectionStrava()" disabled>
+              Importer la sélection
+            </button>
           </div>
           <div id="stravaActivitiesItems"></div>
         `;
@@ -1521,9 +1636,20 @@
 
       const items = document.getElementById('stravaActivitiesItems');
       const countEl = document.getElementById('stravaFilterCount');
+      const selectedCount = window.stravaSelected ? window.stravaSelected.size : 0;
 
       if (countEl) {
-        countEl.textContent = `${filtered.length} activité${filtered.length>1?'s':''} sur ${acts.length} affichée${filtered.length>1?'s':''}`;
+        countEl.textContent = `${filtered.length} activité${filtered.length>1?'s':''} sur ${acts.length} · ${selectedCount} sélectionnée${selectedCount>1?'s':''}`;
+      }
+
+      // Bouton "Tout sélectionner" + "Importer la sélection"
+      const selectAllBtn = document.getElementById('stravaSelectAll');
+      const importBtn = document.getElementById('stravaImportSelected');
+      if (importBtn) {
+        importBtn.disabled = selectedCount === 0;
+        importBtn.textContent = selectedCount === 0
+          ? 'Importer la sélection'
+          : `Importer (${selectedCount})`;
       }
 
       if (filtered.length === 0) {
@@ -1536,9 +1662,14 @@
         const dureeMin = Math.round(a.duree_s / 60);
         const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
         const isImported = dejaImportes.has(String(a.id));
+        const isSelected = window.stravaSelected && window.stravaSelected.has(String(a.id));
         return `
-          <div class="strava-activity">
-            <div>
+          <label class="strava-activity strava-activity-checkable ${isImported?'is-imported':''} ${isSelected?'is-selected':''}">
+            <input type="checkbox" class="strava-check"
+              ${isImported ? 'disabled' : ''}
+              ${isSelected ? 'checked' : ''}
+              onchange="toggleStravaSelection('${a.id}', this)">
+            <div class="strava-act-info">
               <div class="sa-name">${escapeHTML(a.name)}</div>
               <div class="sa-meta">${a.type} · ${date}</div>
             </div>
@@ -1546,12 +1677,37 @@
               ${a.distance_km.toFixed(1)} km · ${Math.round(a.dplus_m)}m D+<br>
               <span style="color:var(--text-3)">${dureeFmt}</span>
             </div>
-            <button class="btn-import-sa" onclick="declencherImportStrava('${a.id}', this)" ${isImported ? 'disabled' : ''}>
-              ${isImported ? '✓ Importée' : 'Importer'}
-            </button>
-          </div>
+            ${isImported ? '<span class="sa-imported-tag">✓ Importée</span>' : ''}
+          </label>
         `;
       }).join('');
+    }
+
+    function toggleStravaSelection(stravaId, checkbox) {
+      if (!window.stravaSelected) window.stravaSelected = new Set();
+      if (checkbox.checked) {
+        window.stravaSelected.add(stravaId);
+      } else {
+        window.stravaSelected.delete(stravaId);
+      }
+      filtrerActivitesStrava();
+    }
+
+    function toggleStravaSelectAll() {
+      const acts = window.allStravaActivities || [];
+      const dejaImportes = window.dejaImportesStrava || new Set();
+      const visibleNotImported = acts.filter(a => !dejaImportes.has(String(a.id)));
+
+      if (!window.stravaSelected) window.stravaSelected = new Set();
+
+      // Si tout est sélectionné → désélectionner ; sinon tout sélectionner
+      const allSelected = visibleNotImported.every(a => window.stravaSelected.has(String(a.id)));
+      if (allSelected) {
+        window.stravaSelected.clear();
+      } else {
+        visibleNotImported.forEach(a => window.stravaSelected.add(String(a.id)));
+      }
+      filtrerActivitesStrava();
     }
 
     function resetFiltresStrava() {
@@ -1564,13 +1720,15 @@
 
     function fermerModalStrava() {
       document.getElementById('modalStrava').classList.remove('active');
+      window.stravaSelected = new Set();
     }
 
-    function declencherImportStrava(stravaId, btn) {
-      btn.disabled = true;
-      btn.textContent = '...';
+    // Lancer l'import de la sélection : on demande UNE SEULE FOIS le type de sortie
+    function lancerImportSelectionStrava() {
+      const ids = Array.from(window.stravaSelected || []);
+      if (ids.length === 0) return;
       fermerModalStrava();
-      ouvrirModalTypeSortie({ source: 'strava', stravaId, btn });
+      ouvrirModalTypeSortie({ source: 'strava-batch', stravaIds: ids });
     }
 
     // ── Loading overlay ────────────────────────────────────────
