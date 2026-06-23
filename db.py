@@ -149,6 +149,34 @@ class ProfilSnapshot(Base):
     created_at        = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class BilanResultat(Base):
+    """
+    Bilan épinglé : comparaison sauvegardée entre une simulation prédite
+    et une course réelle (type 'resultat').
+    """
+    __tablename__ = "bilans_resultats"
+
+    id             = Column(Integer, primary_key=True, index=True)
+    user_id        = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    nom            = Column(String, nullable=False)
+    simulation_id  = Column(Integer, nullable=True)  # id de la sim (peut être supprimée ensuite)
+    resultat_id    = Column(Integer, nullable=True)  # id de l'activité résultat
+    type_profil    = Column(String, default='trail')
+
+    # Données complètes du bilan (JSON) pour réaffichage
+    bilan_data     = Column(JSON, nullable=True)
+
+    # Commentaire personnel de l'utilisateur (contexte de la course)
+    commentaire    = Column(Text, nullable=True)
+
+    # Métriques clés extraites pour affichage liste
+    ecart_total_s  = Column(Float, default=0.0)
+    plus_rapide    = Column(Boolean, default=False)
+    km_commun      = Column(Float, default=0.0)
+
+    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
 # ══════════════════════════════════════════════════════════════
