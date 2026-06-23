@@ -317,6 +317,117 @@
       margin-bottom: 24px;
     }
 
+    /* ── Mon évolution ── */
+    .evolution-section {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    .evolution-section h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+    .evolution-section .desc {
+      color: var(--text-3);
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+    .evolution-tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .ev-metric-btn {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text-3);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ev-metric-btn:hover { color: var(--text-2); border-color: var(--text-3); }
+    .ev-metric-btn.active {
+      background: var(--sun);
+      color: var(--bg);
+      border-color: var(--sun);
+    }
+    .evolution-chart-container {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 18px 12px 6px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .evolution-chart-svg { width: 100%; height: 280px; display: block; }
+    .ev-line { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .ev-point { stroke-width: 1.5; cursor: pointer; transition: r 0.15s; }
+    .ev-point:hover { r: 7; }
+    .ev-axis-line { stroke: var(--line); stroke-width: 1; }
+    .ev-axis-text {
+      fill: var(--text-3);
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+    }
+    .ev-grid-line { stroke: var(--line); stroke-width: 0.5; stroke-dasharray: 2 4; }
+    .ev-tooltip {
+      position: absolute;
+      background: var(--bg);
+      border: 1px solid var(--sun);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: var(--text);
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+      transition: opacity 0.15s;
+      z-index: 50;
+      white-space: nowrap;
+    }
+    .ev-tooltip-title {
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: var(--sun);
+      margin-bottom: 3px;
+      font-size: 11px;
+    }
+    .ev-tooltip-meta { color: var(--text-3); font-size: 10px; }
+    .evolution-legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 12px 6px 0;
+      border-top: 1px solid var(--line);
+    }
+    .ev-legend-item {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px;
+      color: var(--text-2);
+      font-family: var(--font-display);
+      letter-spacing: 0.04em;
+    }
+    .ev-legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .evolution-empty {
+      text-align: center;
+      color: var(--text-3);
+      padding: 60px 20px;
+      font-size: 13px;
+    }
+
     /* ── Modale Strava ── */
     .modal-overlay {
       display: none;
@@ -764,6 +875,7 @@
         currentUser = await fetchMe();
         renderUI();
         await refreshActivites();
+        await refreshEvolution();
       } catch (e) {
         section.innerHTML = `<p style="text-align:center;color:var(--danger)">Erreur : ${e.message}</p>`;
       }
@@ -889,6 +1001,25 @@
           <p class="desc">Écart de performance par type de terrain par rapport à ton allure sur le plat (référence 0%).</p>
           ${renderScorePente(profilData)}
         </div>
+
+        <!-- Mon évolution -->
+        <div class="evolution-section">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <h3>📈 Mon évolution</h3>
+            <div class="evolution-tabs">
+              <button class="ev-metric-btn active" data-metric="vep_globale"        onclick="switchEvolutionMetric('vep_globale')">VEP</button>
+              <button class="ev-metric-btn"        data-metric="coefficient_course" onclick="switchEvolutionMetric('coefficient_course')">Coef</button>
+              <button class="ev-metric-btn"        data-metric="score_montee"       onclick="switchEvolutionMetric('score_montee')">Montée</button>
+              <button class="ev-metric-btn"        data-metric="score_descente"     onclick="switchEvolutionMetric('score_descente')">Descente</button>
+              <button class="ev-metric-btn"        data-metric="dist_moy_km"        onclick="switchEvolutionMetric('dist_moy_km')">Dist. moy.</button>
+            </div>
+          </div>
+          <p class="desc">Visualise l'évolution de tes indicateurs au fil de tes imports. Couleur de la courbe = archétype au moment du snapshot.</p>
+          <div id="evolutionChart" class="evolution-chart-container">
+            <div style="text-align:center;color:var(--text-3);padding:32px;font-size:13px;">Chargement de l'historique...</div>
+          </div>
+          <div class="evolution-legend" id="evolutionLegend"></div>
+        </div>
       `;
     }
 
@@ -937,6 +1068,176 @@
       currentProfilType = type;
       renderUI();
       await refreshActivites();
+      await refreshEvolution();
+    }
+
+    // ── Évolution : couleurs par archétype ────────────────────
+    const ARCHETYPE_COLORS = {
+      'Grimpeur':    '#FFC857',  // jaune
+      'Descendeur':  '#4FA3D9',  // bleu
+      'Explosif':    '#E55B5B',  // rouge
+      'Équilibré':   '#6BB36B',  // vert
+      'Tenace':      '#B388EB',  // violet
+      'Combattant':  '#F39237',  // orange
+    };
+
+    let evolutionData = [];
+    let currentEvolutionMetric = 'vep_globale';
+
+    const METRIC_CONFIG = {
+      vep_globale:        { label: 'VEP globale',      unit: 'km/h',  fmt: v => v.toFixed(1) },
+      coefficient_course: { label: 'Coef course',      unit: '×',     fmt: v => v.toFixed(2) },
+      score_montee:       { label: 'Score montée',     unit: '%',     fmt: v => (v>=0?'+':'')+v.toFixed(1) },
+      score_descente:     { label: 'Score descente',   unit: '%',     fmt: v => (v>=0?'+':'')+v.toFixed(1) },
+      dist_moy_km:        { label: 'Distance moyenne', unit: 'km',    fmt: v => v.toFixed(1) },
+    };
+
+    async function refreshEvolution() {
+      const cont = document.getElementById('evolutionChart');
+      if (!cont) return;
+      try {
+        const res = await getEvolution(currentProfilType);
+        evolutionData = res.snapshots || [];
+        dessinerEvolutionChart();
+      } catch (e) {
+        cont.innerHTML = `<div class="evolution-empty">Erreur : ${e.message}</div>`;
+      }
+    }
+
+    function switchEvolutionMetric(metric) {
+      currentEvolutionMetric = metric;
+      document.querySelectorAll('.ev-metric-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.metric === metric);
+      });
+      dessinerEvolutionChart();
+    }
+
+    function dessinerEvolutionChart() {
+      const cont = document.getElementById('evolutionChart');
+      const legend = document.getElementById('evolutionLegend');
+      if (!cont) return;
+
+      if (evolutionData.length < 2) {
+        cont.innerHTML = `<div class="evolution-empty">
+          Importe au moins 2 activités pour voir ton évolution.<br>
+          <small style="opacity:0.7;">${evolutionData.length} snapshot${evolutionData.length>1?'s':''} disponible${evolutionData.length>1?'s':''}.</small>
+        </div>`;
+        legend.innerHTML = '';
+        return;
+      }
+
+      const config = METRIC_CONFIG[currentEvolutionMetric] || METRIC_CONFIG.vep_globale;
+      const W = cont.clientWidth || 700;
+      const H = 280;
+      const M = { top: 20, right: 16, bottom: 32, left: 44 };
+      const innerW = W - M.left - M.right;
+      const innerH = H - M.top - M.bottom;
+
+      // Extraction des valeurs
+      const values = evolutionData.map(s => s[currentEvolutionMetric] || 0);
+      let yMin = Math.min(...values);
+      let yMax = Math.max(...values);
+      const yRange = Math.max(yMax - yMin, 0.01);
+      yMin -= yRange * 0.1;
+      yMax += yRange * 0.1;
+
+      // X = position dans la séquence (ordre chronologique des snapshots)
+      const xScale = i => M.left + (innerW * i / Math.max(evolutionData.length - 1, 1));
+      const yScale = v => M.top + innerH - ((v - yMin) / Math.max(yMax - yMin, 0.0001)) * innerH;
+
+      // Grilles horizontales (5 lignes)
+      const gridY = [];
+      for (let i = 0; i <= 4; i++) {
+        const v = yMin + (yMax - yMin) * (i / 4);
+        gridY.push({ y: yScale(v), val: v });
+      }
+
+      // Construction des segments de courbe colorés par archétype
+      let pathSegments = '';
+      for (let i = 0; i < evolutionData.length - 1; i++) {
+        const a = evolutionData[i], b = evolutionData[i + 1];
+        const color = ARCHETYPE_COLORS[a.archetype_nom] || 'var(--sun)';
+        const x1 = xScale(i), y1 = yScale(values[i]);
+        const x2 = xScale(i + 1), y2 = yScale(values[i + 1]);
+        pathSegments += `<line class="ev-line" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}"/>`;
+      }
+
+      // Points (cercles)
+      let pointsHTML = '';
+      evolutionData.forEach((s, i) => {
+        const color = ARCHETYPE_COLORS[s.archetype_nom] || '#FFC857';
+        const x = xScale(i), y = yScale(values[i]);
+        pointsHTML += `<circle class="ev-point" cx="${x}" cy="${y}" r="5" fill="${color}" stroke="var(--bg)"
+          data-idx="${i}"
+          onmouseenter="showEvTooltip(event, ${i})"
+          onmouseleave="hideEvTooltip()"/>`;
+      });
+
+      // Labels axe X (premier, milieu, dernier)
+      const xLabels = [];
+      const idxLabels = evolutionData.length <= 6
+        ? evolutionData.map((_, i) => i)
+        : [0, Math.floor(evolutionData.length / 2), evolutionData.length - 1];
+      idxLabels.forEach(i => {
+        const s = evolutionData[i];
+        const date = s.created_at ? new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short'}) : '—';
+        xLabels.push(`<text class="ev-axis-text" x="${xScale(i)}" y="${M.top + innerH + 18}" text-anchor="middle">${date}</text>`);
+      });
+
+      // Labels axe Y
+      const yLabels = gridY.map(g => `
+        <line class="ev-grid-line" x1="${M.left}" y1="${g.y}" x2="${M.left + innerW}" y2="${g.y}"/>
+        <text class="ev-axis-text" x="${M.left - 8}" y="${g.y + 3}" text-anchor="end">${config.fmt(g.val)}</text>
+      `).join('');
+
+      cont.innerHTML = `
+        <svg class="evolution-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+          ${yLabels}
+          <line class="ev-axis-line" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${M.top + innerH}"/>
+          <line class="ev-axis-line" x1="${M.left}" y1="${M.top + innerH}" x2="${M.left + innerW}" y2="${M.top + innerH}"/>
+          ${pathSegments}
+          ${pointsHTML}
+          ${xLabels.join('')}
+          <text class="ev-axis-text" x="${M.left + innerW / 2}" y="${H - 6}" text-anchor="middle" style="font-weight:600;">
+            ${evolutionData.length} snapshot${evolutionData.length>1?'s':''} · ${config.label} (${config.unit})
+          </text>
+        </svg>
+      `;
+
+      // Légende : archétypes présents dans l'historique
+      const archetypesPresents = new Set();
+      evolutionData.forEach(s => { if (s.archetype_nom) archetypesPresents.add(s.archetype_nom); });
+      legend.innerHTML = Array.from(archetypesPresents).map(a => {
+        const color = ARCHETYPE_COLORS[a] || '#FFC857';
+        return `<div class="ev-legend-item">
+          <div class="ev-legend-dot" style="background:${color}"></div>
+          ${a}
+        </div>`;
+      }).join('');
+    }
+
+    function showEvTooltip(event, idx) {
+      hideEvTooltip();
+      const s = evolutionData[idx];
+      const config = METRIC_CONFIG[currentEvolutionMetric];
+      const date = s.created_at ? new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '—';
+      const tt = document.createElement('div');
+      tt.className = 'ev-tooltip';
+      tt.id = 'ev-tooltip-active';
+      tt.innerHTML = `
+        <div class="ev-tooltip-title">${config.fmt(s[currentEvolutionMetric] || 0)} ${config.unit}</div>
+        <div>${s.archetype_nom || '—'} · ${s.nb_traces} activité${s.nb_traces>1?'s':''}</div>
+        <div class="ev-tooltip-meta">${date}</div>
+      `;
+      document.body.appendChild(tt);
+      const rect = event.target.getBoundingClientRect();
+      tt.style.left = `${rect.left + window.scrollX + 14}px`;
+      tt.style.top  = `${rect.top + window.scrollY - 14}px`;
+    }
+
+    function hideEvTooltip() {
+      const tt = document.getElementById('ev-tooltip-active');
+      if (tt) tt.remove();
     }
 
     // ── Activités : chargement & affichage ──────────────────────
@@ -1125,6 +1426,7 @@
       currentUser = await fetchMe();
       renderUI();
       await refreshActivites();
+      await refreshEvolution();
     }
 
     // ── Strava ──────────────────────────────────────────────────
