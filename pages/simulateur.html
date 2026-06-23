@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUM'IT — Simulateur de Course</title>
+  <title>SUM'IT — Simulateur</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -516,11 +516,11 @@
       </div>
       <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 16px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--text-2);">VEP globale</span>
+          <span style="font-size:12px;color:var(--text-2);">VEP globale<span class="info-i" data-tip="Vitesse Équivalente Plat : ta vitesse moyenne ramenée à du plat, en neutralisant le dénivelé. C'est l'indicateur clé de ta forme globale, indépendant du profil du parcours.">i</span></span>
           <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilVEP">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--text-2);">Drain énergie</span>
+          <span style="font-size:12px;color:var(--text-2);">Drain énergie<span class="info-i" data-tip="Vitesse à laquelle tu consommes ta batterie énergétique, estimée depuis ta fréquence cardiaque. Plus le drain est élevé, plus tu fatigues vite sur la durée.">i</span></span>
           <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilDrain">—</span>
         </div>
         <div style="display:flex;justify-content:space-between;">
