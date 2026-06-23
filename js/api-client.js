@@ -230,6 +230,31 @@ async function appliquerCalibration(profilType, coefSuggere) {
   return apiFetch('/api/bilan/appliquer-calibration', { method: 'POST', body: fd });
 }
 
+async function epinglerBilan(nom, simulationId, resultatId, bilanData, commentaire = '') {
+  const fd = new FormData();
+  fd.append('nom', nom);
+  fd.append('simulation_id', simulationId);
+  fd.append('resultat_id', resultatId);
+  fd.append('bilan_json', JSON.stringify(bilanData));
+  if (commentaire) fd.append('commentaire', commentaire);
+  return apiFetch('/api/bilan/pin', { method: 'POST', body: fd });
+}
+
+async function modifierBilan(bilanId, { commentaire, nom }) {
+  const fd = new FormData();
+  if (commentaire !== undefined) fd.append('commentaire', commentaire);
+  if (nom !== undefined) fd.append('nom', nom);
+  return apiFetch(`/api/bilan/pinned/${bilanId}`, { method: 'PATCH', body: fd });
+}
+
+async function listerBilans() {
+  return apiFetch('/api/bilan/pinned');
+}
+
+async function supprimerBilan(bilanId) {
+  return apiFetch(`/api/bilan/pinned/${bilanId}`, { method: 'DELETE' });
+}
+
 
 // ══════════════════════════════════════════════════════════════
 //  STRAVA
@@ -443,6 +468,10 @@ if (typeof window !== 'undefined') {
   window.getBilanCandidats     = getBilanCandidats;
   window.comparerBilan         = comparerBilan;
   window.appliquerCalibration  = appliquerCalibration;
+  window.epinglerBilan         = epinglerBilan;
+  window.modifierBilan         = modifierBilan;
+  window.listerBilans          = listerBilans;
+  window.supprimerBilan        = supprimerBilan;
   // Onboarding (au cas où)
   if (typeof demarrerOnboarding !== 'undefined') {
     window.demarrerOnboarding = demarrerOnboarding;
