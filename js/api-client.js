@@ -172,11 +172,12 @@ async function ajouterActiviteGPX(file, typeSortie, profilType) {
   return apiFetch('/api/activities/add', { method: 'POST', body: fd });
 }
 
-async function ajouterActiviteStrava(stravaId, typeSortie, profilType) {
+async function ajouterActiviteStrava(stravaId, typeSortie, profilType, nom = '') {
   const fd = new FormData();
   fd.append('strava_id',   stravaId);
   fd.append('type_sortie', typeSortie);
   fd.append('profil_type', profilType);
+  if (nom) fd.append('nom', nom);
   return apiFetch('/api/activities/add-strava', { method: 'POST', body: fd });
 }
 
