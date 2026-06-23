@@ -1197,13 +1197,16 @@ def strava_disconnect(
 #  ROUTES ACTIVITÉS (traces stockées par utilisateur)
 # ══════════════════════════════════════════════════════════════
 
-def _recalculer_profil_user(db: Session, user: User, profil_type: str):
+def _recalculer_profil_user(db: Session, user: User, profil_type: str, activity_id: int = None):
     """
     Recalcule le profil agrégé d'un utilisateur à partir de toutes ses
     activités sauvegardées en BDD. Sauvegarde le résultat dans Profile.
 
     Exclut les simulations épinglées (source='simulation') qui ne sont
     pas de vraies traces GPX d'entraînement.
+
+    Si activity_id est fourni → crée un snapshot lié à cette activité.
+    Sinon → ne crée pas de snapshot (c'est juste un recalcul après suppression).
     """
     activities = db.query(Activity).filter(
         Activity.user_id == user.id,
@@ -1212,14 +1215,18 @@ def _recalculer_profil_user(db: Session, user: User, profil_type: str):
     ).all()
 
     if not activities:
-        # Pas d'activité → supprime le profil s'il existe
+        # Pas d'activité → supprime le profil + tous les snapshots
         existing = db.query(Profile).filter(
             Profile.user_id == user.id,
             Profile.type == profil_type
         ).first()
         if existing:
             db.delete(existing)
-            db.commit()
+        db.query(ProfilSnapshot).filter(
+            ProfilSnapshot.user_id == user.id,
+            ProfilSnapshot.type_profil == profil_type,
+        ).delete()
+        db.commit()
         return None
 
     # Reconstruction de la liste "traces" attendue par agreger() et coeff_course()
@@ -1269,17 +1276,18 @@ def _recalculer_profil_user(db: Session, user: User, profil_type: str):
     db.commit()
     db.refresh(existing)
 
-    # Création d'un snapshot pour l'historique d'évolution
-    try:
-        _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities)
-    except Exception as e:
-        print(f"⚠️ Échec création snapshot : {e}")
+    # Snapshot uniquement si activity_id est fourni (= un ajout d'activité)
+    if activity_id is not None:
+        try:
+            _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities, activity_id)
+        except Exception as e:
+            print(f"⚠️ Échec création snapshot : {e}")
 
     return existing
 
 
-def _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities):
-    """Crée un snapshot du profil au moment courant pour tracer l'évolution."""
+def _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities, activity_id):
+    """Crée un snapshot du profil lié à une activité spécifique."""
     # Calculer scores montée / descente
     score_montee = 0.0
     score_descente = 0.0
@@ -1300,21 +1308,21 @@ def _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, tr
     if nb_d > 0: score_descente /= nb_d
 
     # Distance moyenne
-    dist_moy = 0.0
-    if traces:
-        dist_moy = sum(t.get('dist_km', 0) for t in traces) / len(traces)
+    dist_moy = sum(t.get('dist_km', 0) for t in traces) / len(traces) if traces else 0.0
 
-    # Date = la plus récente activité ajoutée (pour ordonner les snapshots)
-    derniere_date = None
-    if activities:
-        dates_valides = [a.date_activity for a in activities if a.date_activity is not None]
-        if dates_valides:
-            derniere_date = max(dates_valides)
+    # Date de l'activité qui déclenche le snapshot (= date de la course)
+    act = db.query(Activity).filter(Activity.id == activity_id).first()
+    date_act = act.date_activity if act else None
+
+    # Normaliser le nom d'archétype (retirer "Le ", "La ", "L'" pour matcher les couleurs)
+    arch_nom_brut = (arch or {}).get('nom', None) or ''
+    arch_nom = arch_nom_brut.replace("L'", "").replace("Le ", "").replace("La ", "").strip()
 
     snap = ProfilSnapshot(
         user_id            = user.id,
         type_profil        = profil_type,
-        date_activity      = derniere_date,
+        activity_id        = activity_id,
+        date_activity      = date_act,
         vep_globale        = vep_glob,
         drain_moy_h        = drain,
         coefficient_course = cc.get('coefficient', 1.0),
@@ -1322,7 +1330,7 @@ def _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, tr
         dist_moy_km        = dist_moy,
         score_montee       = score_montee,
         score_descente     = score_descente,
-        archetype_nom      = (arch or {}).get('nom', None),
+        archetype_nom      = arch_nom,
     )
     db.add(snap)
     db.commit()
@@ -1436,8 +1444,8 @@ async def add_activity_gpx(
     db.commit()
     db.refresh(activity)
 
-    # Recalcul du profil
-    _recalculer_profil_user(db, user, profil_type)
+    # Recalcul du profil + snapshot lié à cette activité
+    _recalculer_profil_user(db, user, profil_type, activity_id=activity.id)
 
     return {"status": "ok", "activity_id": activity.id}
 
@@ -1514,7 +1522,7 @@ async def add_activity_strava(
     db.commit()
     db.refresh(activity)
 
-    _recalculer_profil_user(db, user, profil_type)
+    _recalculer_profil_user(db, user, profil_type, activity_id=activity.id)
 
     return {"status": "ok", "activity_id": activity.id}
 
@@ -1535,6 +1543,13 @@ def delete_activity(
         raise HTTPException(404, detail="Activité introuvable")
 
     profil_type = activity.type_profil
+
+    # Supprimer le snapshot lié à cette activité
+    db.query(ProfilSnapshot).filter(
+        ProfilSnapshot.user_id == user.id,
+        ProfilSnapshot.activity_id == activity_id,
+    ).delete()
+
     db.delete(activity)
     db.commit()
 
@@ -1544,13 +1559,14 @@ def delete_activity(
 
 
 @app.patch("/api/activities/{activity_id}")
-def rename_activity(
+def update_activity(
     activity_id: int,
-    nom: str = Form(...),
+    nom:         Optional[str] = Form(None),
+    type_sortie: Optional[str] = Form(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Renomme une activité (champ name)."""
+    """Modifie une activité : nom et/ou type de sortie."""
     activity = db.query(Activity).filter(
         Activity.id == activity_id,
         Activity.user_id == user.id
@@ -1559,13 +1575,52 @@ def rename_activity(
     if not activity:
         raise HTTPException(404, detail="Activité introuvable")
 
-    nom = nom.strip()
-    if not nom or len(nom) > 200:
-        raise HTTPException(400, detail="Nom invalide (1-200 caractères)")
+    if nom is not None:
+        nom = nom.strip()
+        if not nom or len(nom) > 200:
+            raise HTTPException(400, detail="Nom invalide (1-200 caractères)")
+        activity.name = nom
 
-    activity.name = nom
+    type_change = False
+    if type_sortie is not None:
+        if type_sortie not in ('course', 'entrainement', 'sortie'):
+            raise HTTPException(400, detail="type_sortie doit être course/entrainement/sortie")
+        if activity.type_sortie != type_sortie:
+            activity.type_sortie = type_sortie
+            # Mise à jour de trace_data pour conserver la cohérence (le coefficient_course en dépend)
+            td = dict(activity.trace_data or {})
+            td['type_sortie'] = type_sortie
+            activity.trace_data = td
+            type_change = True
+
     db.commit()
-    return {"status": "ok", "name": activity.name}
+
+    # Si le type a changé, on recalcule le profil (sans nouveau snapshot)
+    if type_change:
+        _recalculer_profil_user(db, user, activity.type_profil)
+
+    return {"status": "ok", "name": activity.name, "type_sortie": activity.type_sortie}
+
+
+@app.delete("/api/evolution/reset")
+def reset_evolution(
+    profil_type: str = "trail",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Réinitialise l'historique d'évolution (supprime tous les snapshots).
+    Utile si l'historique est devenu incohérent après suppressions multiples.
+    """
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+
+    n = db.query(ProfilSnapshot).filter(
+        ProfilSnapshot.user_id == user.id,
+        ProfilSnapshot.type_profil == profil_type,
+    ).delete()
+    db.commit()
+    return {"status": "ok", "supprimes": n}
 
 
 @app.patch("/api/activities/{activity_id}")
