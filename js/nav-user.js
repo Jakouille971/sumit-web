@@ -12,7 +12,44 @@
   injecterStylesNav();
   uniformiserLiens(nav);
   await uniformiserUserSlot(nav);
+  creerBurgerMenu(nav);
 })();
+
+// ── Menu hamburger mobile ───────────────────────────────────────
+function creerBurgerMenu(nav) {
+  // Évite les doublons
+  if (nav.querySelector('.nav-burger')) return;
+
+  const burger = document.createElement('button');
+  burger.className = 'nav-burger';
+  burger.setAttribute('aria-label', 'Menu');
+  burger.innerHTML = '<span></span><span></span><span></span>';
+
+  burger.addEventListener('click', () => {
+    const links = nav.querySelector('.nav-links');
+    burger.classList.toggle('open');
+    if (links) links.classList.toggle('mobile-open');
+  });
+
+  // Insérer le burger juste avant le conteneur user (ou à la fin)
+  const userContainer = nav.querySelector('#nav-user-container');
+  if (userContainer) {
+    nav.insertBefore(burger, userContainer);
+  } else {
+    nav.appendChild(burger);
+  }
+
+  // Fermer le menu quand on clique sur un lien
+  const links = nav.querySelector('.nav-links');
+  if (links) {
+    links.addEventListener('click', (e) => {
+      if (e.target.classList.contains('nav-link')) {
+        burger.classList.remove('open');
+        links.classList.remove('mobile-open');
+      }
+    });
+  }
+}
 
 // ── 1. Uniformiser les liens de navigation ─────────────────────
 function uniformiserLiens(nav) {
