@@ -1802,10 +1802,12 @@ def update_activity(
     activity_id: int,
     name: Optional[str] = Form(None),
     type_sortie: Optional[str] = Form(None),
+    date_activity: Optional[str] = Form(None),  # format ISO 'YYYY-MM-DD' ou ISO complet
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Met à jour le nom et/ou le type d'une activité. Recalcule le profil si le type change."""
+    """Met à jour le nom, le type et/ou la date d'une activité.
+    Recalcule le profil et les snapshots si le type ou la date change."""
     activity = db.query(Activity).filter(
         Activity.id == activity_id,
         Activity.user_id == user.id
@@ -1815,8 +1817,11 @@ def update_activity(
         raise HTTPException(404, detail="Activité introuvable")
 
     type_change = False
+    date_change = False
+
     if name is not None:
         activity.name = name.strip()[:200] or activity.name
+
     if type_sortie is not None and type_sortie in ('course', 'entrainement', 'sortie'):
         if activity.type_sortie != type_sortie:
             activity.type_sortie = type_sortie
@@ -1825,17 +1830,84 @@ def update_activity(
             if activity.trace_data:
                 td = dict(activity.trace_data)
                 td['type_sortie'] = type_sortie
-                # Recalculer le poids type
                 POIDS_TYPE_LOC = {'course': 1.0, 'entrainement': 0.7, 'sortie': 0.4}
                 td['poids_type'] = POIDS_TYPE_LOC.get(type_sortie, 0.7)
                 td['poids_total'] = round(td.get('poids_temporel', 0.5) * td['poids_type'], 3)
                 activity.trace_data = td
 
+    if date_activity is not None and date_activity.strip():
+        try:
+            # Accepte 'YYYY-MM-DD' (input HTML date) ou ISO complet
+            s = date_activity.strip()
+            if len(s) == 10:  # YYYY-MM-DD
+                from datetime import datetime as _dt
+                new_date = _dt.strptime(s, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+            else:
+                new_date = datetime.fromisoformat(s.replace('Z', '+00:00'))
+            if activity.date_activity != new_date:
+                activity.date_activity = new_date
+                date_change = True
+        except Exception as e:
+            raise HTTPException(400, detail=f"Date invalide : {e}")
+
     db.commit()
     db.refresh(activity)
 
-    if type_change:
+    # Si le type ou la date a changé → recalcul du profil + rebuild des snapshots
+    # (la date affecte l'ordre chronologique de l'évolution)
+    if type_change or date_change:
         _recalculer_profil_user(db, user, activity.type_profil)
+        # Rebuild complet de l'évolution si la date a changé
+        if date_change:
+            try:
+                # Suppression snapshots + reconstruction chronologique
+                db.query(ProfilSnapshot).filter(
+                    ProfilSnapshot.user_id == user.id,
+                    ProfilSnapshot.type_profil == activity.type_profil,
+                ).delete()
+                db.commit()
+                # Reconstruction via la même logique que /api/evolution/rebuild
+                acts = db.query(Activity).filter(
+                    Activity.user_id == user.id,
+                    Activity.type_profil == activity.type_profil,
+                    Activity.source != 'simulation',
+                ).order_by(Activity.date_activity.asc().nullslast(), Activity.created_at.asc()).all()
+                montees = ['montee_raide', 'montee_soutenue', 'montee_douce']
+                descentes = ['descente_douce', 'descente_soutenue', 'descente_raide']
+                for i, act in enumerate(acts):
+                    traces_cumul = [a.trace_data for a in acts[:i+1] if a.trace_data]
+                    if not traces_cumul: continue
+                    try:
+                        profil, drain = agreger(traces_cumul)
+                        cc = coeff_course(traces_cumul)
+                        arch = archetype(profil)
+                        vep_glob = sum(t.get('vep_globale', 0) for t in traces_cumul) / len(traces_cumul)
+                        dist_moy = sum(t.get('dist_km', 0) for t in traces_cumul) / len(traces_cumul)
+                        sm, sd, nm, nd = 0.0, 0.0, 0, 0
+                        for t in montees:
+                            if t in profil and 'ecart_plat_pct' in profil[t]:
+                                sm += profil[t]['ecart_plat_pct']; nm += 1
+                        for t in descentes:
+                            if t in profil and 'ecart_plat_pct' in profil[t]:
+                                sd += profil[t]['ecart_plat_pct']; nd += 1
+                        if nm > 0: sm /= nm
+                        if nd > 0: sd /= nd
+                        arch_nom_brut = (arch or {}).get('nom', '') or ''
+                        arch_nom = arch_nom_brut.replace("L'", "").replace("Le ", "").replace("La ", "").strip()
+                        snap = ProfilSnapshot(
+                            user_id=user.id, type_profil=activity.type_profil,
+                            activity_id=act.id, date_activity=act.date_activity,
+                            vep_globale=vep_glob, drain_moy_h=drain,
+                            coefficient_course=cc.get('coefficient', 1.0),
+                            nb_traces=len(traces_cumul), dist_moy_km=dist_moy,
+                            score_montee=sm, score_descente=sd, archetype_nom=arch_nom,
+                        )
+                        db.add(snap)
+                    except Exception as e:
+                        print(f"⚠️ Snapshot {act.id}: {e}")
+                db.commit()
+            except Exception as e:
+                print(f"⚠️ Rebuild après changement date : {e}")
 
     return {
         "status": "ok",
