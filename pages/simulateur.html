@@ -367,6 +367,44 @@
       transition: opacity 0.2s;
     }
     .info-icon:hover::before { opacity: 1; visibility: visible; }
+    /* ════════ UNIFORMISATION TAILLES DE TEXTE ════════ */
+    /* Échelle harmonisée pour réduire la disparité visuelle */
+
+    /* Titres de cards : tous à 14px */
+    .ravito-header,
+    .terrain-header,
+    .breakdown-header,
+    .map-header { font-size: 14px !important; letter-spacing: 0.06em; }
+
+    /* Sous-titres + labels uppercase : tous à 10-11px */
+    .step-num,
+    .file-meta-label,
+    .input-label,
+    .kpi-label,
+    .panel-label { font-size: 10px !important; letter-spacing: 0.12em; }
+
+    /* Titres d'étapes (sidebar) : 14px */
+    .step-title { font-size: 14px !important; }
+
+    /* Descriptions / texte courant : 12px */
+    .step-desc,
+    .upload-zone-sm p,
+    .panel-desc { font-size: 12px !important; line-height: 1.55; }
+
+    /* Tableau ravitos : 12-13px */
+    .data-table th { font-size: 11px !important; letter-spacing: 0.06em; }
+    .data-table td { font-size: 13px !important; }
+
+    /* KPIs grands chiffres : 24-26px */
+    .kpi-val { font-size: 24px !important; }
+    .kpi-sub { font-size: 11px !important; }
+
+    /* Bouton flottant feedback : 12px */
+    .floating-feedback { font-size: 12px !important; }
+
+    /* Modal headers : 16-18px */
+    .modal-content h2 { font-size: 18px !important; }
+
   </style>
 </head>
 <body>
@@ -573,7 +611,15 @@
         <div class="ravito-header">⛽ Temps de passage aux ravitaillements</div>
         <table class="data-table">
           <thead>
-            <tr><th>Point</th><th>Distance</th><th>Temps estimé</th><th>🟢 Top</th><th>🔴 Difficile</th><th>Batterie</th></tr>
+            <tr>
+              <th>Point</th>
+              <th>Distance</th>
+              <th>Temps estimé</th>
+              <th>🟢 Top</th>
+              <th>🔴 Difficile</th>
+              <th>D+</th>
+              <th>D-</th>
+            </tr>
           </thead>
           <tbody id="ravitoBody"></tbody>
         </table>
@@ -1009,6 +1055,10 @@ function afficherResultats(data) {
 
   // Tableau ravitos
   const tbody = document.getElementById('ravitoBody');
+  const distTot  = data.distance_km || 0;
+  const dplusTot = data.dplus_m || 0;
+  const dmoinsTot= data.dmoins_m || dplusTot; // par défaut si pas dispo
+
   tbody.innerHTML = `
     <tr>
       <td style="font-family:var(--font-display);">Départ</td>
@@ -1016,10 +1066,12 @@ function afficherResultats(data) {
       <td style="color:var(--sun);font-family:var(--font-display);">0h00m00s</td>
       <td class="range-col">0h00m00s</td>
       <td class="range-col">0h00m00s</td>
-      <td class="batt-g">100%</td>
+      <td class="dplus-col">0 m</td>
+      <td class="dmoins-col">0 m</td>
     </tr>`;
   (data.ravitos || []).forEach(r => {
-    const cls = r.batterie_pct < 20 ? 'batt-r' : r.batterie_pct < 50 ? 'batt-o' : 'batt-g';
+    const dp = Math.round(r.dplus_cum || 0);
+    const dm = Math.round(r.dmoins_cum || 0);
     tbody.innerHTML += `
       <tr>
         <td>Ravito ${r.km.toFixed(1)} km</td>
@@ -1027,17 +1079,19 @@ function afficherResultats(data) {
         <td style="color:var(--sun);font-family:var(--font-display);">${r.temps_fmt}</td>
         <td class="range-col">${r.bas_fmt}</td>
         <td class="range-col">${r.haut_fmt}</td>
-        <td class="${cls}">${Math.round(r.batterie_pct)}%</td>
+        <td class="dplus-col">+${dp} m</td>
+        <td class="dmoins-col">-${dm} m</td>
       </tr>`;
   });
   tbody.innerHTML += `
     <tr>
       <td>Arrivée</td>
-      <td>${data.distance_km.toFixed(1)} km</td>
+      <td>${distTot.toFixed(1)} km</td>
       <td>${data.temps_fmt}</td>
       <td class="range-col">${data.bas_fmt}</td>
       <td class="range-col">${data.haut_fmt}</td>
-      <td class="${data.batt_finale < 20 ? 'batt-r' : 'batt-o'}">${data.batt_finale}%</td>
+      <td class="dplus-col">+${Math.round(dplusTot)} m</td>
+      <td class="dmoins-col">-${Math.round(dmoinsTot)} m</td>
     </tr>`;
 
   // Barres terrain
@@ -1997,21 +2051,24 @@ async function epinglerSimulationActuelle() {
   try {
     const data = window.lastSimData;
     const simPayload = {
-      distance_km:   data.distance_km,
-      dplus_m:       data.dplus_m,
-      temps_total_s: data.temps_total_s,
-      temps_fmt:     data.temps_fmt,
-      allure_moy:    data.allure_moy,
-      categorie:     data.categorie,
-      batt_finale:   data.batt_finale,
-      fourchettes:   data.fourchettes ? {
-        bas: data.fourchettes.bas,
-        haut: data.fourchettes.haut,
-      } : null,
-      // On stocke aussi le profil_chart pour pouvoir réafficher si pas de recalcul
-      profil_chart:  data.profil_chart,
-      ravitos:       data.ravitos,
-      repartition:   data.repartition,
+      distance_km:    data.distance_km,
+      dplus_m:        data.dplus_m,
+      dmoins_m:       data.dmoins_m,
+      dep_km:         data.dep_km,
+      temps_total_s:  data.temps_total_s,
+      temps_bas_s:    data.temps_bas_s,
+      temps_haut_s:   data.temps_haut_s,
+      temps_fmt:      data.temps_fmt,
+      bas_fmt:        data.bas_fmt,
+      haut_fmt:       data.haut_fmt,
+      allure_moy:     data.allure_moy,
+      categorie:      data.categorie,
+      batt_finale:    data.batt_finale,
+      coefficient_course: data.coefficient_course,
+      profil_chart:   data.profil_chart,
+      ravitos:        data.ravitos,
+      repartition:    data.repartition,
+      repartition_terrain_type: data.repartition_terrain_type,
     };
 
     // GPX en base64 (pour pouvoir recalculer plus tard)
