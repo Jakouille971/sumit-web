@@ -17,7 +17,7 @@ import urllib.parse
 from datetime import datetime, timezone
 
 # Auth + BDD
-from db import init_db, get_db, User, Profile, Activity
+from db import init_db, get_db, User, Profile, Activity, ProfilSnapshot
 from auth import (
     construire_url_google_auth,
     echanger_code_google,
@@ -1268,7 +1268,102 @@ def _recalculer_profil_user(db: Session, user: User, profil_type: str):
 
     db.commit()
     db.refresh(existing)
+
+    # Création d'un snapshot pour l'historique d'évolution
+    try:
+        _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities)
+    except Exception as e:
+        print(f"⚠️ Échec création snapshot : {e}")
+
     return existing
+
+
+def _creer_snapshot(db, user, profil_type, profil, arch, drain, cc, vep_glob, traces, activities):
+    """Crée un snapshot du profil au moment courant pour tracer l'évolution."""
+    # Calculer scores montée / descente
+    score_montee = 0.0
+    score_descente = 0.0
+    montees = ['montee_raide', 'montee_soutenue', 'montee_douce']
+    descentes = ['descente_douce', 'descente_soutenue', 'descente_raide']
+
+    nb_m, nb_d = 0, 0
+    for t in montees:
+        if t in profil and 'ecart_plat_pct' in profil[t]:
+            score_montee += profil[t]['ecart_plat_pct']
+            nb_m += 1
+    for t in descentes:
+        if t in profil and 'ecart_plat_pct' in profil[t]:
+            score_descente += profil[t]['ecart_plat_pct']
+            nb_d += 1
+
+    if nb_m > 0: score_montee /= nb_m
+    if nb_d > 0: score_descente /= nb_d
+
+    # Distance moyenne
+    dist_moy = 0.0
+    if traces:
+        dist_moy = sum(t.get('dist_km', 0) for t in traces) / len(traces)
+
+    # Date = la plus récente activité ajoutée (pour ordonner les snapshots)
+    derniere_date = None
+    if activities:
+        dates_valides = [a.date_activity for a in activities if a.date_activity is not None]
+        if dates_valides:
+            derniere_date = max(dates_valides)
+
+    snap = ProfilSnapshot(
+        user_id            = user.id,
+        type_profil        = profil_type,
+        date_activity      = derniere_date,
+        vep_globale        = vep_glob,
+        drain_moy_h        = drain,
+        coefficient_course = cc.get('coefficient', 1.0),
+        nb_traces          = len(traces),
+        dist_moy_km        = dist_moy,
+        score_montee       = score_montee,
+        score_descente     = score_descente,
+        archetype_nom      = (arch or {}).get('nom', None),
+    )
+    db.add(snap)
+    db.commit()
+
+
+@app.get("/api/evolution")
+def get_evolution(
+    profil_type: str = "trail",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Retourne l'historique des snapshots pour tracer l'évolution du coureur.
+    Tri chronologique (par date d'activité la plus récente à chaque snapshot).
+    """
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+
+    snaps = db.query(ProfilSnapshot).filter(
+        ProfilSnapshot.user_id == user.id,
+        ProfilSnapshot.type_profil == profil_type,
+    ).order_by(ProfilSnapshot.created_at.asc()).all()
+
+    return {
+        "snapshots": [
+            {
+                "id":                 s.id,
+                "created_at":         s.created_at.isoformat() if s.created_at else None,
+                "date_activity":      s.date_activity.isoformat() if s.date_activity else None,
+                "vep_globale":        round(s.vep_globale, 2),
+                "drain_moy_h":        round(s.drain_moy_h, 4),
+                "coefficient_course": round(s.coefficient_course, 3),
+                "nb_traces":          s.nb_traces,
+                "dist_moy_km":        round(s.dist_moy_km, 1),
+                "score_montee":       round(s.score_montee, 2),
+                "score_descente":     round(s.score_descente, 2),
+                "archetype_nom":      s.archetype_nom,
+            }
+            for s in snaps
+        ]
+    }
 
 
 @app.get("/api/activities")
