@@ -214,6 +214,22 @@ async function rebuildEvolution(profilType = 'trail') {
   return apiFetch(`/api/evolution/rebuild?profil_type=${profilType}`, { method: 'POST' });
 }
 
+// ── Bilan : Réel vs Prédit (#9) ──────────────────────────────
+async function getBilanCandidats() {
+  return apiFetch('/api/bilan/candidats');
+}
+
+async function comparerBilan(simulationId, resultatId) {
+  return apiFetch(`/api/bilan/comparer?simulation_id=${simulationId}&resultat_id=${resultatId}`);
+}
+
+async function appliquerCalibration(profilType, coefSuggere) {
+  const fd = new FormData();
+  fd.append('profil_type', profilType);
+  fd.append('coef_suggere', coefSuggere);
+  return apiFetch('/api/bilan/appliquer-calibration', { method: 'POST', body: fd });
+}
+
 
 // ══════════════════════════════════════════════════════════════
 //  STRAVA
@@ -423,6 +439,10 @@ if (typeof window !== 'undefined') {
   // Évolution
   window.getEvolution          = getEvolution;
   window.rebuildEvolution      = rebuildEvolution;
+  // Bilan (Réel vs Prédit)
+  window.getBilanCandidats     = getBilanCandidats;
+  window.comparerBilan         = comparerBilan;
+  window.appliquerCalibration  = appliquerCalibration;
   // Onboarding (au cas où)
   if (typeof demarrerOnboarding !== 'undefined') {
     window.demarrerOnboarding = demarrerOnboarding;
