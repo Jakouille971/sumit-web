@@ -25,6 +25,7 @@ function uniformiserLiens(nav) {
     { label: 'Accueil',    href: inPages ? '../' : '/',         id: 'home' },
     { label: 'Mon profil', href: `${prefix}profil.html`,        id: 'profil' },
     { label: 'Simulateur', href: `${prefix}simulateur.html`,    id: 'simulateur' },
+    { label: 'Bilan',      href: `${prefix}bilan.html`,         id: 'bilan' },
     { label: 'Mon compte', href: `${prefix}compte.html`,        id: 'compte' },
     { label: 'À venir',    href: `${prefix}avenir.html`,        id: 'avenir' },
   ];
@@ -32,6 +33,7 @@ function uniformiserLiens(nav) {
   const currentId =
     path.endsWith('profil.html')     ? 'profil' :
     path.endsWith('simulateur.html') ? 'simulateur' :
+    path.endsWith('bilan.html')      ? 'bilan' :
     path.endsWith('avenir.html')     ? 'avenir' :
     path.endsWith('compte.html')     ? 'compte' :
     'home';
