@@ -86,7 +86,7 @@ CATEGORIES = [
     {'nom':'Ultra', 'emoji':'🔴','min':80,'max':999,'facteur':0.78},
 ]
 
-POIDS_TYPE = {'course':1.00,'entrainement':0.70,'sortie':0.40}
+POIDS_TYPE = {'course':1.00,'resultat':1.00,'entrainement':0.70,'sortie':0.40}
 DEMI_VIE   = 180
 
 ZONES_FC = {
@@ -335,7 +335,7 @@ def coeff_course(traces, cible=0.87):
 
         if t['type_sortie']=='entrainement':
             fe.append(r); pe.append(poids)
-        elif t['type_sortie']=='course':
+        elif t['type_sortie'] in ('course', 'resultat'):
             fc_.append(r); pc.append(poids)
 
     me=float(np.average(fe,weights=pe)) if fe else 0.75
@@ -410,7 +410,7 @@ def agreger(traces):
 def extraire_trackpoints(df, max_points=200):
     """
     Échantillonne les trackpoints du DataFrame pour stockage léger
-    (carte Leaflet + altimétrie). Conserve dist, lat, lon, alt.
+    (carte Leaflet + altimétrie + comparaison temps). Conserve dist, lat, lon, alt, t.
     """
     if df is None or len(df) == 0:
         return []
@@ -427,14 +427,25 @@ def extraire_trackpoints(df, max_points=200):
     if not cols.issubset(sample.columns):
         return []
 
+    # Temps cumulé (secondes) si disponible, pour la comparaison réel/prédit
+    has_time = 'duree_s' in df.columns
+    if has_time:
+        t_cum_full = df['duree_s'].cumsum()
+
     pts = []
-    for _, row in sample.iterrows():
-        pts.append({
+    for idx, row in sample.iterrows():
+        pt = {
             'lat':  round(float(row['lat']), 6),
             'lon':  round(float(row['lon']), 6),
             'alt':  round(float(row['alt']), 1),
             'dist': round(float(row['dist_cum']), 3),
-        })
+        }
+        if has_time:
+            try:
+                pt['t'] = round(float(t_cum_full.loc[idx]), 1)
+            except Exception:
+                pass
+        pts.append(pt)
     return pts
 
 
@@ -1822,7 +1833,7 @@ def update_activity(
     if name is not None:
         activity.name = name.strip()[:200] or activity.name
 
-    if type_sortie is not None and type_sortie in ('course', 'entrainement', 'sortie'):
+    if type_sortie is not None and type_sortie in ('course', 'entrainement', 'sortie', 'resultat'):
         if activity.type_sortie != type_sortie:
             activity.type_sortie = type_sortie
             type_change = True
@@ -1830,7 +1841,7 @@ def update_activity(
             if activity.trace_data:
                 td = dict(activity.trace_data)
                 td['type_sortie'] = type_sortie
-                POIDS_TYPE_LOC = {'course': 1.0, 'entrainement': 0.7, 'sortie': 0.4}
+                POIDS_TYPE_LOC = {'course': 1.0, 'resultat': 1.0, 'entrainement': 0.7, 'sortie': 0.4}
                 td['poids_type'] = POIDS_TYPE_LOC.get(type_sortie, 0.7)
                 td['poids_total'] = round(td.get('poids_temporel', 0.5) * td['poids_type'], 3)
                 activity.trace_data = td
@@ -2093,6 +2104,215 @@ def delete_simulation(
     db.delete(sim)
     db.commit()
     return {"status": "ok"}
+
+
+# ══════════════════════════════════════════════════════════════
+#  BILAN : COMPARAISON RÉEL vs PRÉDIT (#9)
+# ══════════════════════════════════════════════════════════════
+
+def _temps_reels_aux_km(df, kms):
+    """
+    Pour un DataFrame de course réelle (avec dist_cum et duree_s),
+    retourne le temps de passage cumulé réel (en secondes) à chaque km demandé.
+    """
+    t_cum = df['duree_s'].cumsum().values
+    dist  = df['dist_cum'].values
+    out = []
+    for km in kms:
+        # Index du point le plus proche du km demandé
+        idx = int(np.abs(dist - km).argmin())
+        out.append(float(t_cum[idx]))
+    return out
+
+
+@app.get("/api/bilan/candidats")
+def bilan_candidats(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Retourne les éléments comparables :
+    - simulations épinglées (prédictions)
+    - activités de type 'resultat' (courses réellement courues)
+    """
+    sims = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).order_by(Activity.created_at.desc()).all()
+
+    resultats = db.query(Activity).filter(
+        Activity.user_id == user.id,
+        Activity.source != 'simulation',
+        Activity.type_sortie == 'resultat',
+    ).order_by(Activity.date_activity.desc().nullslast()).all()
+
+    return {
+        "simulations": [
+            {
+                "id": s.id, "name": s.name, "type_profil": s.type_profil,
+                "dist_km": s.dist_km, "dplus_m": s.dplus_m, "duree_s": s.duree_s,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in sims
+        ],
+        "resultats": [
+            {
+                "id": r.id, "name": r.name, "type_profil": r.type_profil,
+                "dist_km": r.dist_km, "dplus_m": r.dplus_m, "duree_s": r.duree_s,
+                "date": r.date_activity.isoformat() if r.date_activity else None,
+            }
+            for r in resultats
+        ],
+    }
+
+
+@app.get("/api/bilan/comparer")
+def bilan_comparer(
+    simulation_id: int,
+    resultat_id:   int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Compare une simulation épinglée (prédit) à une activité résultat (réel).
+    Renvoie : temps totaux, écarts par ravito, et une suggestion de coefficient.
+    """
+    sim = db.query(Activity).filter(
+        Activity.id == simulation_id,
+        Activity.user_id == user.id,
+        Activity.source == 'simulation',
+    ).first()
+    if not sim:
+        raise HTTPException(404, detail="Simulation introuvable")
+
+    resultat = db.query(Activity).filter(
+        Activity.id == resultat_id,
+        Activity.user_id == user.id,
+    ).first()
+    if not resultat:
+        raise HTTPException(404, detail="Activité résultat introuvable")
+
+    sim_td = sim.trace_data or {}
+    res_td = resultat.trace_data or {}
+
+    # ── Temps total prédit & réel ──
+    temps_predit = float(sim_td.get('temps_total_s', sim.duree_s) or 0)
+    temps_reel   = float(resultat.duree_s or 0)
+
+    if temps_predit <= 0:
+        raise HTTPException(400, detail="La simulation n'a pas de temps prédit valide")
+    if temps_reel <= 0:
+        raise HTTPException(400, detail="L'activité résultat n'a pas de durée valide")
+
+    ecart_total_s   = temps_reel - temps_predit
+    ecart_total_pct = (ecart_total_s / temps_predit * 100) if temps_predit > 0 else 0
+
+    # ── Comparaison par ravito ──
+    ravitos_predits = sim_td.get('ravitos', []) or []
+    comparaison_ravitos = []
+
+    trackpoints = res_td.get('_trackpoints', [])
+    reel_dispo = False
+
+    # On cherche si les trackpoints réels contiennent le temps cumulé 't'
+    tp_avec_temps = [tp for tp in trackpoints if 't' in tp and 'dist' in tp]
+    a_temps_exact = len(tp_avec_temps) > 2
+
+    if ravitos_predits and temps_reel > 0 and temps_predit > 0:
+        for rv in ravitos_predits:
+            km = rv.get('km', 0)
+            t_predit = float(rv.get('temps_s', 0))
+
+            if a_temps_exact:
+                # Temps réel EXACT : on trouve le trackpoint le plus proche de ce km
+                proche = min(tp_avec_temps, key=lambda tp: abs(tp['dist'] - km))
+                t_reel_est = float(proche['t'])
+                methode = 'exact'
+            else:
+                # Fallback : répartition proportionnelle à la distance
+                dist_tot = sim.dist_km or resultat.dist_km or 1
+                frac = min(km / dist_tot, 1.0) if dist_tot > 0 else 0
+                t_reel_est = temps_reel * frac
+                methode = 'estime'
+
+            ecart_s = t_reel_est - t_predit
+            comparaison_ravitos.append({
+                "km": km,
+                "temps_predit_s": round(t_predit, 0),
+                "temps_reel_s": round(t_reel_est, 0),
+                "ecart_s": round(ecart_s, 0),
+                "temps_predit_fmt": fmt(t_predit),
+                "temps_reel_fmt": fmt(t_reel_est),
+                "ecart_fmt": ("+" if ecart_s >= 0 else "−") + fmt(abs(ecart_s)),
+                "plus_rapide": ecart_s < 0,  # réel < prédit = plus rapide
+                "methode": methode,
+            })
+        reel_dispo = True
+
+    # ── Suggestion d'ajustement du coefficient ──
+    # Si le réel est plus lent que le prédit (ecart positif), le modèle
+    # sous-estime la difficulté → augmenter le coefficient, et vice-versa.
+    profil = db.query(Profile).filter(
+        Profile.user_id == user.id,
+        Profile.type == sim.type_profil,
+    ).first()
+    coef_actuel = float(profil.coefficient_course) if profil else 1.10
+
+    # Le ratio temps_reel/temps_predit indique le facteur correctif
+    ratio = temps_reel / temps_predit if temps_predit > 0 else 1.0
+    coef_suggere = float(max(1.0, min(1.40, coef_actuel * ratio)))
+
+    return {
+        "simulation": {
+            "id": sim.id, "name": sim.name,
+            "dist_km": sim.dist_km, "dplus_m": sim.dplus_m,
+            "temps_predit_s": round(temps_predit, 0),
+            "temps_predit_fmt": fmt(temps_predit),
+        },
+        "resultat": {
+            "id": resultat.id, "name": resultat.name,
+            "dist_km": resultat.dist_km, "dplus_m": resultat.dplus_m,
+            "temps_reel_s": round(temps_reel, 0),
+            "temps_reel_fmt": fmt(temps_reel),
+            "date": resultat.date_activity.isoformat() if resultat.date_activity else None,
+        },
+        "ecart_total_s": round(ecart_total_s, 0),
+        "ecart_total_pct": round(ecart_total_pct, 1),
+        "ecart_total_fmt": ("+" if ecart_total_s >= 0 else "−") + fmt(abs(ecart_total_s)),
+        "plus_rapide": ecart_total_s < 0,
+        "ravitos": comparaison_ravitos,
+        "reel_dispo": reel_dispo,
+        "calibration": {
+            "coef_actuel": round(coef_actuel, 3),
+            "coef_suggere": round(coef_suggere, 3),
+            "ratio": round(ratio, 3),
+        },
+    }
+
+
+@app.post("/api/bilan/appliquer-calibration")
+def appliquer_calibration(
+    profil_type:  str   = Form(...),
+    coef_suggere: float = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Applique le coefficient suggéré au profil (après validation utilisateur)."""
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+    if not (1.0 <= coef_suggere <= 1.40):
+        raise HTTPException(400, detail="Coefficient hors limites (1.0 - 1.40)")
+
+    profil = db.query(Profile).filter(
+        Profile.user_id == user.id,
+        Profile.type == profil_type,
+    ).first()
+    if not profil:
+        raise HTTPException(404, detail="Profil introuvable")
+
+    profil.coefficient_course = coef_suggere
+    db.commit()
+    return {"status": "ok", "coefficient_course": coef_suggere}
 
 
 # ══════════════════════════════════════════════════════════════
