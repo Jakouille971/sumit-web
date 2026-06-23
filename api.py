@@ -17,7 +17,7 @@ import urllib.parse
 from datetime import datetime, timezone
 
 # Auth + BDD
-from db import init_db, get_db, User, Profile, Activity, ProfilSnapshot
+from db import init_db, get_db, User, Profile, Activity, ProfilSnapshot, BilanResultat
 from auth import (
     construire_url_google_auth,
     echanger_code_google,
@@ -2195,9 +2195,49 @@ def bilan_comparer(
     sim_td = sim.trace_data or {}
     res_td = resultat.trace_data or {}
 
-    # ── Temps total prédit & réel ──
-    temps_predit = float(sim_td.get('temps_total_s', sim.duree_s) or 0)
-    temps_reel   = float(resultat.duree_s or 0)
+    # ── Distances : on compare à un point kilométrique COMMUN ──
+    dist_sim = float(sim.dist_km or 0)
+    dist_reel = float(resultat.dist_km or 0)
+    # Le point de comparaison équitable = la plus courte des deux distances
+    km_commun = min(dist_sim, dist_reel) if dist_sim > 0 and dist_reel > 0 else max(dist_sim, dist_reel)
+    distances_differentes = abs(dist_sim - dist_reel) > 0.3  # tolérance 300m
+
+    # ── Trackpoints réels (avec temps cumulé) ──
+    trackpoints = res_td.get('_trackpoints', [])
+    tp_avec_temps = [tp for tp in trackpoints if 't' in tp and 'dist' in tp]
+    a_temps_exact = len(tp_avec_temps) > 2
+
+    def temps_reel_au_km(km):
+        """Temps de passage réel à un km donné (exact si trackpoints, sinon proportionnel)."""
+        if a_temps_exact:
+            proche = min(tp_avec_temps, key=lambda tp: abs(tp['dist'] - km))
+            return float(proche['t'])
+        # Fallback proportionnel à la distance réelle totale
+        if dist_reel > 0:
+            return float(resultat.duree_s or 0) * min(km / dist_reel, 1.0)
+        return float(resultat.duree_s or 0)
+
+    # ── Temps prédit & réel AU KM COMMUN ──
+    ravitos_predits = sim_td.get('ravitos', []) or []
+
+    # Temps prédit au km commun : on cherche le ravito le plus proche, sinon on prend le total
+    temps_predit_total = float(sim_td.get('temps_total_s', sim.duree_s) or 0)
+    if abs(km_commun - dist_sim) < 0.3:
+        # km commun = fin de la simu → temps total prédit
+        temps_predit = temps_predit_total
+    elif ravitos_predits:
+        # Interpoler le temps prédit au km commun depuis les ravitos
+        rv_proche = min(ravitos_predits, key=lambda r: abs(r.get('km', 0) - km_commun))
+        temps_predit = float(rv_proche.get('temps_s', temps_predit_total))
+    else:
+        temps_predit = temps_predit_total
+
+    # Temps réel au km commun
+    temps_reel_total = float(resultat.duree_s or 0)
+    if abs(km_commun - dist_reel) < 0.3:
+        temps_reel = temps_reel_total
+    else:
+        temps_reel = temps_reel_au_km(km_commun)
 
     if temps_predit <= 0:
         raise HTTPException(400, detail="La simulation n'a pas de temps prédit valide")
@@ -2207,75 +2247,79 @@ def bilan_comparer(
     ecart_total_s   = temps_reel - temps_predit
     ecart_total_pct = (ecart_total_s / temps_predit * 100) if temps_predit > 0 else 0
 
-    # ── Comparaison par ravito ──
-    ravitos_predits = sim_td.get('ravitos', []) or []
+    # ── Comparaison par ravito (jusqu'au km commun seulement) ──
     comparaison_ravitos = []
-
-    trackpoints = res_td.get('_trackpoints', [])
     reel_dispo = False
-
-    # On cherche si les trackpoints réels contiennent le temps cumulé 't'
-    tp_avec_temps = [tp for tp in trackpoints if 't' in tp and 'dist' in tp]
-    a_temps_exact = len(tp_avec_temps) > 2
 
     if ravitos_predits and temps_reel > 0 and temps_predit > 0:
         for rv in ravitos_predits:
             km = rv.get('km', 0)
+            # On ne compare que les ravitos avant le point commun
+            if km > km_commun + 0.3:
+                continue
             t_predit = float(rv.get('temps_s', 0))
-
-            if a_temps_exact:
-                # Temps réel EXACT : on trouve le trackpoint le plus proche de ce km
-                proche = min(tp_avec_temps, key=lambda tp: abs(tp['dist'] - km))
-                t_reel_est = float(proche['t'])
-                methode = 'exact'
-            else:
-                # Fallback : répartition proportionnelle à la distance
-                dist_tot = sim.dist_km or resultat.dist_km or 1
-                frac = min(km / dist_tot, 1.0) if dist_tot > 0 else 0
-                t_reel_est = temps_reel * frac
-                methode = 'estime'
+            t_reel_est = temps_reel_au_km(km)
+            methode = 'exact' if a_temps_exact else 'estime'
 
             ecart_s = t_reel_est - t_predit
             comparaison_ravitos.append({
-                "km": km,
+                "km": round(km, 1),
                 "temps_predit_s": round(t_predit, 0),
                 "temps_reel_s": round(t_reel_est, 0),
                 "ecart_s": round(ecart_s, 0),
                 "temps_predit_fmt": fmt(t_predit),
                 "temps_reel_fmt": fmt(t_reel_est),
                 "ecart_fmt": ("+" if ecart_s >= 0 else "−") + fmt(abs(ecart_s)),
-                "plus_rapide": ecart_s < 0,  # réel < prédit = plus rapide
+                "plus_rapide": ecart_s < 0,
                 "methode": methode,
+                "is_arrivee": False,
             })
         reel_dispo = True
 
+    # ── Ligne d'arrivée (au km commun) ──
+    comparaison_ravitos.append({
+        "km": round(km_commun, 1),
+        "temps_predit_s": round(temps_predit, 0),
+        "temps_reel_s": round(temps_reel, 0),
+        "ecart_s": round(ecart_total_s, 0),
+        "temps_predit_fmt": fmt(temps_predit),
+        "temps_reel_fmt": fmt(temps_reel),
+        "ecart_fmt": ("+" if ecart_total_s >= 0 else "−") + fmt(abs(ecart_total_s)),
+        "plus_rapide": ecart_total_s < 0,
+        "methode": 'exact' if a_temps_exact else 'estime',
+        "is_arrivee": True,
+    })
+
     # ── Suggestion d'ajustement du coefficient ──
-    # Si le réel est plus lent que le prédit (ecart positif), le modèle
-    # sous-estime la difficulté → augmenter le coefficient, et vice-versa.
     profil = db.query(Profile).filter(
         Profile.user_id == user.id,
         Profile.type == sim.type_profil,
     ).first()
     coef_actuel = float(profil.coefficient_course) if profil else 1.10
 
-    # Le ratio temps_reel/temps_predit indique le facteur correctif
     ratio = temps_reel / temps_predit if temps_predit > 0 else 1.0
     coef_suggere = float(max(1.0, min(1.40, coef_actuel * ratio)))
 
     return {
         "simulation": {
-            "id": sim.id, "name": sim.name,
-            "dist_km": sim.dist_km, "dplus_m": sim.dplus_m,
+            "id": sim.id, "name": sim.name, "type_profil": sim.type_profil,
+            "dist_km": dist_sim, "dplus_m": sim.dplus_m,
             "temps_predit_s": round(temps_predit, 0),
             "temps_predit_fmt": fmt(temps_predit),
+            "temps_total_s": round(temps_predit_total, 0),
+            "temps_total_fmt": fmt(temps_predit_total),
         },
         "resultat": {
             "id": resultat.id, "name": resultat.name,
-            "dist_km": resultat.dist_km, "dplus_m": resultat.dplus_m,
+            "dist_km": dist_reel, "dplus_m": resultat.dplus_m,
             "temps_reel_s": round(temps_reel, 0),
             "temps_reel_fmt": fmt(temps_reel),
+            "temps_total_s": round(temps_reel_total, 0),
+            "temps_total_fmt": fmt(temps_reel_total),
             "date": resultat.date_activity.isoformat() if resultat.date_activity else None,
         },
+        "km_commun": round(km_commun, 1),
+        "distances_differentes": distances_differentes,
         "ecart_total_s": round(ecart_total_s, 0),
         "ecart_total_pct": round(ecart_total_pct, 1),
         "ecart_total_fmt": ("+" if ecart_total_s >= 0 else "−") + fmt(abs(ecart_total_s)),
@@ -2313,6 +2357,87 @@ def appliquer_calibration(
     profil.coefficient_course = coef_suggere
     db.commit()
     return {"status": "ok", "coefficient_course": coef_suggere}
+
+
+@app.post("/api/bilan/pin")
+def pin_bilan(
+    nom:           str = Form(...),
+    simulation_id: int = Form(...),
+    resultat_id:   int = Form(...),
+    bilan_json:    str = Form(...),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Épingle un bilan (comparaison réel vs prédit) pour le retrouver plus tard."""
+    count = db.query(BilanResultat).filter(BilanResultat.user_id == user.id).count()
+    if count >= 30:
+        raise HTTPException(400, detail="Limite de 30 bilans épinglés atteinte.")
+
+    try:
+        bilan = json.loads(bilan_json)
+    except Exception as e:
+        raise HTTPException(400, detail=f"bilan_json invalide : {e}")
+
+    b = BilanResultat(
+        user_id       = user.id,
+        nom           = nom.strip()[:200] or "Bilan",
+        simulation_id = simulation_id,
+        resultat_id   = resultat_id,
+        type_profil   = bilan.get('simulation', {}).get('type_profil', 'trail'),
+        bilan_data    = bilan,
+        ecart_total_s = float(bilan.get('ecart_total_s', 0) or 0),
+        plus_rapide   = bool(bilan.get('plus_rapide', False)),
+        km_commun     = float(bilan.get('km_commun', 0) or 0),
+    )
+    db.add(b)
+    db.commit()
+    db.refresh(b)
+    return {"status": "ok", "bilan_id": b.id}
+
+
+@app.get("/api/bilan/pinned")
+def list_bilans(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Liste les bilans épinglés."""
+    bilans = db.query(BilanResultat).filter(
+        BilanResultat.user_id == user.id,
+    ).order_by(BilanResultat.created_at.desc()).all()
+
+    return {
+        "bilans": [
+            {
+                "id": b.id,
+                "nom": b.nom,
+                "ecart_total_s": b.ecart_total_s,
+                "ecart_fmt": ("+" if b.ecart_total_s >= 0 else "−") + fmt(abs(b.ecart_total_s)),
+                "plus_rapide": b.plus_rapide,
+                "km_commun": b.km_commun,
+                "created_at": b.created_at.isoformat() if b.created_at else None,
+                "bilan_data": b.bilan_data,
+            }
+            for b in bilans
+        ]
+    }
+
+
+@app.delete("/api/bilan/pinned/{bilan_id}")
+def delete_bilan(
+    bilan_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Supprime un bilan épinglé."""
+    b = db.query(BilanResultat).filter(
+        BilanResultat.id == bilan_id,
+        BilanResultat.user_id == user.id,
+    ).first()
+    if not b:
+        raise HTTPException(404, detail="Bilan introuvable")
+    db.delete(b)
+    db.commit()
+    return {"status": "ok"}
 
 
 # ══════════════════════════════════════════════════════════════
