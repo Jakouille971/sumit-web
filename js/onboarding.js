@@ -44,15 +44,22 @@ const ONBOARDING_STEPS = [
   },
   {
     id: 5, page: 'simulateur', selector: '#dropzoneSim, .sidebar-sim, .sim-sidebar',
-    title: 'Étape 4/5 — Simule une course',
+    title: 'Étape 4/6 — Simule une course',
     text: "Upload un GPX de course (UTMB, ta prochaine cible…) et lance la simulation.<br><br>L'algo prédit ton temps en tenant compte de la fatigue mécanique et de ton allure. Choisis Trail ou Rando selon le terrain.",
     nextLabel: 'Compris !',
     nextAction: 'next',
   },
   {
     id: 6, page: 'simulateur', selector: '#btnPin, .btn-pin',
-    title: 'Étape 5/5 — Épingle et retrouve tes sims',
-    text: "Clique sur <strong>⭐ Épingler</strong> pour sauver une simulation.<br><br>Retrouve-les dans <strong>Mon compte</strong> et clique <strong>'Ouvrir'</strong> pour les rouvrir avec ton GPX et tes ravitos. Possibilité de <strong>recalculer</strong> avec ton profil mis à jour.",
+    title: 'Étape 5/6 — Épingle tes simulations',
+    text: "Clique sur <strong>⭐ Épingler</strong> pour sauver une simulation avant ta course.<br><br>Retrouve-les dans <strong>Mon compte</strong>, rouvre-les avec ton GPX et tes ravitos, et recalcule-les avec ton profil mis à jour.",
+    nextLabel: 'Et après la course ?',
+    nextAction: 'goto:bilan',
+  },
+  {
+    id: 7, page: 'bilan', selector: '.bilan-selectors, .bilan-header',
+    title: 'Étape 6/6 — Compare réel vs prédit',
+    text: "Après ta course, importe-la en type <strong>🏅 Résultat</strong> dans Mon profil.<br><br>Ici, compare ta <strong>simulation</strong> à ta <strong>performance réelle</strong> : écart par ravito, ajustement du modèle, commentaire personnel. Ton profil apprend de chaque course !",
     nextLabel: 'Terminer le tour 🎉',
     nextAction: 'finish',
   },
@@ -120,6 +127,7 @@ function getPageCourante() {
   const path = window.location.pathname;
   if (path.endsWith('/profil.html'))     return 'profil';
   if (path.endsWith('/simulateur.html')) return 'simulateur';
+  if (path.endsWith('/bilan.html'))      return 'bilan';
   if (path.endsWith('/compte.html'))     return 'compte';
   if (path.endsWith('/avenir.html'))     return 'avenir';
   return 'home';
@@ -410,6 +418,11 @@ async function handleNextOnboarding(step) {
       setOnboardingStep(step.id + 1);
       retirerWidget();
       window.location.href = pathTo('simulateur');
+      break;
+    case 'goto:bilan':
+      setOnboardingStep(step.id + 1);
+      retirerWidget();
+      window.location.href = pathTo('bilan');
       break;
     case 'finish':
       stopperOnboarding();
