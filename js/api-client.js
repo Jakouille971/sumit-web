@@ -192,10 +192,13 @@ async function renommerActivite(activiteId, nouveauNom) {
   return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
 }
 
-async function modifierActivite(activiteId, { nom, typeSortie }) {
+async function modifierActivite(activiteId, { nom, name, typeSortie, dateActivity }) {
   const fd = new FormData();
-  if (nom !== undefined) fd.append('name', nom);
+  // 'nom' (FR) ou 'name' (EN) acceptés ; le backend attend 'name'
+  const finalName = nom !== undefined ? nom : name;
+  if (finalName !== undefined) fd.append('name', finalName);
   if (typeSortie !== undefined) fd.append('type_sortie', typeSortie);
+  if (dateActivity !== undefined && dateActivity !== '') fd.append('date_activity', dateActivity);
   return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
 }
 
@@ -207,15 +210,8 @@ async function getEvolution(profilType = 'trail') {
   return apiFetch(`/api/evolution?profil_type=${profilType}`);
 }
 
-async function resetEvolution(profilType = 'trail') {
-  return apiFetch(`/api/evolution/reset?profil_type=${profilType}`, { method: 'DELETE' });
-}
-
-async function modifierActivite(activiteId, { name, typeSortie }) {
-  const fd = new FormData();
-  if (name !== undefined) fd.append('name', name);
-  if (typeSortie !== undefined) fd.append('type_sortie', typeSortie);
-  return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
+async function rebuildEvolution(profilType = 'trail') {
+  return apiFetch(`/api/evolution/rebuild?profil_type=${profilType}`, { method: 'POST' });
 }
 
 
@@ -396,9 +392,39 @@ async function chargerProfilActuel(profilType = 'trail') {
 if (typeof window !== 'undefined') {
   capturerTokenURL();
 
-  // Expose explicitement toutes les fonctions appelées depuis du HTML inline (onclick)
-  window.loginGoogle = loginGoogle;
-  window.logout = logout;
-  window.loginStrava = loginStrava;
-  window.demarrerOnboarding = typeof demarrerOnboarding !== 'undefined' ? demarrerOnboarding : window.demarrerOnboarding;
+  // Expose explicitement TOUTES les fonctions appelées depuis du HTML inline
+  // ou depuis d'autres fichiers JS (nav-user, onboarding, pages)
+  window.loginGoogle           = loginGoogle;
+  window.logout                = logout;
+  window.loginStrava           = loginStrava;
+  window.fetchMe               = fetchMe;
+  window.isLoggedIn            = isLoggedIn;
+  window.getCachedUser         = getCachedUser;
+  window.setCachedUser         = setCachedUser;
+  window.clearToken            = clearToken;
+  window.updateSettings        = updateSettings;
+  window.deconnecterStrava     = deconnecterStrava;
+  // Profils & activités
+  window.listerActivites       = listerActivites;
+  window.ajouterActiviteGPX    = ajouterActiviteGPX;
+  window.ajouterActiviteStrava = ajouterActiviteStrava;
+  window.supprimerActivite     = supprimerActivite;
+  window.renommerActivite      = renommerActivite;
+  window.modifierActivite      = modifierActivite;
+  window.getActiviteDetail     = getActiviteDetail;
+  // Strava
+  window.listerActivitesStrava = listerActivitesStrava;
+  // Simulations
+  window.listerSimulations     = listerSimulations;
+  window.getSimulation         = getSimulation;
+  window.epinglerSimulation    = epinglerSimulation;
+  window.updateSimulation      = updateSimulation;
+  window.supprimerSimulation   = supprimerSimulation;
+  // Évolution
+  window.getEvolution          = getEvolution;
+  window.rebuildEvolution      = rebuildEvolution;
+  // Onboarding (au cas où)
+  if (typeof demarrerOnboarding !== 'undefined') {
+    window.demarrerOnboarding = demarrerOnboarding;
+  }
 }
