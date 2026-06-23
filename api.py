@@ -2365,6 +2365,7 @@ def pin_bilan(
     simulation_id: int = Form(...),
     resultat_id:   int = Form(...),
     bilan_json:    str = Form(...),
+    commentaire:   str = Form(""),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -2385,6 +2386,7 @@ def pin_bilan(
         resultat_id   = resultat_id,
         type_profil   = bilan.get('simulation', {}).get('type_profil', 'trail'),
         bilan_data    = bilan,
+        commentaire   = (commentaire or '').strip()[:2000] or None,
         ecart_total_s = float(bilan.get('ecart_total_s', 0) or 0),
         plus_rapide   = bool(bilan.get('plus_rapide', False)),
         km_commun     = float(bilan.get('km_commun', 0) or 0),
@@ -2393,6 +2395,31 @@ def pin_bilan(
     db.commit()
     db.refresh(b)
     return {"status": "ok", "bilan_id": b.id}
+
+
+@app.patch("/api/bilan/pinned/{bilan_id}")
+def update_bilan(
+    bilan_id:    int,
+    commentaire: Optional[str] = Form(None),
+    nom:         Optional[str] = Form(None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Met à jour le commentaire et/ou le nom d'un bilan épinglé."""
+    b = db.query(BilanResultat).filter(
+        BilanResultat.id == bilan_id,
+        BilanResultat.user_id == user.id,
+    ).first()
+    if not b:
+        raise HTTPException(404, detail="Bilan introuvable")
+
+    if commentaire is not None:
+        b.commentaire = commentaire.strip()[:2000] or None
+    if nom is not None and nom.strip():
+        b.nom = nom.strip()[:200]
+
+    db.commit()
+    return {"status": "ok", "commentaire": b.commentaire, "nom": b.nom}
 
 
 @app.get("/api/bilan/pinned")
@@ -2410,6 +2437,7 @@ def list_bilans(
             {
                 "id": b.id,
                 "nom": b.nom,
+                "commentaire": b.commentaire,
                 "ecart_total_s": b.ecart_total_s,
                 "ecart_fmt": ("+" if b.ecart_total_s >= 0 else "−") + fmt(abs(b.ecart_total_s)),
                 "plus_rapide": b.plus_rapide,
