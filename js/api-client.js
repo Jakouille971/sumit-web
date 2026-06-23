@@ -191,8 +191,19 @@ async function renommerActivite(activiteId, nouveauNom) {
   return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
 }
 
+async function modifierActivite(activiteId, { nom, typeSortie }) {
+  const fd = new FormData();
+  if (nom !== undefined) fd.append('nom', nom);
+  if (typeSortie !== undefined) fd.append('type_sortie', typeSortie);
+  return apiFetch(`/api/activities/${activiteId}`, { method: 'PATCH', body: fd });
+}
+
 async function getEvolution(profilType = 'trail') {
   return apiFetch(`/api/evolution?profil_type=${profilType}`);
+}
+
+async function resetEvolution(profilType = 'trail') {
+  return apiFetch(`/api/evolution/reset?profil_type=${profilType}`, { method: 'DELETE' });
 }
 
 async function modifierActivite(activiteId, { name, typeSortie }) {
