@@ -195,6 +195,7 @@
       border: 1px solid var(--line-2);
     }
     .activite-type-tag.course { color: var(--sun); border-color: rgba(255, 200, 87, 0.4); background: rgba(255, 200, 87, 0.08); }
+    .activite-type-tag.resultat { color: #E8B04B; border-color: rgba(232, 176, 75, 0.5); background: rgba(232, 176, 75, 0.10); }
     .activite-type-tag.entrainement { color: var(--leaf); border-color: rgba(107, 179, 107, 0.4); background: rgba(107, 179, 107, 0.08); }
     .activite-type-tag.sortie { color: var(--sky); border-color: rgba(79, 163, 217, 0.4); background: rgba(79, 163, 217, 0.08); }
     .btn-delete {
@@ -1073,6 +1074,13 @@
             </div>
             <span class="tag" style="color:var(--sun);border-color:rgba(255,200,87,0.4);background:rgba(255,200,87,0.08);">Top intensité</span>
           </div>
+          <div class="type-option" data-type="resultat" onclick="selectionnerTypeEdit('resultat')">
+            <div>
+              <div class="type-option-name">🏅 Résultat de course</div>
+              <div class="type-option-desc">Course réelle courue, comparable à une simulation (poids ×1.0)</div>
+            </div>
+            <span class="tag" style="color:#E8B04B;border-color:rgba(232,176,75,0.4);background:rgba(232,176,75,0.08);">Bilan</span>
+          </div>
           <div class="type-option" data-type="entrainement" onclick="selectionnerTypeEdit('entrainement')">
             <div>
               <div class="type-option-name">🏃 Entraînement</div>
@@ -1108,6 +1116,13 @@
             <div class="type-option-desc">Compétition (poids ×1.0)</div>
           </div>
           <span class="tag" style="color:var(--sun);border-color:rgba(255,200,87,0.4);background:rgba(255,200,87,0.08);">Top intensité</span>
+        </div>
+        <div class="type-option" onclick="confirmerTypeSortie('resultat')">
+          <div>
+            <div class="type-option-name">🏅 Résultat de course</div>
+            <div class="type-option-desc">Course réelle courue, à comparer à une simulation (poids ×1.0)</div>
+          </div>
+          <span class="tag" style="color:#E8B04B;border-color:rgba(232,176,75,0.4);background:rgba(232,176,75,0.08);">Bilan</span>
         </div>
         <div class="type-option" onclick="confirmerTypeSortie('entrainement')">
           <div>
@@ -1153,6 +1168,13 @@
     let currentProfile    = null;
     let currentActivites  = [];
     let pendingUpload     = null;
+
+    const TYPE_LABELS = {
+      course:       'COURSE',
+      resultat:     'RÉSULTAT',
+      entrainement: 'ENTRAÎNEMENT',
+      sortie:       'SORTIE',
+    };
     let stravaActivitiesCache = []; // cache pour filtrer sans refetch
 
     const ARCHETYPES = {
@@ -1663,7 +1685,7 @@
               <div class="activite-name">${escapeHTML(a.name || 'Sans nom')}</div>
               <div style="font-size:11px;color:var(--text-3)">${date}</div>
             </div>
-            <span class="activite-type-tag ${a.type_sortie}">${a.type_sortie}</span>
+            <span class="activite-type-tag ${a.type_sortie}">${TYPE_LABELS[a.type_sortie] || a.type_sortie}</span>
             <div class="activite-meta">${a.dist_km.toFixed(1)} km</div>
             <div class="activite-meta">${Math.round(a.dplus_m)} m D+</div>
             <div class="activite-meta">${dureeFmt}</div>
