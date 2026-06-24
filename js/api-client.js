@@ -79,24 +79,166 @@ async function apiFetch(path, options = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    mode: 'cors',
-  });
+  // Retry automatique : le serveur Render peut être en veille (cold start ~30-60s).
+  // On réessaie quelques fois sur les erreurs réseau / 502 / 503.
+  const maxRetries = 6;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(`${API_URL}${path}`, { ...options, headers, mode: 'cors' });
 
-  if (res.status === 401) {
-    // Token expiré ou invalide
-    clearToken();
-    throw new Error('Session expirée, reconnecte-toi');
+      if (res.status === 401) {
+        clearToken();
+        throw new Error('Session expirée, reconnecte-toi');
+      }
+      // 502/503 = serveur en train de démarrer → on réessaie
+      if ((res.status === 502 || res.status === 503) && attempt < maxRetries) {
+        afficherBandeauReveil();
+        await dormir(2500);
+        continue;
+      }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `Erreur HTTP ${res.status}`);
+      }
+      cacherBandeauReveil();
+      return res.json();
+    } catch (e) {
+      lastErr = e;
+      // Erreur d'authentification → on ne réessaie pas
+      if (e.message && e.message.includes('Session expirée')) throw e;
+      // Erreur réseau (serveur endormi) → on réessaie
+      if (attempt < maxRetries) {
+        afficherBandeauReveil();
+        await dormir(2500);
+        continue;
+      }
+    }
   }
+  cacherBandeauReveil();
+  throw lastErr || new Error('Le serveur ne répond pas. Réessaie dans un instant.');
+}
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Erreur HTTP ${res.status}`);
+function dormir(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ── Bandeau "réveil du serveur" ──────────────────────────────
+let _bandeauReveilTimer = null;
+let _bandeauReveilDebut = null;
+
+function afficherBandeauReveil() {
+  if (document.getElementById('sumit-reveil-banner')) return;
+  _bandeauReveilDebut = Date.now();
+
+  const banner = document.createElement('div');
+  banner.id = 'sumit-reveil-banner';
+  banner.innerHTML = `
+    <div class="reveil-inner">
+      <div class="reveil-spinner"></div>
+      <div class="reveil-text">
+        <strong>Réveil du serveur en cours…</strong>
+        <span>La première connexion après une période d'inactivité prend ~30 à 60 secondes. Merci de patienter, ça ne durera qu'une fois.</span>
+      </div>
+      <div class="reveil-timer" id="sumit-reveil-timer">0s</div>
+    </div>
+    <div class="reveil-progress"><div class="reveil-progress-bar" id="sumit-reveil-bar"></div></div>
+  `;
+  injecterStylesReveil();
+  document.body.appendChild(banner);
+
+  _bandeauReveilTimer = setInterval(() => {
+    const sec = Math.floor((Date.now() - _bandeauReveilDebut) / 1000);
+    const t = document.getElementById('sumit-reveil-timer');
+    const bar = document.getElementById('sumit-reveil-bar');
+    if (t) t.textContent = `${sec}s`;
+    // Barre de progression estimée sur 60s
+    if (bar) bar.style.width = `${Math.min(sec / 60 * 100, 95)}%`;
+  }, 1000);
+}
+
+function cacherBandeauReveil() {
+  if (_bandeauReveilTimer) { clearInterval(_bandeauReveilTimer); _bandeauReveilTimer = null; }
+  const b = document.getElementById('sumit-reveil-banner');
+  if (b) {
+    const bar = document.getElementById('sumit-reveil-bar');
+    if (bar) bar.style.width = '100%';
+    setTimeout(() => b.remove(), 400);
   }
+}
 
-  return res.json();
+function injecterStylesReveil() {
+  if (document.getElementById('sumit-reveil-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'sumit-reveil-styles';
+  s.textContent = `
+    #sumit-reveil-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: linear-gradient(90deg, rgba(255,200,87,0.14), rgba(107,179,107,0.10));
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,200,87,0.35);
+      z-index: 99999;
+      animation: reveilSlide 0.3s ease;
+    }
+    @keyframes reveilSlide { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+    .reveil-inner {
+      display: flex; align-items: center; gap: 16px;
+      max-width: 1000px; margin: 0 auto;
+      padding: 14px 24px;
+    }
+    .reveil-spinner {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border: 2.5px solid rgba(255,200,87,0.25);
+      border-top-color: #FFC857;
+      border-radius: 50%;
+      animation: reveilSpin 0.8s linear infinite;
+    }
+    @keyframes reveilSpin { to { transform: rotate(360deg); } }
+    .reveil-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .reveil-text strong {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px; color: #FFC857; letter-spacing: 0.02em;
+    }
+    .reveil-text span { font-size: 12px; color: rgba(244,241,232,0.75); line-height: 1.4; }
+    .reveil-timer {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 18px; font-weight: 700; color: #FFC857;
+      min-width: 44px; text-align: right;
+    }
+    .reveil-progress { height: 3px; background: rgba(255,255,255,0.06); }
+    .reveil-progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #FFC857, #6BB36B);
+      transition: width 1s linear;
+    }
+    @media (max-width: 600px) {
+      .reveil-text span { display: none; }
+      .reveil-inner { padding: 12px 16px; }
+    }
+  `;
+  document.head.appendChild(s);
+}
+
+// Réveil proactif : ping /api/health au chargement (ne bloque pas).
+async function reveillerServeurEnArrierePlan() {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3000);
+    const res = await fetch(`${API_URL}/api/health`, { mode: 'cors', signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) return; // serveur déjà réveillé, rien à faire
+  } catch (e) {
+    // Serveur endormi → on affiche le bandeau et on ping en boucle jusqu'au réveil
+  }
+  afficherBandeauReveil();
+  for (let i = 0; i < 30; i++) {
+    try {
+      const res = await fetch(`${API_URL}/api/health`, { mode: 'cors' });
+      if (res.ok) { cacherBandeauReveil(); return; }
+    } catch (e) { /* encore endormi */ }
+    await dormir(2500);
+  }
+  cacherBandeauReveil();
 }
 
 
@@ -342,10 +484,13 @@ async function analyserProfilAPI(filesData, fcmax, profilType) {
   return await res.json();
 }
 
-async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coefficient, fcmax) {
+async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coefficient, fcmax, ravitosNoms) {
   const formData = new FormData();
   formData.append('fichier_cible', fichierGPX, fichierGPX.name);
   formData.append('ravitos_km',    ravitosKm);
+  if (ravitosNoms && Object.keys(ravitosNoms).length > 0) {
+    formData.append('ravitos_noms', JSON.stringify(ravitosNoms));
+  }
   formData.append('profil_json',   JSON.stringify(profil));
   formData.append('drain_moy_h',   drainMoyH);
   formData.append('coefficient',   coefficient);
@@ -432,6 +577,11 @@ async function chargerProfilActuel(profilType = 'trail') {
 // Auto-capture du token au chargement de chaque page
 if (typeof window !== 'undefined') {
   capturerTokenURL();
+
+  // Réveil proactif du serveur Render (cold start) dès le chargement de la page
+  if (typeof reveillerServeurEnArrierePlan === 'function') {
+    reveillerServeurEnArrierePlan();
+  }
 
   // Expose explicitement TOUTES les fonctions appelées depuis du HTML inline
   // ou depuis d'autres fichiers JS (nav-user, onboarding, pages)
