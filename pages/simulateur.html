@@ -406,11 +406,26 @@
     .modal-content h2 { font-size: 18px !important; }
 
     /* ── Liste dynamique de ravitos ── */
+    .ravitos-head {
+      display: grid;
+      grid-template-columns: 64px 1fr 58px 32px;
+      gap: 7px;
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .ravitos-head span {
+      font-family: var(--font-display);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-3);
+      text-align: center;
+    }
+    .ravitos-head span:nth-child(2) { text-align: left; }
     .ravitos-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
     .ravito-row {
       display: grid;
-      grid-template-columns: 78px 1fr 32px;
-      gap: 8px;
+      grid-template-columns: 64px 1fr 58px 32px;
+      gap: 7px;
       align-items: center;
     }
     .ravito-row input {
@@ -427,6 +442,7 @@
     .ravito-row input:focus { border-color: var(--sun); }
     .ravito-row input::placeholder { color: var(--text-3); }
     .ravito-km-input { text-align: center; font-family: var(--font-display); }
+    .ravito-pause-input { text-align: center; font-family: var(--font-display); color: var(--sky); }
     .btn-del-ravito {
       background: transparent;
       border: 1px solid var(--line);
@@ -544,8 +560,20 @@
         <div class="step-num">2</div>
         <div>
           <div class="step-title">Ravitaillements & points d'intérêt<span class="info-i" data-tip="Définis tes points de passage clés : ravitaillements, cols, refuges, bases de vie… Indique le kilométrage et un nom. Le simulateur affichera ton temps de passage estimé à chacun. Laisse vide pour 4 points automatiques.">i</span></div>
-          <div class="step-desc">Kilométrage + nom de chaque point.</div>
+          <div class="step-desc">Km, nom et temps d'arrêt de chaque point.</div>
         </div>
+      </div>
+      <div class="ravitos-head">
+        <span>Km</span>
+        <span>Nom du point</span>
+        <span>Pause</span>
+        <span></span>
+      </div>
+      <div class="ravitos-head">
+        <span>Km</span>
+        <span>Nom du point</span>
+        <span title="Temps d'arrêt en minutes">Pause</span>
+        <span></span>
       </div>
       <div id="ravitosList" class="ravitos-list"></div>
       <button type="button" class="btn-add-ravito" onclick="ajouterRavito()">+ Ajouter un point</button>
@@ -773,7 +801,7 @@ let gpxFile = null;
 // ══ Gestion dynamique des ravitos / points d'intérêt ══════════
 let _ravitoSeq = 0;
 
-function creerLigneRavito(km = '', nom = '') {
+function creerLigneRavito(km = '', nom = '', pause = '') {
   _ravitoSeq++;
   const id = _ravitoSeq;
   const row = document.createElement('div');
@@ -782,15 +810,16 @@ function creerLigneRavito(km = '', nom = '') {
   row.innerHTML = `
     <input type="number" class="ravito-km-input" min="0" step="0.1" placeholder="km" value="${km}" oninput="syncRavitos()">
     <input type="text" class="ravito-nom-input" maxlength="60" placeholder="Nom (ex : Refuge, Col, Base de vie…)" value="${nom.replace(/"/g, '&quot;')}" oninput="syncRavitos()">
+    <input type="number" class="ravito-pause-input" min="0" step="1" placeholder="pause" value="${pause}" title="Temps d'arrêt en minutes" oninput="syncRavitos()">
     <button type="button" class="btn-del-ravito" onclick="supprimerRavito(${id})" title="Retirer">−</button>
   `;
   return row;
 }
 
-function ajouterRavito(km = '', nom = '') {
+function ajouterRavito(km = '', nom = '', pause = '') {
   const list = document.getElementById('ravitosList');
   if (!list) return;
-  list.appendChild(creerLigneRavito(km, nom));
+  list.appendChild(creerLigneRavito(km, nom, pause));
   syncRavitos();
 }
 
@@ -798,6 +827,20 @@ function supprimerRavito(id) {
   const row = document.querySelector(`.ravito-row[data-rid="${id}"]`);
   if (row) row.remove();
   syncRavitos();
+}
+
+// Récupère le mapping {km: minutes de pause} pour l'envoi backend
+function getRavitosPauses() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const map = {};
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    const pause = r.querySelector('.ravito-pause-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km)) && pause !== '' && parseFloat(pause) > 0) {
+      map[parseFloat(km).toFixed(1)] = parseFloat(pause);
+    }
+  });
+  return map;
 }
 
 // Synchronise la liste vers le champ caché #ravitos (km) — compat existant
@@ -827,7 +870,7 @@ function getRavitosNoms() {
 }
 
 // Pré-remplit la liste depuis une chaîne "12,25,42" (réouverture sim) + noms optionnels
-function chargerRavitosDansListe(ravitosKmStr, nomsMap = {}) {
+function chargerRavitosDansListe(ravitosKmStr, nomsMap = {}, pausesMap = {}) {
   const list = document.getElementById('ravitosList');
   if (!list) return;
   list.innerHTML = '';
@@ -839,7 +882,8 @@ function chargerRavitosDansListe(ravitosKmStr, nomsMap = {}) {
   kms.forEach(km => {
     const k = parseFloat(km);
     const nom = nomsMap[k.toFixed(1)] || '';
-    list.appendChild(creerLigneRavito(k, nom));
+    const pause = pausesMap[k.toFixed(1)] || '';
+    list.appendChild(creerLigneRavito(k, nom, pause));
   });
   syncRavitos();
 }
@@ -984,16 +1028,21 @@ async function chargerSimulationEpinglee(simId) {
     if (document.getElementById('nomCourse')) {
       document.getElementById('nomCourse').value = sim.name;
     }
-    // Charger les ravitos (km + noms) dans la liste dynamique.
-    // Les noms sont récupérés depuis sim_data.ravitos s'ils existent.
+    // Charger les ravitos (km + noms + pauses) dans la liste dynamique.
+    // Récupérés depuis sim_data.ravitos s'ils existent.
     let nomsMap = {};
+    let pausesMap = {};
     if (sim.sim_data && Array.isArray(sim.sim_data.ravitos)) {
       sim.sim_data.ravitos.forEach(rv => {
-        if (rv.nom && rv.km != null) nomsMap[Number(rv.km).toFixed(1)] = rv.nom;
+        if (rv.km != null) {
+          const k = Number(rv.km).toFixed(1);
+          if (rv.nom) nomsMap[k] = rv.nom;
+          if (rv.pause_min && rv.pause_min > 0) pausesMap[k] = rv.pause_min;
+        }
       });
     }
     if (sim.ravitos_km) {
-      chargerRavitosDansListe(sim.ravitos_km, nomsMap);
+      chargerRavitosDansListe(sim.ravitos_km, nomsMap, pausesMap);
     } else {
       initRavitosDefaut();
     }
@@ -1138,6 +1187,7 @@ async function lancerSimulation() {
   syncRavitos();
   const ravitos = document.getElementById('ravitos').value.trim();
   const ravitosNoms = getRavitosNoms();
+  const ravitosPauses = getRavitosPauses();
   const btn     = document.getElementById('btnSimuler');
   btn.textContent = '⏳ Analyse du terrain en cours (OSM)...';
   btn.disabled = true;
@@ -1149,7 +1199,7 @@ async function lancerSimulation() {
     const data = await simulerCourseAPI(
       gpxFile, ravitos,
       p.profil, p.drain_moy_h, p.coefficient, p.fcmax || 193,
-      ravitosNoms
+      ravitosNoms, ravitosPauses
     );
 
     console.log('Réponse API:', data);
@@ -1223,9 +1273,12 @@ function afficherResultats(data) {
   (data.ravitos || []).forEach(r => {
     const dp = Math.round(r.dplus_cum || 0);
     const dm = Math.round(r.dmoins_cum || 0);
+    const pauseBadge = (r.pause_min && r.pause_min > 0)
+      ? ` <span style="display:inline-block;font-size:10px;color:var(--sky);background:rgba(79,163,217,0.12);border:1px solid rgba(79,163,217,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-family:var(--font-display);">⏸ ${Math.round(r.pause_min)}min</span>`
+      : '';
     const label = (r.nom && r.nom.trim())
-      ? `<strong style="color:var(--text);">${escapeHTMLSim(r.nom)}</strong>`
-      : `Ravito`;
+      ? `<strong style="color:var(--text);">${escapeHTMLSim(r.nom)}</strong>${pauseBadge}`
+      : `Ravito${pauseBadge}`;
     tbody.innerHTML += `
       <tr>
         <td>${label}</td>
