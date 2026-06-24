@@ -86,7 +86,7 @@ CATEGORIES = [
     {'nom':'Ultra', 'emoji':'🔴','min':80,'max':999,'facteur':0.78},
 ]
 
-POIDS_TYPE = {'course':1.00,'resultat':1.00,'entrainement':0.70,'sortie':0.40}
+POIDS_TYPE = {'course':1.00,'resultat':1.00,'rando':1.00,'entrainement':0.70,'sortie':0.40}
 DEMI_VIE   = 180
 
 ZONES_FC = {
@@ -848,6 +848,12 @@ def health():
     return {"status":"ok","app":"SUM'IT API","version":"1.0.0"}
 
 
+@app.get("/api/health")
+def api_health():
+    """Endpoint léger (sans accès BDD) pour vérifier que le serveur est réveillé."""
+    return {"status": "ok", "awake": True}
+
+
 @app.post("/api/analyser-profil")
 async def analyser_profil(
     fichiers:    List[UploadFile] = File(...),
@@ -893,6 +899,7 @@ async def analyser_profil(
 async def api_simuler(
     fichier_cible: UploadFile = File(...),
     ravitos_km:    str   = Form(""),
+    ravitos_noms:  str   = Form(""),   # JSON optionnel {"12.0": "Refuge", "25.0": "Col"}
     profil_json:   str   = Form(...),
     drain_moy_h:   float = Form(0.08),
     coefficient:   float = Form(1.0),
@@ -910,6 +917,16 @@ async def api_simuler(
         profil=json.loads(profil_json)
     except:
         raise HTTPException(400,detail="Profil JSON invalide")
+
+    # Noms des ravitos (mapping km → nom)
+    noms_ravitos = {}
+    if ravitos_noms.strip():
+        try:
+            raw = json.loads(ravitos_noms)
+            # Clés en float arrondi pour le matching
+            noms_ravitos = {round(float(k), 1): str(v) for k, v in raw.items()}
+        except Exception:
+            noms_ravitos = {}
 
     dist_km=float(df['dist_cum'].max())
     dplus_m=float(df['dp_cum'].max())
@@ -963,8 +980,10 @@ async def api_simuler(
         b_ =float(sdf.loc[idx,'batterie_pct'])
         dp_=float(sdf.loc[idx,'dplus_cum']) if 'dplus_cum' in sdf.columns else 0
         dm_=float(sdf.loc[idx,'dmoins_cum']) if 'dmoins_cum' in sdf.columns else 0
+        nom_rv = noms_ravitos.get(round(km, 1), '')
         rvd.append({
             'km':round(km,1),
+            'nom':nom_rv,
             'temps_s':round(t_,1),'temps_bas_s':round(tb_,1),'temps_haut_s':round(th_,1),
             'batterie_pct':round(b_,1),
             'dplus_cum':round(dp_,0),
@@ -1833,7 +1852,7 @@ def update_activity(
     if name is not None:
         activity.name = name.strip()[:200] or activity.name
 
-    if type_sortie is not None and type_sortie in ('course', 'entrainement', 'sortie', 'resultat'):
+    if type_sortie is not None and type_sortie in ('course', 'entrainement', 'sortie', 'resultat', 'rando'):
         if activity.type_sortie != type_sortie:
             activity.type_sortie = type_sortie
             type_change = True
@@ -1841,7 +1860,7 @@ def update_activity(
             if activity.trace_data:
                 td = dict(activity.trace_data)
                 td['type_sortie'] = type_sortie
-                POIDS_TYPE_LOC = {'course': 1.0, 'resultat': 1.0, 'entrainement': 0.7, 'sortie': 0.4}
+                POIDS_TYPE_LOC = {'course': 1.0, 'resultat': 1.0, 'rando': 1.0, 'entrainement': 0.7, 'sortie': 0.4}
                 td['poids_type'] = POIDS_TYPE_LOC.get(type_sortie, 0.7)
                 td['poids_total'] = round(td.get('poids_temporel', 0.5) * td['poids_type'], 3)
                 activity.trace_data = td
