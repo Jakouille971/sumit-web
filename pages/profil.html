@@ -1187,7 +1187,7 @@
         <input type="date" id="editActDate" style="width:100%;background:var(--bg);border:1px solid var(--line-2);color:var(--text);padding:10px 14px;font-size:14px;border-radius:4px;outline:none;color-scheme:dark;">
         <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Important pour l'évolution chronologique (graphique).</div>
       </div>
-      <div>
+      <div id="editTypeBlock">
         <label style="display:block;font-family:var(--font-display);font-size:11px;color:var(--text-3);margin-bottom:8px;letter-spacing:0.08em;text-transform:uppercase;">Type de sortie</label>
         <div class="type-options" style="margin-bottom:18px;">
           <div class="type-option" data-type="course" onclick="selectionnerTypeEdit('course')">
@@ -1295,6 +1295,7 @@
     const TYPE_LABELS = {
       course:       'COURSE',
       resultat:     'RÉSULTAT',
+      rando:        'RANDO',
       entrainement: 'ENTRAÎNEMENT',
       sortie:       'SORTIE',
     };
@@ -1882,7 +1883,7 @@
               <div class="activite-name">${escapeHTML(a.name || 'Sans nom')}</div>
               <div style="font-size:11px;color:var(--text-3)">${date}</div>
             </div>
-            <span class="activite-type-tag ${a.type_sortie}">${TYPE_LABELS[a.type_sortie] || a.type_sortie}</span>
+            ${currentProfilType === 'rando' ? '' : `<span class="activite-type-tag ${a.type_sortie}">${TYPE_LABELS[a.type_sortie] || a.type_sortie}</span>`}
             <div class="activite-meta">${a.dist_km.toFixed(1)} km</div>
             <div class="activite-meta">${Math.round(a.dplus_m)} m D+</div>
             <div class="activite-meta">${dureeFmt}</div>
@@ -2148,6 +2149,9 @@
       document.querySelectorAll('#modalEditActivite .type-option').forEach(el => {
         el.classList.toggle('selected', el.dataset.type === activite.type_sortie);
       });
+      // Masquer le choix de type pour le profil rando (un seul type)
+      const typeBlock = document.getElementById('editTypeBlock');
+      if (typeBlock) typeBlock.style.display = (currentProfilType === 'rando') ? 'none' : 'block';
       window.editActiviteId = id;
       modal.classList.add('active');
       setTimeout(() => document.getElementById('editActNom').focus(), 50);
@@ -2170,7 +2174,8 @@
       const nom = document.getElementById('editActNom').value.trim();
       const dateValue = document.getElementById('editActDate').value;
       const typeEl = document.querySelector('#modalEditActivite .type-option.selected');
-      const type_sortie = typeEl ? typeEl.dataset.type : null;
+      // En rando, on ne touche pas au type (un seul type)
+      const type_sortie = (currentProfilType === 'rando') ? undefined : (typeEl ? typeEl.dataset.type : null);
 
       if (!nom) {
         alert('Le nom ne peut pas être vide');
@@ -2233,6 +2238,12 @@
     // ── Type sortie (modale) ────────────────────────────────────
     function ouvrirModalTypeSortie(upload) {
       pendingUpload = upload;
+      // Pour le profil "rando", pas de distinction de type d'effort :
+      // on importe directement avec un type unique, sans demander.
+      if (currentProfilType === 'rando') {
+        confirmerTypeSortie('rando');
+        return;
+      }
       document.getElementById('modalTypeSortie').classList.add('active');
     }
 
