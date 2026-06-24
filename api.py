@@ -449,7 +449,7 @@ def extraire_trackpoints(df, max_points=200):
     return pts
 
 
-def archetype(profil):
+def archetype(profil, profil_type='trail'):
     """
     Classifie le coureur en 8 archétypes distincts basés sur :
     - em : écart moyen en montée (positif = à l'aise)
@@ -457,10 +457,17 @@ def archetype(profil):
     - sr : régularité (écart-type des écarts → faible = homogène)
     - em_raide / em_douce : profil dans les montées
     - ed_raide / ed_douce : profil dans les descentes
+
+    En rando, les vitesses sont plus basses et plus homogènes : les écarts
+    par terrain se compriment, ce qui fausse la détection de spécialisation
+    (tout le monde paraît "Cabri"). On durcit donc les seuils et on privilégie
+    les archétypes d'endurance/régularité, plus pertinents pour la marche.
     """
     if not profil:
         return {'key':'combattant','nom':'Le Combattant','desc':'Profil en construction.',
                 'forces':[],'faiblesses':[],'conseil':'Ajoute plus de traces GPX.'}
+
+    est_rando = (profil_type == 'rando')
 
     # Écarts par type de terrain
     def ep(t): return profil[t]['ecart_plat_pct'] if t in profil and 'ecart_plat_pct' in profil[t] else None
@@ -485,10 +492,76 @@ def archetype(profil):
     delta_raide_mont = (em_raide - em_douce) if em_raide is not None and em_douce is not None else 0
     delta_raide_desc = (ed_raide - ed_douce) if ed_raide is not None and ed_douce is not None else 0
 
+    # ═══ Seuils adaptés au type de profil ═══
+    # En rando : seuils de spécialisation plus stricts + régularité plus tolérante,
+    # car les écarts sont naturellement plus resserrés.
+    if est_rando:
+        seuil_delta_raide = 14    # au lieu de 8 : il faut une vraie spécialisation
+        seuil_dominance   = 8     # au lieu de 5 : montée vs descente
+        seuil_equilibre   = 10    # au lieu de 7 : plus tolérant
+        seuil_diesel      = 16    # au lieu de 12
+    else:
+        seuil_delta_raide = 8
+        seuil_dominance   = 5
+        seuil_equilibre   = 7
+        seuil_diesel      = 12
+
     # ═══ Classification (ordre = priorité) ═══
 
+    # En rando, on privilégie d'abord les profils d'endurance/régularité
+    # (le Marcheur régulier, le Diesel) avant les spécialistes explosifs.
+    if est_rando:
+        # R1. L'Équilibré — randonneur très régulier sur tous terrains
+        if sr < seuil_equilibre:
+            return {'key':'equilibre','nom':"L'Équilibré",
+                    'desc':"En rando, tu gardes un rythme constant quel que soit le terrain. Solide et prévisible.",
+                    'forces':['Régularité sur tous terrains','Gestion du rythme','Endurance longue durée'],
+                    'faiblesses':['Pas de point fort marqué'],
+                    'conseil':'Travaille un terrain spécifique (montée raide ou descente technique) pour gagner en polyvalence.'}
+
+        # R2. Le Grimpeur — vraiment plus à l'aise en montée (seuil strict)
+        if em > 0 and em > ed + seuil_dominance:
+            return {'key':'grimpeur','nom':'Le Grimpeur',
+                    'desc':"Les montées sont ton terrain. Tu avales le D+ sans faiblir, là où d'autres ralentissent.",
+                    'forces':['Montées longues et soutenues',"Résistance à l'accumulation de D+",'Marche en côte efficace'],
+                    'faiblesses':['Descentes techniques','Allure sur le plat'],
+                    'conseil':'Travaille tes descentes pour ne pas perdre le temps gagné en montée.'}
+
+        # R3. Le Descendeur — vraiment plus à l'aise en descente
+        if ed > 0 and ed > em + seuil_dominance:
+            return {'key':'descendeur','nom':'Le Descendeur',
+                    'desc':"Tu dévales les descentes avec assurance et récupères ce que tu perds à la montée.",
+                    'forces':['Descentes fluides et sûres','Gestion des appuis','Économie musculaire en descente'],
+                    'faiblesses':['Longues montées','Accumulation de D+'],
+                    'conseil':'Intègre des montées régulières pour équilibrer ton profil de randonneur.'}
+
+        # R4. Le Cabri — spécialiste montée raide (seuil très strict en rando)
+        if em > 0 and delta_raide_mont > seuil_delta_raide:
+            return {'key':'cabri','nom':'Le Cabri',
+                    'desc':"Les pentes raides ne te font pas peur : tu y es plus efficace que sur les pentes douces.",
+                    'forces':['Pentes raides','Passages techniques montants','Force musculaire'],
+                    'faiblesses':['Longues montées régulières','Rythme sur terrain roulant'],
+                    'conseil':'Travaille l\'endurance sur de longues sorties à allure constante.'}
+
+        # R5. Le Diesel — randonneur d'endurance, monte en puissance sur la durée
+        if sr < seuil_diesel:
+            return {'key':'diesel','nom':'Le Diesel',
+                    'desc':"Tu démarres tranquillement et tu tiens des heures. L'ultra-rando, c'est ton monde.",
+                    'forces':['Endurance sur très longue distance','Régularité du rythme','Gestion énergétique'],
+                    'faiblesses':['Passages explosifs','Allure de pointe'],
+                    'conseil':'Ajoute quelques sorties plus intenses pour élargir ta palette.'}
+
+        # R6. Le Tenace — randonneur courageux par défaut
+        return {'key':'tenace','nom':'Le Tenace',
+                'desc':"Tu ne lâches rien. Ta force, c'est la constance et la capacité à enchaîner les heures.",
+                'forces':["Gestion de l'effort prolongé",'Mental solide','Constance sur ultra-rando'],
+                'faiblesses':['Vitesse de pointe','Sections courtes et rapides'],
+                'conseil':'Fais-toi plaisir sur les longues traversées. Varie les terrains pour progresser.'}
+
+    # ═══ TRAIL (logique d'origine) ═══
+
     # 1. Le Cabri — puissant en montée raide (>> douce)
-    if em > 0 and delta_raide_mont > 8:
+    if em > 0 and delta_raide_mont > seuil_delta_raide:
         return {'key':'cabri','nom':'Le Cabri',
                 'desc':"Tu attaques les pentes raides comme un cabri. Plus ça monte, plus tu accélères.",
                 'forces':['Pentes raides courtes','Explosivité musculaire','Sections techniques montantes'],
@@ -496,7 +569,7 @@ def archetype(profil):
                 'conseil':'Travaille des montées longues à allure constante pour ajouter du diesel à ton explosivité.'}
 
     # 2. Le Grimpeur — excellent en montée (général), particulièrement soutenu/douce
-    if em > 0 and em > ed + 5:
+    if em > 0 and em > ed + seuil_dominance:
         return {'key':'grimpeur','nom':'Le Grimpeur',
                 'desc':"Tu avales les D+ comme personne. Les montées sont ton terrain de jeu.",
                 'forces':['Montées soutenues et longues',"Résistance à l'accumulation de D+",'Économie d\'énergie en côte'],
@@ -504,7 +577,7 @@ def archetype(profil):
                 'conseil':'Travaille tes descentes en fractionné technique pour ne pas perdre ce que tu gagnes en montée.'}
 
     # 3. Le Funambule — descente raide >> descente douce (technicien)
-    if ed > 0 and delta_raide_desc > 8:
+    if ed > 0 and delta_raide_desc > seuil_delta_raide:
         return {'key':'funambule','nom':'Le Funambule',
                 'desc':"Tu danses sur les descentes techniques. Plus ça plonge, plus tu vas vite.",
                 'forces':['Descentes raides et techniques','Pieds véloces','Lecture du terrain'],
@@ -512,7 +585,7 @@ def archetype(profil):
                 'conseil':'Renforce le travail spécifique en côte pour équilibrer ton profil.'}
 
     # 4. Le Descendeur — excellent en descente (général)
-    if ed > 0 and ed > em + 5:
+    if ed > 0 and ed > em + seuil_dominance:
         return {'key':'descendeur','nom':'Le Descendeur',
                 'desc':"Tu récupères dans les descentes ce que tu perds à la montée.",
                 'forces':['Descentes rapides et fluides','Technique sur terrain varié','Gestion impact'],
@@ -520,7 +593,7 @@ def archetype(profil):
                 'conseil':'Intègre des montées spécifiques à tes entraînements (côtes courtes intenses).'}
 
     # 5. L'Équilibré — variabilité très faible
-    if sr < 7:
+    if sr < seuil_equilibre:
         return {'key':'equilibre','nom':"L'Équilibré",
                 'desc':'Profil homogène sur tous les terrains. Pas de point faible, pas de point fort dominant.',
                 'forces':['Polyvalence','Régularité de l\'allure','Adaptable à tous parcours'],
@@ -528,7 +601,7 @@ def archetype(profil):
                 'conseil':'Choisis des parcours variés. Travaille un point fort pour te démarquer.'}
 
     # 6. Le Diesel — modérément performant partout, mais régulier
-    if sr < 12 and -15 < em < 5 and -15 < ed < 5:
+    if sr < seuil_diesel and -15 < em < 5 and -15 < ed < 5:
         return {'key':'diesel','nom':'Le Diesel',
                 'desc':"Tu démarres calmement et tu finis fort. Ton truc, c'est la durée.",
                 'forces':['Endurance sur très longue distance','Régularité','Gestion énergétique'],
@@ -885,7 +958,7 @@ async def analyser_profil(
 
     profil,drain=agreger(traces)
     cc=coeff_course(traces)
-    arch=archetype(profil)
+    arch=archetype(profil, profil_type)
 
     return {
         "status":"ok","nb_traces":len(traces),"traces":traces,
@@ -900,6 +973,7 @@ async def api_simuler(
     fichier_cible: UploadFile = File(...),
     ravitos_km:    str   = Form(""),
     ravitos_noms:  str   = Form(""),   # JSON optionnel {"12.0": "Refuge", "25.0": "Col"}
+    ravitos_pauses: str  = Form(""),   # JSON optionnel {"12.0": 5, "25.0": 10} (minutes)
     profil_json:   str   = Form(...),
     drain_moy_h:   float = Form(0.08),
     coefficient:   float = Form(1.0),
@@ -927,6 +1001,15 @@ async def api_simuler(
             noms_ravitos = {round(float(k), 1): str(v) for k, v in raw.items()}
         except Exception:
             noms_ravitos = {}
+
+    # Pauses aux ravitos (mapping km → minutes d'arrêt)
+    pauses_ravitos = {}
+    if ravitos_pauses.strip():
+        try:
+            raw = json.loads(ravitos_pauses)
+            pauses_ravitos = {round(float(k), 1): max(0.0, float(v)) for k, v in raw.items()}
+        except Exception:
+            pauses_ravitos = {}
 
     dist_km=float(df['dist_cum'].max())
     dplus_m=float(df['dp_cum'].max())
@@ -972,7 +1055,9 @@ async def api_simuler(
 
     # Ravitos data
     rvd=[]
-    for km in ravs:
+    ravs_tries = sorted(ravs)  # ordre kilométrique pour cumuler les pauses
+    pause_cumulee_s = 0.0       # somme des pauses des ravitos déjà passés
+    for km in ravs_tries:
         idx=int((sdf['dist_km']-km).abs().idxmin())
         t_ =float(sdf.loc[idx,'temps_s'])
         tb_=float(fdf.loc[idx,'tb'])
@@ -981,15 +1066,30 @@ async def api_simuler(
         dp_=float(sdf.loc[idx,'dplus_cum']) if 'dplus_cum' in sdf.columns else 0
         dm_=float(sdf.loc[idx,'dmoins_cum']) if 'dmoins_cum' in sdf.columns else 0
         nom_rv = noms_ravitos.get(round(km, 1), '')
+
+        # Pause à ce ravito (minutes → secondes)
+        pause_min = pauses_ravitos.get(round(km, 1), 0.0)
+        pause_s = pause_min * 60.0
+        # Le temps de passage inclut les pauses des ravitos précédents + celle-ci
+        # (on considère que le coureur s'arrête en arrivant au ravito)
+        pause_cumulee_s += pause_s
+        t_avec_pauses  = t_  + pause_cumulee_s
+        tb_avec_pauses = tb_ + pause_cumulee_s
+        th_avec_pauses = th_ + pause_cumulee_s
+
         rvd.append({
             'km':round(km,1),
             'nom':nom_rv,
-            'temps_s':round(t_,1),'temps_bas_s':round(tb_,1),'temps_haut_s':round(th_,1),
+            'pause_min':round(pause_min,0),
+            'temps_s':round(t_avec_pauses,1),'temps_bas_s':round(tb_avec_pauses,1),'temps_haut_s':round(th_avec_pauses,1),
             'batterie_pct':round(b_,1),
             'dplus_cum':round(dp_,0),
             'dmoins_cum':round(dm_,0),
-            'temps_fmt':fmt(t_),'bas_fmt':fmt(tb_),'haut_fmt':fmt(th_),
+            'temps_fmt':fmt(t_avec_pauses),'bas_fmt':fmt(tb_avec_pauses),'haut_fmt':fmt(th_avec_pauses),
         })
+
+    # Temps total de pause (toutes les pauses, à ajouter au temps d'arrivée)
+    pause_totale_s = sum(v * 60.0 for v in pauses_ravitos.values())
 
     # Répartition terrain
     rep={}
@@ -1031,12 +1131,14 @@ async def api_simuler(
             "emoji":cat["emoji"],
             "facteur":cat["facteur"],
         },
-        "temps_total_s":round(tt,1),
-        "temps_bas_s":round(tb,1),
-        "temps_haut_s":round(th,1),
-        "temps_fmt":fmt(tt),
-        "bas_fmt":fmt(tb),
-        "haut_fmt":fmt(th),
+        "temps_total_s":round(tt + pause_totale_s, 1),
+        "temps_bas_s":round(tb + pause_totale_s, 1),
+        "temps_haut_s":round(th + pause_totale_s, 1),
+        "temps_fmt":fmt(tt + pause_totale_s),
+        "bas_fmt":fmt(tb + pause_totale_s),
+        "haut_fmt":fmt(th + pause_totale_s),
+        "pause_totale_s":round(pause_totale_s, 0),
+        "pause_totale_fmt":fmt(pause_totale_s) if pause_totale_s > 0 else None,
         "allure_moy":am,
         "batt_finale":round(bf,1),
         "coefficient_course":round(coefficient,3),
@@ -1351,7 +1453,7 @@ def _recalculer_profil_user(db: Session, user: User, profil_type: str, activity_
     try:
         profil, drain = agreger(traces)
         cc = coeff_course(traces)
-        arch = archetype(profil)
+        arch = archetype(profil, profil_type)
     except Exception as e:
         print(f"⚠️ Échec recalcul profil : {e}")
         return None
@@ -1738,7 +1840,7 @@ def rebuild_evolution(
         try:
             profil, drain = agreger(traces_cumul)
             cc = coeff_course(traces_cumul)
-            arch = archetype(profil)
+            arch = archetype(profil, profil_type)
 
             vep_glob = sum(t.get('vep_globale', 0) for t in traces_cumul) / len(traces_cumul)
             dist_moy = sum(t.get('dist_km', 0) for t in traces_cumul) / len(traces_cumul)
@@ -1910,7 +2012,7 @@ def update_activity(
                     try:
                         profil, drain = agreger(traces_cumul)
                         cc = coeff_course(traces_cumul)
-                        arch = archetype(profil)
+                        arch = archetype(profil, activity.type_profil)
                         vep_glob = sum(t.get('vep_globale', 0) for t in traces_cumul) / len(traces_cumul)
                         dist_moy = sum(t.get('dist_km', 0) for t in traces_cumul) / len(traces_cumul)
                         sm, sd, nm, nd = 0.0, 0.0, 0, 0
