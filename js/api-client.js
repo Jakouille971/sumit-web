@@ -484,12 +484,15 @@ async function analyserProfilAPI(filesData, fcmax, profilType) {
   return await res.json();
 }
 
-async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coefficient, fcmax, ravitosNoms) {
+async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coefficient, fcmax, ravitosNoms, ravitosPauses) {
   const formData = new FormData();
   formData.append('fichier_cible', fichierGPX, fichierGPX.name);
   formData.append('ravitos_km',    ravitosKm);
   if (ravitosNoms && Object.keys(ravitosNoms).length > 0) {
     formData.append('ravitos_noms', JSON.stringify(ravitosNoms));
+  }
+  if (ravitosPauses && Object.keys(ravitosPauses).length > 0) {
+    formData.append('ravitos_pauses', JSON.stringify(ravitosPauses));
   }
   formData.append('profil_json',   JSON.stringify(profil));
   formData.append('drain_moy_h',   drainMoyH);
