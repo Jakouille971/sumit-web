@@ -3,726 +3,2331 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SUM'IT — Mon compte</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Simulateur de course">
+  <meta property="og:description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/simulateur.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Simulateur de course">
+  <meta name="twitter:description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Simulateur</title>
   <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
-    /* === Layout === */
-    .compte-section {
-      padding: 50px 80px 100px;
-      max-width: 1100px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 2;
-    }
+    body { padding-top: 64px; }
 
-    /* === Header utilisateur === */
-    .compte-header {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      padding: 28px;
-      background: var(--bg-2);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      margin-bottom: 28px;
-    }
-    .compte-header-avatar {
-      width: 84px; height: 84px;
-      border-radius: 50%;
+    .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 240px); }
+    .sim-sidebar { border-right:1px solid var(--line); padding:40px 36px; background:var(--bg-2); }
+    .sim-main { padding:40px 48px; background:var(--bg-3); }
+
+    .step-block { margin-bottom:32px; }
+    .step-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+    .step-num { width:26px; height:26px; border:1px solid var(--sun); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-display); font-size:12px; color:var(--sun); }
+    .step-title { font-family:var(--font-display); font-size:16px; font-weight:500; color:var(--text); letter-spacing:0.02em; margin-bottom:3px; }
+    .step-desc { font-size:12px; font-weight:300; color:var(--text-2); line-height:1.6; }
+    .step-divider { height:0.5px; background:var(--line); margin:28px 0; }
+
+    .upload-zone-sm { border:0.5px dashed rgba(255,200,87,0.25); padding:20px; text-align:center; background:var(--sun-soft); cursor:pointer; transition:all 0.2s; }
+    .upload-zone-sm:hover { background:rgba(255,200,87,0.08); border-color:rgba(255,200,87,0.5); }
+    .upload-zone-sm svg { width:18px; height:18px; stroke:var(--sun); fill:none; stroke-width:1.5; margin:0 auto 8px; display:block; }
+    .upload-zone-sm p { font-size:12px; color:var(--text-2); pointer-events:none; }
+
+    .file-detected { background:rgba(255,200,87,0.04); border:1px solid var(--line-2); padding:12px 14px; margin-top:10px; display:none; }
+    .file-detected-name { font-size:13px; color:var(--text); margin-bottom:6px; }
+    .file-meta-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .file-meta-val { font-family:var(--font-display); font-size:14px; color:var(--sun); }
+    .file-meta-label { font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.08em; }
+
+    .input-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
+    .input-group { margin-bottom:16px; }
+
+    .btn-simulate {
+      width: 100%;
+      padding: 18px;
       background: var(--gradient-summit);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display);
-      font-size: 32px; font-weight: 700;
       color: var(--bg);
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-    .compte-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .compte-header-info { flex: 1; }
-    .compte-header-name {
       font-family: var(--font-display);
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 0.02em;
-    }
-    .compte-header-email {
-      font-size: 13px;
-      color: var(--text-3);
-      margin-top: 4px;
-    }
-    .compte-header-stats {
-      display: flex;
-      gap: 24px;
-      margin-top: 16px;
-    }
-    .compte-header-stat {
-      font-size: 12px;
-      color: var(--text-2);
-    }
-    .compte-header-stat strong {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text);
-      display: block;
-    }
-
-    /* === Sections === */
-    .compte-card {
-      background: var(--bg-2);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 28px;
-      margin-bottom: 24px;
-    }
-    .compte-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .compte-card h3 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      color: var(--text);
-      letter-spacing: 0.02em;
-    }
-    .compte-card .section-desc {
-      font-size: 13px;
-      color: var(--text-3);
-      margin-bottom: 20px;
-    }
-
-    /* === Form réglages === */
-    .settings-form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .form-field { display: flex; flex-direction: column; gap: 6px; }
-    .form-field label {
-      font-family: var(--font-display);
-      font-size: 11px;
-      color: var(--text-3);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    .form-field input {
-      background: var(--bg);
-      border: 1px solid var(--line-2);
-      color: var(--text);
-      padding: 10px 14px;
       font-size: 14px;
-      border-radius: 4px;
-      outline: none;
-    }
-    .form-field input:focus {
-      border-color: var(--sun);
-      box-shadow: 0 0 0 2px rgba(255, 200, 87, 0.10);
-    }
-    .form-row-actions {
-      grid-column: 1 / -1;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 8px;
-    }
-    .btn-save {
-      background: var(--gradient-summit);
-      color: var(--bg);
-      font-family: var(--font-display);
-      font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      padding: 12px 26px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      transition: transform 0.15s, opacity 0.2s;
+      transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 18px rgba(255, 200, 87, 0.25);
+      margin-top: 8px;
     }
-    .btn-save:hover { transform: translateY(-1px); opacity: 0.95; }
-    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .save-feedback {
-      font-size: 12px;
-      color: var(--leaf);
-      align-self: center;
-      opacity: 0;
-      transition: opacity 0.3s;
+    .btn-simulate:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+      box-shadow: 0 6px 24px rgba(255, 200, 87, 0.35);
     }
-    .save-feedback.show { opacity: 1; }
-
-    /* === Carte Strava === */
-    .strava-card {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-    }
-    .strava-logo {
-      width: 56px; height: 56px;
-      border-radius: 12px;
-      background: rgba(252, 76, 2, 0.12);
-      border: 1px solid rgba(252, 76, 2, 0.3);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .strava-logo svg {
-      width: 28px; height: 28px;
-      fill: none; stroke: #FC4C02; stroke-width: 1.8;
-    }
-    .strava-info { flex: 1; }
-    .strava-info h4 {
-      font-family: var(--font-display);
-      font-size: 16px;
-      color: var(--text);
-      letter-spacing: 0.02em;
-    }
-    .strava-info p {
-      font-size: 12px;
-      color: var(--text-3);
-      margin-top: 4px;
-    }
-    .strava-status-badge {
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 6px 12px;
-      border-radius: 4px;
-    }
-    .strava-status-badge.connected {
-      background: rgba(107, 179, 107, 0.15);
-      color: var(--leaf);
-      border: 1px solid rgba(107, 179, 107, 0.4);
-    }
-    .strava-status-badge.disconnected {
-      background: rgba(110, 106, 94, 0.15);
-      color: var(--text-2);
-      border: 1px solid var(--line-2);
-    }
-    .btn-strava-action {
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 10px 18px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-strava-connect {
-      background: #FC4C02;
-      color: white;
-      border: none;
-    }
-    .btn-strava-connect:hover { opacity: 0.9; }
-    .btn-strava-disconnect {
-      background: transparent;
-      color: var(--text-2);
-      border: 1px solid var(--line-2);
-    }
-    .btn-strava-disconnect:hover {
-      border-color: var(--danger);
-      color: var(--danger);
+    .btn-simulate:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
 
-    /* === Simulations épinglées === */
-    .sims-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 14px;
-    }
-    .sim-card {
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 20px;
-      transition: all 0.2s;
-      position: relative;
-    }
-    .sim-card:hover { border-color: var(--sun); }
-    .sim-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-    }
-    .sim-card-title {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: 0.02em;
-      padding-right: 30px;
-    }
-    .sim-card-date {
-      font-size: 11px;
-      color: var(--text-3);
-      margin-top: 2px;
-    }
-    .sim-card-time {
-      font-family: var(--font-display);
-      font-size: 28px;
-      font-weight: 700;
-      background: var(--gradient-summit);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      margin: 8px 0;
-    }
-    .sim-card-meta {
-      display: flex;
-      gap: 12px;
-      font-size: 11px;
-      color: var(--text-2);
-      font-family: var(--font-display);
-      letter-spacing: 0.04em;
-    }
-    .sim-card-profile-tag {
-      font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 4px 8px;
-      border-radius: 3px;
-      border: 1px solid;
-      display: inline-block;
-      margin-top: 10px;
-    }
-    .sim-card-profile-tag.trail {
-      color: var(--sun);
-      border-color: rgba(255, 200, 87, 0.4);
-      background: rgba(255, 200, 87, 0.08);
-    }
-    .sim-card-profile-tag.rando {
-      color: var(--sky);
-      border-color: rgba(79, 163, 217, 0.4);
-      background: rgba(79, 163, 217, 0.08);
-    }
-    .btn-delete-sim {
-      position: absolute;
-      top: 14px; right: 14px;
-      background: transparent;
-      border: 1px solid var(--line);
-      color: var(--text-3);
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-delete-sim:hover { border-color: var(--danger); color: var(--danger); }
-    .btn-delete-sim svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
+    .empty-state { text-align:center; padding:80px 20px; }
+    .empty-icon { width:64px; height:64px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+    .empty-icon svg { width:28px; height:28px; stroke:var(--text-2); fill:none; stroke-width:1.5; }
+    .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--text-2); margin-bottom:8px; letter-spacing:0.04em; }
+    .empty-sub { font-size:13px; color:var(--text-2); opacity:0.5; line-height:1.6; }
 
-    .btn-open-sim {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+    .result-kpis { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); margin-bottom:20px; }
+    .result-kpi { padding:20px; border-right:1px solid var(--line); text-align:center; }
+    .result-kpi:last-child { border-right:none; }
+    .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
+    .result-kpi-val { font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--text); letter-spacing:0.01em; }
+    .result-kpi-val.cyan { background: var(--gradient-summit); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .result-kpi-val.red { color:var(--danger); }
+    .result-kpi-val.grn { color:var(--leaf); }
+
+    .fourch-row { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); margin-bottom:20px; }
+    .fourch-item { padding:16px 20px; border-right:1px solid var(--line); }
+    .fourch-item:last-child { border-right:none; }
+    .fourch-label { font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:6px; }
+    .fg .fourch-label { color:var(--leaf); }
+    .fr .fourch-label { color:var(--danger); }
+    .fourch-val { font-family:var(--font-display); font-size:20px; font-weight:500; }
+    .fg .fourch-val { color:#9FE1CB; }
+    .fr .fourch-val { color:#F5C4B3; }
+    .fourch-sub { font-size:11px; color:var(--text-2); margin-top:4px; }
+
+    .chart-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .chart-header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+    .chart-title { font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
+    .chart-legend { display:flex; gap:14px; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:5px; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; }
+    .legend-label { font-size:11px; color:var(--text-2); }
+    .chart-body { padding:16px 20px 8px; }
+
+    .ravito-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .ravito-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
+
+    .terrain-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
+    .terrain-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
+    .terrain-body { padding:16px 20px; }
+    .terrain-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .terrain-icon { width:26px; height:26px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .terrain-icon svg { width:13px; height:13px; fill:none; stroke-width:1.8; }
+    .terrain-label { font-family:var(--font-display); font-size:11px; color:var(--text-2); width:130px; flex-shrink:0; }
+    .terrain-track { flex:1; height:4px; background:rgba(255,255,255,0.06); }
+    .terrain-fill { height:100%; transition:width 1s ease; }
+    .terrain-time { font-family:var(--font-display); font-size:12px; color:var(--text); width:60px; text-align:right; }
+    .terrain-pct { font-size:11px; color:var(--text-2); width:36px; text-align:right; }
+
+    @media (max-width:1024px) {
+      .sim-layout { grid-template-columns:1fr; }
+      .sim-sidebar { border-right:none; border-bottom:1px solid var(--line); padding:32px 24px; }
+      .sim-main { padding:32px 24px; }
+      .result-kpis { grid-template-columns:1fr 1fr; }
+      
+    }
+
+    /* ── Bouton avis flottant ── */
+    .floating-feedback {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+      background: var(--sun); color: var(--bg);
+      font-family: var(--font-display); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 14px 20px; border: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,200,87,0.4);
+      display: flex; align-items: center; gap: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .floating-feedback:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,200,87,0.5); }
+    .floating-feedback svg { width: 16px; height: 16px; stroke: var(--bg); fill: none; stroke-width: 2; }
+
+    /* ── Modal avis ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(13,27,42,0.85);
+      display: none; align-items: center; justify-content: center;
+      z-index: 2000; padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--bg-2); border: 1px solid var(--line-2);
+      max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;
+      padding: 36px;
+    }
+    .modal-close {
+      float: right; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
+      background: none; border: none; color: var(--text); font-size: 24px;
+    }
+    .modal-close:hover { opacity: 1; }
+    .modal-content h2 { font-family: var(--font-display); font-size: 24px; color: var(--text); margin-bottom: 8px; }
+    .modal-content p.modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+
+    .rating-group { display: flex; gap: 6px; }
+    .rating-btn {
+      flex: 1; padding: 8px 4px; border: 1px solid var(--line);
+      background: transparent; color: var(--text-2);
+      font-family: var(--font-display); font-size: 11px; cursor: pointer;
+      transition: all 0.2s; text-align: center;
+    }
+    .rating-btn:hover, .rating-btn.selected {
+      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
+    }
+
+    /* ── Bouton PDF ── */
+    .btn-pdf {
       background: var(--gradient-summit);
       color: var(--bg);
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.2s;
-      margin-top: 14px;
-      width: 100%;
-      justify-content: center;
-    }
-    .btn-open-sim:hover { transform: translateY(-1px); opacity: 0.95; }
-    .btn-open-sim svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .sims-empty {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 32px;
-      color: var(--text-3);
-      font-size: 13px;
+      font-family: var(--font-display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 14px 28px; border: none; border-radius: 4px;
+      cursor: pointer; transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      margin-bottom: 20px;
+      display: inline-flex; align-items: center; gap: 10px;
+      box-shadow: 0 4px 14px rgba(255, 200, 87, 0.20);
     }
 
-    /* === Zone danger === */
-    .danger-zone {
-      border-color: rgba(229, 91, 91, 0.3) !important;
-    }
-    .danger-zone h3 { color: var(--danger); }
-    .btn-logout {
-      background: transparent;
+    /* ── Toggle Profil Trail/Rando ── */
+    .profil-toggle-btn {
+      flex: 1;
+      background: var(--bg-3);
+      border: 1px solid var(--line-2);
       color: var(--text-2);
       font-family: var(--font-display);
       font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      padding: 12px 24px;
-      border: 1px solid var(--line-2);
+      padding: 9px 12px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .btn-logout:hover {
-      border-color: var(--danger);
-      color: var(--danger);
+    .profil-toggle-btn:hover { color: var(--text); border-color: var(--text-3); }
+    .profil-toggle-btn.active {
+      background: var(--sun-soft);
+      border-color: var(--sun);
+      color: var(--sun);
     }
 
-    /* === Login required === */
-    .login-required {
-      text-align: center;
-      padding: 100px 40px;
+    /* ── Bouton Épingler simulation ── */
+    .btn-pin {
+      background: transparent;
+      color: var(--sun);
+      font-family: var(--font-display); font-size: 13px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 14px 22px; border: 1px solid var(--sun); border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      margin-left: 10px;
+      display: inline-flex; align-items: center; gap: 10px;
+      transition: all 0.2s;
     }
-    .login-required h2 {
+    .btn-pin:hover { background: var(--sun-soft); transform: translateY(-1px); }
+    .btn-pin.pinned {
+      background: var(--gradient-summit);
+      color: var(--bg);
+      border: none;
+    }
+    .btn-pin:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-pin svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
+    .btn-pdf:hover { transform: translateY(-1px); opacity: 0.95; box-shadow: 0 6px 20px rgba(255, 200, 87, 0.30); }
+    .btn-pdf svg { width: 15px; height: 15px; stroke: var(--bg); fill: none; stroke-width: 2; }
+
+    /* ── Carte Leaflet ── */
+    .map-card {
+      background: var(--bg-2); border: 1px solid var(--line); margin-bottom: 20px; border-radius: 6px; overflow: hidden;
+    }
+    .map-header {
+      padding: 14px 20px; border-bottom: 1px solid var(--line);
+      font-family: var(--font-display); font-size: 10px; color: var(--sun);
+      text-transform: uppercase; letter-spacing: 0.14em;
+    }
+    /* ── Checkbox items modal ── */
+    .checkbox-item {
+      padding: 7px 12px; border: 1px solid var(--line); cursor: pointer;
+      font-size: 12px; color: var(--text-2); transition: all 0.2s; user-select: none;
+    }
+    .checkbox-item:hover, .checkbox-item.checked {
+      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
+    }
+
+    /* ── Toggles courbes ── */
+    .chart-toggle {
+      display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+    }
+    .chart-toggle input { display: none; }
+    .toggle-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      opacity: 0.3; transition: opacity 0.2s;
+    }
+    .chart-toggle input:checked ~ .toggle-dot { opacity: 1; box-shadow: 0 0 8px currentColor; }
+    .toggle-label {
+      font-size: 11px; color: var(--text-2); transition: color 0.2s;
+    }
+    .chart-toggle input:checked ~ .toggle-label { color: var(--text); }
+
+    /* ── Tooltip curseur graphique ── */
+    .chart-tooltip {
+      display: none;
+      position: absolute;
+      pointer-events: none;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--sun);
+      border-radius: 6px;
+      padding: 10px 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 3px rgba(255, 200, 87, 0.10);
+      min-width: 180px;
+      max-width: 220px;
+      font-family: 'Inter', sans-serif;
+    }
+    .chart-tooltip .tt-header {
       font-family: var(--font-display);
-      font-size: 36px;
-      color: var(--text);
-      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--sun);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 200, 87, 0.2);
+      font-weight: 700;
     }
-    .login-required p {
-      color: var(--text-2);
-      margin-bottom: 32px;
+    .chart-tooltip .tt-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 11.5px;
+    }
+    .chart-tooltip .tt-row .tt-ic {
+      width: 14px;
+      text-align: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .chart-tooltip .tt-row .tt-lbl {
+      color: var(--text-3);
+      font-size: 10.5px;
+      flex: 1;
+    }
+    .chart-tooltip .tt-row strong {
+      color: var(--text);
+      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      text-align: right;
+    }
+    .chart-tooltip .tt-row-split {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 5px;
+      margin-top: 5px;
+      border-top: 1px solid rgba(244, 241, 232, 0.06);
+    }
+    .chart-tooltip .tt-row-split span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
     }
 
-    @media (max-width: 768px) {
-      .compte-section { padding: 30px 24px; }
-      .compte-header { flex-direction: column; text-align: center; }
-      .settings-form { grid-template-columns: 1fr; }
-      .strava-card { flex-direction: column; text-align: center; }
+    #leafletMap { height: 320px; width: 100%; }
+
+    /* ── Tooltip (i) ── */
+    .info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px;
+      cursor: help; margin-left: 6px;
+      vertical-align: middle; transition: all 0.2s;
+      position: relative;
+      color: var(--text-2);
     }
+    .info-icon svg { width: 14px; height: 14px; display: block; }
+    .info-icon:hover { color: var(--sun); }
+    .info-icon::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 50%;
+      transform: translateX(-50%);
+      width: 280px; padding: 10px 12px;
+      background: var(--bg-3); color: var(--text);
+      border: 1px solid var(--sun);
+      font-size: 11px; font-weight: 300; line-height: 1.5;
+      letter-spacing: 0.02em;
+      white-space: normal; text-align: left;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+      z-index: 100;
+      pointer-events: none;
+    }
+    .info-icon:hover::after { opacity: 1; visibility: visible; }
+    .info-icon::before {
+      content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent; border-top-color: var(--sun);
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.2s;
+    }
+    .info-icon:hover::before { opacity: 1; visibility: visible; }
+    /* ════════ UNIFORMISATION TAILLES DE TEXTE ════════ */
+    /* Échelle harmonisée pour réduire la disparité visuelle */
+
+    /* Titres de cards : tous à 14px */
+    .ravito-header,
+    .terrain-header,
+    .breakdown-header,
+    .map-header { font-size: 14px !important; letter-spacing: 0.06em; }
+
+    /* Sous-titres + labels uppercase : tous à 10-11px */
+    .step-num,
+    .file-meta-label,
+    .input-label,
+    .kpi-label,
+    .panel-label { font-size: 10px !important; letter-spacing: 0.12em; }
+
+    /* Titres d'étapes (sidebar) : 14px */
+    .step-title { font-size: 14px !important; }
+
+    /* Descriptions / texte courant : 12px */
+    .step-desc,
+    .upload-zone-sm p,
+    .panel-desc { font-size: 12px !important; line-height: 1.55; }
+
+    /* Tableau ravitos : 12-13px */
+    .data-table th { font-size: 11px !important; letter-spacing: 0.06em; }
+    .data-table td { font-size: 13px !important; }
+
+    /* KPIs grands chiffres : 24-26px */
+    .kpi-val { font-size: 24px !important; }
+    .kpi-sub { font-size: 11px !important; }
+
+    /* Bouton flottant feedback : 12px */
+    .floating-feedback { font-size: 12px !important; }
+
+    /* Modal headers : 16-18px */
+    .modal-content h2 { font-size: 18px !important; }
+
+    /* ── Liste dynamique de ravitos ── */
+    .ravitos-head {
+      display: grid;
+      grid-template-columns: 64px 1fr 58px 32px;
+      gap: 7px;
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .ravitos-head span {
+      font-family: var(--font-display);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-3);
+      text-align: center;
+    }
+    .ravitos-head span:nth-child(2) { text-align: left; }
+    .ravitos-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .ravito-row {
+      display: grid;
+      grid-template-columns: 64px 1fr 58px 32px;
+      gap: 7px;
+      align-items: center;
+    }
+    .ravito-row input {
+      background: var(--bg-3, #15161a);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 9px 11px;
+      font-size: 13px;
+      border-radius: 5px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+    .ravito-row input:focus { border-color: var(--sun); }
+    .ravito-row input::placeholder { color: var(--text-3); }
+    .ravito-km-input { text-align: center; font-family: var(--font-display); }
+    .ravito-pause-input { text-align: center; font-family: var(--font-display); color: var(--sky); }
+    .btn-del-ravito {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--text-3);
+      width: 32px; height: 36px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-del-ravito:hover { border-color: var(--danger); color: var(--danger); background: rgba(229,91,91,0.08); }
+    .btn-add-ravito {
+      background: transparent;
+      border: 1px dashed var(--line-2);
+      color: var(--text-2);
+      font-family: var(--font-display);
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 10px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-add-ravito:hover { border-color: var(--sun); color: var(--sun); }
   </style>
 </head>
 <body>
 
-  <!-- ══ Nav ══ -->
-  <nav class="nav">
-    <a href="/" class="nav-logo">
-      <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
-      <div class="nav-logo-text">
-        <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
-        <div class="nav-logo-sub">Plan your peaks</div>
+<nav class="nav">
+  <a href="../index.html" class="nav-logo">
+    <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
+    <div class="nav-logo-text">
+      <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
+      <div class="nav-logo-sub">Plan your peaks</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="../index.html"   class="nav-link">Accueil</a>
+    <a href="profil.html"     class="nav-link">Mon profil</a>
+    <a href="simulateur.html" class="nav-link active">Simulateur</a>
+    <a href="avenir.html"     class="nav-link">À venir</a>
+    <a href="compte.html"    class="nav-link">Mon compte</a>
+  </div>
+  <button class="nav-cta" onclick="window.location.href='profil.html'">Mon profil</button>
+</nav>
+
+<!-- Bandeau hero -->
+<div class="page-hero">
+  <div class="page-hero-bg"></div>
+  
+  <div class="page-hero-content">
+    <div class="section-tag" style="margin-bottom:10px;">Étape 2 sur 2</div>
+    <h1>Simulateur de course</h1>
+    <p>Importe la trace de ta prochaine course et obtiens tes temps de passage.</p>
+  </div>
+</div>
+
+<div class="sim-layout">
+  <!-- Sidebar -->
+  <div class="sim-sidebar">
+
+    <!-- Sélecteur profil Trail/Rando -->
+    <div class="step-block" id="profilSelector" style="display:none;">
+      <div class="step-header">
+        <div class="step-num" style="background:var(--sun-soft);color:var(--sun);">★</div>
+        <div>
+          <div class="step-title">Profil utilisé</div>
+          <div class="step-desc">Quel profil veux-tu utiliser pour cette simulation ?</div>
+        </div>
       </div>
-    </a>
-    <div class="nav-links">
-      <a href="/" class="nav-link">Accueil</a>
-      <a href="profil.html" class="nav-link">Mon profil</a>
-      <a href="simulateur.html" class="nav-link">Simulateur</a>
-      <a href="avenir.html" class="nav-link">À venir</a>
-      <a href="compte.html" class="nav-link active">Mon compte</a>
+      <div class="profil-toggle-row" style="display:flex;gap:6px;margin-top:8px;">
+        <button class="profil-toggle-btn active" data-type="trail" onclick="switchProfilSim('trail')">🏃 Trail</button>
+        <button class="profil-toggle-btn" data-type="rando" onclick="switchProfilSim('rando')">🥾 Rando</button>
+      </div>
+      <div id="profilSelectorInfo" style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.5;"></div>
     </div>
-  </nav>
 
-  <!-- ══ Hero ══ -->
-  <section class="page-hero">
-    <div class="page-hero-content">
-      <div class="section-tag">Mon espace</div>
-      <h1>Mon <em>compte</em></h1>
-      <p>Réglages, connexions et historique de tes simulations.</p>
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Trace de la course</div>
+          <div class="step-desc">Importe le GPX de ta prochaine course.</div>
+        </div>
+      </div>
+      <div class="upload-zone-sm" id="dropzoneSim">
+        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <p>Glisse ou clique pour importer</p>
+        <p style="font-size:11px;margin-top:3px;opacity:0.5;">fichier .gpx</p>
+      </div>
+      <input type="file" id="fileGPX" accept=".gpx" style="display:none">
+
+      <div class="file-detected" id="fileInfo">
+        <div class="file-detected-name" id="fileName">—</div>
+        <div style="margin-top:6px;"><span class="tag tag-cyan" id="fileCat">—</span></div>
+        <div class="file-meta-row" style="margin-top:10px;">
+          <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
+          <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé +</div></div>
+        </div>
+      </div>
+
+      <div class="input-group" style="margin-top:14px;">
+        <label class="input-label">Nom de la course</label>
+        <input type="text" id="nomCourse" placeholder="Ex : Trail EDF 2026">
+      </div>
     </div>
-  </section>
 
-  <!-- ══ Contenu ══ -->
-  <section class="compte-section" id="compteSection">
-    <!-- Rempli dynamiquement -->
-  </section>
+    <div class="step-divider"></div>
 
-  <!-- ══ Footer ══ -->
-  <footer class="footer">
-    <div>
-      <div class="footer-logo">SUM<span>'IT</span></div>
-      <div class="footer-sub">PLAN YOUR PEAKS</div>
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">Ravitaillements & points d'intérêt<span class="info-i" data-tip="Définis tes points de passage clés : ravitaillements, cols, refuges, bases de vie… Indique le kilométrage et un nom. Le simulateur affichera ton temps de passage estimé à chacun. Laisse vide pour 4 points automatiques."></span></div>
+          <div class="step-desc">Km, nom et temps d'arrêt de chaque point.</div>
+        </div>
+      </div>
+      <div class="ravitos-head">
+        <span>Km</span>
+        <span>Nom du point</span>
+        <span>Pause</span>
+        <span></span>
+      </div>
+      <div class="ravitos-head">
+        <span>Km</span>
+        <span>Nom du point</span>
+        <span title="Temps d'arrêt en minutes">Pause</span>
+        <span></span>
+      </div>
+      <div id="ravitosList" class="ravitos-list"></div>
+      <button type="button" class="btn-add-ravito" onclick="ajouterRavito()">+ Ajouter un point</button>
+      <!-- Champ caché conservé pour compat (rempli dynamiquement) -->
+      <input type="hidden" id="ravitos">
     </div>
-    <div class="footer-copy">© 2025 SUM'IT — Beta</div>
-  </footer>
 
-  <script src="../js/api-client.js"></script>
+    <div class="step-divider"></div>
+
+    <div class="step-block">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Profil de référence</div>
+          <div class="step-desc">Issu de ton analyse GPX.</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-2);">VEP globale<span class="info-i" data-tip="Vitesse Équivalente Plat : ta vitesse moyenne ramenée à du plat, en neutralisant le dénivelé. C'est l'indicateur clé de ta forme globale, indépendant du profil du parcours."></span></span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilVEP">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--text-2);">Drain énergie<span class="info-i" data-tip="Vitesse à laquelle tu consommes ta batterie énergétique, estimée depuis ta fréquence cardiaque. Plus le drain est élevé, plus tu fatigues vite sur la durée."></span></span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilDrain">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:12px;color:var(--text-2);">Coeff. course</span>
+          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilCoeff">—</span>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--text-2);margin-top:10px;line-height:1.5;opacity:0.7;">
+        Pas encore de profil ? <a href="profil.html" style="color:var(--sun);">Analyse tes traces GPX →</a>
+      </p>
+    </div>
+
+    <div class="step-divider"></div>
+
+    <button class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>
+      Lancer la simulation
+    </button>
+  </div>
+
+  <!-- Main résultats -->
+  <div class="sim-main">
+    <div class="empty-state" id="emptyStateSim">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="empty-title">Ta simulation s'affichera ici</div>
+      <div class="empty-sub">Importe une trace GPX de course<br>et lance la simulation</div>
+    </div>
+
+    <div id="simResults" style="display:none;">
+
+      <button class="btn-pdf" onclick="genererPDF()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Télécharger en PDF
+      </button>
+
+      <button class="btn-pin" id="btnPin" onclick="epinglerSimulationActuelle()" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span id="btnPinLabel">Épingler cette simulation</span>
+      </button>
+
+      <div class="result-kpis">
+        <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
+        <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div></div>
+      </div>
+      <div class="fourch-row">
+        <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" data-tooltip="Temps optimiste calculé à partir de la fourchette basse de variabilité de tes performances par terrain. Représente ton temps potentiel un jour où tout se passe bien."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+        <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" data-tooltip="Temps pessimiste basé sur la fourchette haute de variabilité. Représente un jour où les conditions sont défavorables (météo, fatigue résiduelle, gestion difficile)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Profil de course — allure &amp; ravitaillements<span class="info-icon" data-tooltip="Profil altimétrique de la course coloré par allure prédite. Les bulles cyan marquent les ravitaillements avec temps de passage. Tu peux superposer la batterie énergétique et la fréquence cardiaque estimée."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#FFC857"></div><span class="legend-label">&lt;10'/km</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div><span class="legend-label">10-13'</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div><span class="legend-label">13-18'</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div><span class="legend-label">&gt;18'/km</span></div>
+          </div>
+        </div>
+        <!-- Toggles données superposées -->
+        <div style="padding:8px 20px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
+          <span style="font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
+          <label class="chart-toggle">
+            <input type="checkbox" id="toggleAllure" onchange="dessinerProfilChart(window.lastSimData)">
+            <span class="toggle-dot" style="background:#FFD93D"></span>
+            <span class="toggle-label">Allure (min/km)</span>
+          </label>
+          <label class="chart-toggle">
+            <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
+            <span class="toggle-dot" style="background:#FF6B9D"></span>
+            <span class="toggle-label">Fréquence cardiaque (estimée)</span>
+          </label>
+        </div>
+        <div class="chart-body" style="position:relative;">
+          <svg id="profilChart" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+          <div id="chartTooltip" class="chart-tooltip"></div>
+        </div>
+      </div>
+
+      <div class="map-card">
+        <div class="map-header">🗺️ Tracé GPX</div>
+        <div id="leafletMap"></div>
+      </div>
+
+      <div class="ravito-card">
+        <div class="ravito-header">⛽ Temps de passage aux ravitaillements</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Point</th>
+              <th>Distance</th>
+              <th>Temps estimé</th>
+              <th>▲ Top</th>
+              <th>▼ Difficile</th>
+              <th>D+</th>
+              <th>D-</th>
+            </tr>
+          </thead>
+          <tbody id="ravitoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="terrain-card">
+        <div class="terrain-header">Répartition du temps par terrain</div>
+        <div class="terrain-body" id="terrainBars"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div><div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div><div class="footer-sub">Plan your peaks · Trail &amp; Rando</div></div>
+  <div class="footer-copy">© 2026 SUM'IT</div>
+</footer>
+
+<!-- ══ Bouton flottant avis ══ -->
+<button class="floating-feedback" onclick="ouvrirModal()">
+  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  Donner mon avis
+</button>
+
+<!-- ══ Modal avis bêta ══ -->
+<div class="modal-overlay" id="modalAvis">
+  <div class="modal-content">
+    <button class="modal-close" onclick="fermerModal()">×</button>
+    <h2>Ton avis nous est précieux</h2>
+    <p class="modal-sub">Aide-nous à améliorer SUM'IT en partageant ton expérience.</p>
+
+    <div id="formAvis">
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Pertinence des prédictions de temps</label>
+        <div class="rating-group" id="ratingPred">
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,1)">1</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,2)">2</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,3)">3</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,4)">4</button>
+          <button class="rating-btn" onclick="selectRating('ratingPred',this,5)">5</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Pertinence du profil coureur</label>
+        <div class="rating-group" id="ratingProfil">
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,1)">1</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,2)">2</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,3)">3</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,4)">4</button>
+          <button class="rating-btn" onclick="selectRating('ratingProfil',this,5)">5</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Fonctionnalités que tu souhaiterais voir</label>
+        <div id="modalFeatures" style="display:flex;flex-wrap:wrap;gap:8px;">
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Strava</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Garmin</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Conseils nutritionnels</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Coach IA personnalisé</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Intégration météo</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Suivi d'autres athlètes</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Application mobile</div>
+          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Profil Coach (multi-athlètes)</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Commentaire libre</label>
+        <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées..." style="width:100%;min-height:80px;padding:10px;font-family:'Inter', sans-serif;"></textarea>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label class="input-label">Email (optionnel)</label>
+        <input type="email" id="modalEmail" placeholder="ton@email.com">
+      </div>
+
+      <button class="btn-primary" style="width:100%;padding:14px;" onclick="envoyerAvis()">
+        Envoyer mon avis
+      </button>
+    </div>
+
+    <div id="successAvis" style="display:none;text-align:center;padding:30px 0;">
+      <div style="font-size:48px;margin-bottom:14px;">✓</div>
+      <h3 style="font-family:var(--font-display);color:var(--sun);margin-bottom:8px;">Merci pour ton retour !</h3>
+      <p style="font-size:13px;color:var(--text-2);">Ton avis a bien été envoyé.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../js/main.js"></script>
+<script src="../js/api-client.js"></script>
   <script src="../js/nav-user.js"></script>
   <script src="../js/onboarding.js"></script>
-  <script>
+<script>
+emailjs.init('rc324sv1XWdtOjTM6');
 
-    let currentUser = null;
-    let currentSimulations = [];
+// Variables globales
+let gpxFile = null;
 
-    // ── Init ────────────────────────────────────────────────────
-    (async function init() {
-      const section = document.getElementById('compteSection');
+// ══ Gestion dynamique des ravitos / points d'intérêt ══════════
+let _ravitoSeq = 0;
 
-      if (!isLoggedIn()) {
-        section.innerHTML = `
-          <div class="login-required">
-            <h2>Connecte-toi pour accéder à ton compte</h2>
-            <p>Réglages, Strava, et tes simulations épinglées.</p>
-            <button class="btn-primary" onclick="loginGoogle()" style="font-size:14px;">
-              Se connecter avec Google
-            </button>
-          </div>
-        `;
-        return;
+function creerLigneRavito(km = '', nom = '', pause = '') {
+  _ravitoSeq++;
+  const id = _ravitoSeq;
+  const row = document.createElement('div');
+  row.className = 'ravito-row';
+  row.dataset.rid = id;
+  row.innerHTML = `
+    <input type="number" class="ravito-km-input" min="0" step="0.1" placeholder="km" value="${km}" oninput="syncRavitos()">
+    <input type="text" class="ravito-nom-input" maxlength="60" placeholder="Nom (ex : Refuge, Col, Base de vie…)" value="${nom.replace(/"/g, '&quot;')}" oninput="syncRavitos()">
+    <input type="number" class="ravito-pause-input" min="0" step="1" placeholder="pause" value="${pause}" title="Temps d'arrêt en minutes" oninput="syncRavitos()">
+    <button type="button" class="btn-del-ravito" onclick="supprimerRavito(${id})" title="Retirer">−</button>
+  `;
+  return row;
+}
+
+function ajouterRavito(km = '', nom = '', pause = '') {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.appendChild(creerLigneRavito(km, nom, pause));
+  syncRavitos();
+}
+
+function supprimerRavito(id) {
+  const row = document.querySelector(`.ravito-row[data-rid="${id}"]`);
+  if (row) row.remove();
+  syncRavitos();
+}
+
+// Récupère le mapping {km: minutes de pause} pour l'envoi backend
+function getRavitosPauses() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const map = {};
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    const pause = r.querySelector('.ravito-pause-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km)) && pause !== '' && parseFloat(pause) > 0) {
+      map[parseFloat(km).toFixed(1)] = parseFloat(pause);
+    }
+  });
+  return map;
+}
+
+// Synchronise la liste vers le champ caché #ravitos (km) — compat existant
+function syncRavitos() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const kms = [];
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km))) kms.push(parseFloat(km));
+  });
+  const hidden = document.getElementById('ravitos');
+  if (hidden) hidden.value = kms.join(',');
+}
+
+// Récupère le mapping {km: nom} pour l'envoi backend
+function getRavitosNoms() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const map = {};
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    const nom = r.querySelector('.ravito-nom-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km)) && nom) {
+      map[parseFloat(km).toFixed(1)] = nom;
+    }
+  });
+  return map;
+}
+
+// Pré-remplit la liste depuis une chaîne "12,25,42" (réouverture sim) + noms optionnels
+function chargerRavitosDansListe(ravitosKmStr, nomsMap = {}, pausesMap = {}) {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.innerHTML = '';
+  const kms = (ravitosKmStr || '').split(',').map(s => s.trim()).filter(s => s !== '' && !isNaN(parseFloat(s)));
+  if (kms.length === 0) {
+    initRavitosDefaut();
+    return;
+  }
+  kms.forEach(km => {
+    const k = parseFloat(km);
+    const nom = nomsMap[k.toFixed(1)] || '';
+    const pause = pausesMap[k.toFixed(1)] || '';
+    list.appendChild(creerLigneRavito(k, nom, pause));
+  });
+  syncRavitos();
+}
+
+// 3 ravitos vides par défaut
+function initRavitosDefaut() {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.innerHTML = '';
+  for (let i = 0; i < 3; i++) list.appendChild(creerLigneRavito('', ''));
+  syncRavitos();
+}
+
+
+// Constantes affichage
+const TERRAIN_COLORS = {
+  montee_raide:'#E24B4A', montee_soutenue:'#EF9F27', montee_douce:'#5DCAA5',
+  plat:'#FFC857', descente_douce:'#5DCAA5', descente_soutenue:'#EF9F27', descente_raide:'#E24B4A'
+};
+const TERRAIN_LABELS_S = {
+  montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
+  montee_douce:'Montée douce', plat:'Plat',
+  descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide'
+};
+const TERRAIN_ICONS_S = {
+  montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="2,11 7,2 11,7"/></svg>`,
+  montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
+  montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
+  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="#FFC857" stroke-width="1.6"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
+  descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
+  descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
+  descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="6,2 11,9 7,11"/></svg>`,
+};
+
+const ORDRE_T2 = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+
+// ── INIT — Sélection du fichier ────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('fileGPX');
+  const zone  = document.getElementById('dropzoneSim');
+
+  // 3 ravitos vides par défaut (sauf si réouverture d'une sim, géré plus loin)
+  if (!new URLSearchParams(window.location.search).get('sim_id')) {
+    initRavitosDefaut();
+  }
+
+  // Click sur la zone → ouvrir le sélecteur
+  zone.addEventListener('click', () => input.click());
+
+  // Sélection d'un fichier via le dialog
+  input.addEventListener('change', e => {
+    if (e.target.files.length > 0) chargerFichier(e.target.files[0]);
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'rgba(255,200,87,0.6)';
+  });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    if (e.dataTransfer.files.length > 0) chargerFichier(e.dataTransfer.files[0]);
+  });
+
+  // Charger le profil sauvegardé dans la sidebar
+  initSimulateur();
+});
+
+// ── Profil utilisé : Trail / Rando ─────────────────────────────────
+let currentSimProfilType = 'trail';
+
+async function initSimulateur() {
+  // Si connecté → afficher le sélecteur de profil et charger les profils
+  if (isLoggedIn()) {
+    document.getElementById('profilSelector').style.display = 'block';
+
+    try {
+      const user = await fetchMe();
+      const trail = user.profiles.find(p => p.type === 'trail');
+      const rando = user.profiles.find(p => p.type === 'rando');
+
+      // Au chargement, on prend trail par défaut (sauf si trail vide et rando OK)
+      if (!trail && rando) currentSimProfilType = 'rando';
+      else currentSimProfilType = 'trail';
+
+      // Mettre à jour les boutons
+      document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === currentSimProfilType);
+      });
+
+      // Indiquer s'il manque un profil
+      const info = document.getElementById('profilSelectorInfo');
+      if (!trail && !rando) {
+        info.innerHTML = '⚠️ Aucun profil. <a href="profil.html" style="color:var(--sun);">Crée-en un</a> pour utiliser le simulateur.';
+      } else if (currentSimProfilType === 'trail' && !trail) {
+        info.innerHTML = '⚠️ Profil Trail vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Rando.';
+      } else if (currentSimProfilType === 'rando' && !rando) {
+        info.innerHTML = '⚠️ Profil Rando vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Trail.';
+      } else {
+        info.innerHTML = '';
       }
 
-      // Vérifier les retours OAuth Strava
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('strava_connected') === '1') {
-        setTimeout(() => alert('✅ Compte Strava connecté avec succès !'), 200);
-        cleanURL(['strava_connected']);
-      }
-      const stravaError = params.get('strava_error');
-      if (stravaError) {
-        setTimeout(() => alert(`❌ Erreur Strava : ${stravaError}`), 200);
-        cleanURL(['strava_error']);
-      }
+      // Charger le profil depuis BDD
+      await chargerProfilActuel(currentSimProfilType);
+    } catch (e) {
+      console.warn('Erreur chargement profils:', e);
+    }
+  }
 
-      try {
-        currentUser = await fetchMe();
-        await refreshSimulations();
-        renderUI();
-      } catch (e) {
-        section.innerHTML = `<p style="text-align:center;color:var(--danger)">Erreur : ${e.message}</p>`;
-      }
-    })();
+  afficherProfilSidebar();
 
-    function cleanURL(paramsToRemove) {
-      const url = new URL(window.location);
-      paramsToRemove.forEach(p => url.searchParams.delete(p));
-      window.history.replaceState({}, '', url.toString());
+  // Si on arrive via ?sim_id=XX, on charge la simulation épinglée
+  const params = new URLSearchParams(window.location.search);
+  const simId = params.get('sim_id');
+  if (simId && isLoggedIn()) {
+    await chargerSimulationEpinglee(parseInt(simId));
+  }
+}
+
+// ── Chargement d'une simulation épinglée ──────────────────────
+async function chargerSimulationEpinglee(simId) {
+  try {
+    const sim = await getSimulation(simId);
+
+    // Switch sur le bon profil
+    if (sim.type_profil && sim.type_profil !== currentSimProfilType) {
+      await switchProfilSim(sim.type_profil);
     }
 
-    // ── Render UI ──────────────────────────────────────────────
-    function renderUI() {
-      const section = document.getElementById('compteSection');
-      const prenom = currentUser.prenom || currentUser.name?.split(' ')[0] || 'Coureur';
-      const initiale = prenom[0]?.toUpperCase() || 'C';
-
-      const profilTrail = currentUser.profiles.find(p => p.type === 'trail');
-      const profilRando = currentUser.profiles.find(p => p.type === 'rando');
-      const nbActivitesTrail = profilTrail?.nb_traces || 0;
-      const nbActivitesRando = profilRando?.nb_traces || 0;
-      const totalActivites = nbActivitesTrail + nbActivitesRando;
-
-      section.innerHTML = `
-        <!-- HEADER UTILISATEUR -->
-        <div class="compte-header">
-          <div class="compte-header-avatar">
-            ${currentUser.picture ? `<img src="${currentUser.picture}">` : initiale}
-          </div>
-          <div class="compte-header-info">
-            <div class="compte-header-name">${escapeHTML(prenom)}</div>
-            <div class="compte-header-email">${escapeHTML(currentUser.email)}</div>
-            <div class="compte-header-stats">
-              <div class="compte-header-stat">
-                <strong>${totalActivites}</strong>
-                Activités importées
-              </div>
-              <div class="compte-header-stat">
-                <strong>${currentUser.profiles.length}</strong>
-                Profil${currentUser.profiles.length>1?'s':''} actif${currentUser.profiles.length>1?'s':''}
-              </div>
-              <div class="compte-header-stat">
-                <strong>${currentSimulations.length}</strong>
-                Simulation${currentSimulations.length>1?'s':''} épinglée${currentSimulations.length>1?'s':''}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RÉGLAGES -->
-        <div class="compte-card">
-          <h3>⚙️ Réglages du compte</h3>
-          <p class="section-desc">Personnalise ton profil et tes paramètres physiologiques.</p>
-          <form class="settings-form" onsubmit="event.preventDefault(); sauvegarderReglages();">
-            <div class="form-field">
-              <label for="setPrenom">Prénom (utilisé dans les PDFs)</label>
-              <input type="text" id="setPrenom" value="${escapeHTML(currentUser.prenom || '')}" maxlength="50">
-            </div>
-            <div class="form-field">
-              <label for="setFcmax">FC max (battements/min)</label>
-              <input type="number" id="setFcmax" value="${currentUser.fcmax}" min="100" max="250">
-            </div>
-            <div class="form-row-actions">
-              <span class="save-feedback" id="saveFeedback">✓ Enregistré</span>
-              <button type="submit" class="btn-save" id="btnSave">Enregistrer</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- STRAVA -->
-        <div class="compte-card">
-          <h3>🔗 Connexions externes</h3>
-          <p class="section-desc">Lie tes comptes pour importer tes activités automatiquement.</p>
-          <div class="strava-card">
-            <div class="strava-logo">
-              <svg viewBox="0 0 24 24"><path d="M12 1l9 16-9 6-9-6 9-16z"/></svg>
-            </div>
-            <div class="strava-info">
-              <h4>Strava</h4>
-              <p>${currentUser.strava_connected
-                ? 'Importe tes activités directement depuis Strava sur la page Profil.'
-                : 'Connecte ton compte Strava pour pouvoir importer tes activités.'}</p>
-              <div style="margin-top:8px;">
-                <span class="strava-status-badge ${currentUser.strava_connected?'connected':'disconnected'}">
-                  ${currentUser.strava_connected ? '✓ Connecté' : 'Non lié'}
-                </span>
-              </div>
-            </div>
-            <div>
-              ${currentUser.strava_connected
-                ? `<button class="btn-strava-action btn-strava-disconnect" onclick="deconnecterStravaAction()">Déconnecter</button>`
-                : `<button class="btn-strava-action btn-strava-connect" onclick="loginStrava()">Connecter Strava</button>`}
-            </div>
-          </div>
-        </div>
-
-        <!-- SIMULATIONS ÉPINGLÉES -->
-        <div class="compte-card">
-          <div class="compte-card-header">
-            <h3>⭐ Simulations épinglées</h3>
-            <span style="color:var(--text-3);font-size:12px;font-family:var(--font-display);">${currentSimulations.length} / 20</span>
-          </div>
-          <p class="section-desc">Tes simulations sauvegardées pour les retrouver facilement.</p>
-          <div id="simsContainer" class="sims-grid">
-            ${renderSimulations()}
-          </div>
-        </div>
-
-        <!-- ZONE DANGER -->
-        <div class="compte-card danger-zone">
-          <h3>⚠️ Zone sensible</h3>
-          <p class="section-desc">Déconnexion ou actions définitives.</p>
-          <button class="btn-logout" onclick="logout()">Se déconnecter</button>
-        </div>
-      `;
+    // Recharger le GPX original si présent
+    if (sim.gpx_base64) {
+      const bin = atob(sim.gpx_base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reconstitueFile = new File([bytes], `${sim.name}.gpx`, { type: 'application/gpx+xml' });
+      chargerFichier(reconstitueFile);
     }
 
-    // ── Simulations épinglées ──────────────────────────────────
-    async function refreshSimulations() {
-      try {
-        const res = await listerSimulations();
-        currentSimulations = res.simulations || [];
-      } catch (e) {
-        console.warn('Impossible de charger les simulations:', e);
-        currentSimulations = [];
+    // Restaurer le nom de course + ravitos
+    if (document.getElementById('nomCourse')) {
+      document.getElementById('nomCourse').value = sim.name;
+    }
+    // Charger les ravitos (km + noms + pauses) dans la liste dynamique.
+    // Récupérés depuis sim_data.ravitos s'ils existent.
+    let nomsMap = {};
+    let pausesMap = {};
+    if (sim.sim_data && Array.isArray(sim.sim_data.ravitos)) {
+      sim.sim_data.ravitos.forEach(rv => {
+        if (rv.km != null) {
+          const k = Number(rv.km).toFixed(1);
+          if (rv.nom) nomsMap[k] = rv.nom;
+          if (rv.pause_min && rv.pause_min > 0) pausesMap[k] = rv.pause_min;
+        }
+      });
+    }
+    if (sim.ravitos_km) {
+      chargerRavitosDansListe(sim.ravitos_km, nomsMap, pausesMap);
+    } else {
+      initRavitosDefaut();
+    }
+
+    // Restaurer les stats du fichier depuis sim_data
+    if (sim.dist_km && document.getElementById('fileDist')) {
+      document.getElementById('fileDist').textContent  = `${sim.dist_km.toFixed(1)} km`;
+      document.getElementById('fileDplus').textContent = `${Math.round(sim.dplus_m)} m D+`;
+    }
+
+    // Restaurer les résultats si présents (sans recalculer)
+    if (sim.sim_data && Object.keys(sim.sim_data).length > 0) {
+      const data = sim.sim_data;
+      // On reconstruit l'affichage sans appel API
+      window.lastSimData = data;
+      afficherResultats(data);
+    }
+
+    // Bascule en mode édition
+    window.editingSimId = simId;
+    window.editingSimName = sim.name;
+    afficherBandeauEdition();
+
+  } catch (e) {
+    alert('Impossible de charger la simulation : ' + e.message);
+  }
+}
+
+function afficherBandeauEdition() {
+  let bandeau = document.getElementById('editingBanner');
+  if (!bandeau) {
+    bandeau = document.createElement('div');
+    bandeau.id = 'editingBanner';
+    bandeau.style.cssText = `
+      position: sticky; top: 68px; z-index: 50;
+      background: linear-gradient(90deg, var(--sun) 0%, var(--leaf) 100%);
+      color: var(--bg);
+      padding: 10px 24px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    `;
+    document.body.insertBefore(bandeau, document.body.querySelector('.nav').nextSibling);
+  }
+  bandeau.innerHTML = `
+    <div>⭐ Mode édition : <strong>${escapeHTMLSim(window.editingSimName || 'Simulation')}</strong></div>
+    <button onclick="quitterModeEdition()" style="background:rgba(0,0,0,0.2);color:var(--bg);border:none;padding:6px 14px;font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;border-radius:4px;cursor:pointer;font-weight:700;">
+      Quitter le mode édition
+    </button>
+  `;
+
+  // Mettre à jour le label du bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Mettre à jour la sim épinglée';
+}
+
+function quitterModeEdition() {
+  window.editingSimId = null;
+  window.editingSimName = null;
+  const bandeau = document.getElementById('editingBanner');
+  if (bandeau) bandeau.remove();
+  // Reset URL
+  const url = new URL(window.location);
+  url.searchParams.delete('sim_id');
+  window.history.replaceState({}, '', url.toString());
+  // Reset bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Épingler cette simulation';
+}
+
+function escapeHTMLSim(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function switchProfilSim(type) {
+  currentSimProfilType = type;
+  document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  try {
+    await chargerProfilActuel(type);
+
+    // Re-check si le profil a été chargé ou est vide
+    const user = await fetchMe();
+    const p = user.profiles.find(pp => pp.type === type);
+    const info = document.getElementById('profilSelectorInfo');
+    if (!p) {
+      info.innerHTML = `⚠️ Profil ${type === 'trail' ? 'Trail' : 'Rando'} vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a>.`;
+    } else {
+      info.innerHTML = '';
+    }
+  } catch (e) { console.warn(e); }
+  afficherProfilSidebar();
+}
+
+// ── Chargement du fichier ──────────────────────────────────────────
+function chargerFichier(file) {
+  if (!file.name.toLowerCase().endsWith('.gpx')) {
+    alert('Seuls les fichiers .gpx sont acceptés !');
+    return;
+  }
+  gpxFile = file;
+  // Affichage info fichier
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileDist').textContent = '...';
+  document.getElementById('fileDplus').textContent = '...';
+  document.getElementById('fileCat').textContent = 'Prêt';
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('btnSimuler').disabled = false;
+  console.log('✅ Fichier chargé :', file.name, file.size, 'bytes');
+}
+
+// ── Profil sidebar ─────────────────────────────────────────────────
+function afficherProfilSidebar() {
+  const p = chargerProfil();
+  if (p && p.profil) {
+    // Utilise la même VEP globale que sur la page profil
+    const vep = p.vep_globale ? p.vep_globale.toFixed(1) : '—';
+    document.getElementById('profilVEP').textContent   = `${vep} km/h`;
+    document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1)} %/h`;
+    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2)}`;
+  } else {
+    document.getElementById('profilVEP').textContent   = '—';
+    document.getElementById('profilDrain').textContent = '—';
+    document.getElementById('profilCoeff').textContent = '—';
+  }
+}
+
+// ── Lancer la simulation ──────────────────────────────────────────
+async function lancerSimulation() {
+  if (!gpxFile) { alert('Importe une trace GPX !'); return; }
+
+  const p = chargerProfil();
+  if (!p || !p.profil) {
+    alert('Aucun profil sauvegardé. Va d\'abord créer ton profil sur la page "Mon profil".');
+    return;
+  }
+
+  syncRavitos();
+  const ravitos = document.getElementById('ravitos').value.trim();
+  const ravitosNoms = getRavitosNoms();
+  const ravitosPauses = getRavitosPauses();
+  const btn     = document.getElementById('btnSimuler');
+  btn.textContent = '⏳ Analyse du terrain en cours (OSM)...';
+  btn.disabled = true;
+
+  try {
+    // Charger les points GPS pour la carte
+    trackPoints = await chargerTrackPoints(gpxFile);
+
+    const data = await simulerCourseAPI(
+      gpxFile, ravitos,
+      p.profil, p.drain_moy_h, p.coefficient, p.fcmax || 193,
+      ravitosNoms, ravitosPauses
+    );
+
+    console.log('Réponse API:', data);
+    afficherResultats(data);
+
+    // Affichage carte après résultats
+    setTimeout(() => afficherCarte(trackPoints), 200);
+
+    envoyerMailSimulation(data);
+
+  } catch(err) {
+    console.error('Erreur simulation:', err);
+    alert(`Erreur : ${err.message}\n\nVérifie que l'API tourne (python api.py)`);
+  } finally {
+    btn.textContent = 'Lancer la simulation';
+    btn.disabled = false;
+  }
+}
+
+// ── Affichage résultats ───────────────────────────────────────────
+function afficherResultats(data) {
+  document.getElementById('emptyStateSim').style.display = 'none';
+  document.getElementById('simResults').style.display    = 'block';
+
+  // Bouton Épingler visible seulement si connecté
+  const btnPin = document.getElementById('btnPin');
+  if (isLoggedIn()) {
+    btnPin.style.display = 'inline-flex';
+    btnPin.classList.remove('pinned');
+    btnPin.disabled = false;
+    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+  } else {
+    btnPin.style.display = 'none';
+  }
+
+  // KPIs
+  document.getElementById('resTemps').textContent  = data.temps_fmt || '—';
+  document.getElementById('resAllure').textContent = data.allure_moy ? `${data.allure_moy}'/km` : '—';
+
+  const cat = data.categorie || {};
+  document.getElementById('resCat').textContent = `${cat.emoji || ''} ${cat.nom || '—'}`;
+
+  // Mise à jour info fichier
+  document.getElementById('fileDist').textContent  = `${data.distance_km.toFixed(1)} km`;
+  document.getElementById('fileDplus').textContent = `${Math.round(data.dplus_m)} m`;
+  document.getElementById('fileCat').textContent   = `${cat.emoji} ${cat.nom}`;
+
+  // Fourchettes
+  document.getElementById('fourchBas').textContent  = data.bas_fmt;
+  document.getElementById('fourchHaut').textContent = data.haut_fmt;
+
+  // Graphique
+  dessinerProfilChart(data);
+
+  // Tableau ravitos
+  const tbody = document.getElementById('ravitoBody');
+  const distTot  = data.distance_km || 0;
+  const dplusTot = data.dplus_m || 0;
+  const dmoinsTot= data.dmoins_m || dplusTot; // par défaut si pas dispo
+
+  tbody.innerHTML = `
+    <tr>
+      <td style="font-family:var(--font-display);">Départ</td>
+      <td>0 km</td>
+      <td style="color:var(--sun);font-family:var(--font-display);">0h00m00s</td>
+      <td class="range-col">0h00m00s</td>
+      <td class="range-col">0h00m00s</td>
+      <td class="dplus-col">0 m</td>
+      <td class="dmoins-col">0 m</td>
+    </tr>`;
+  (data.ravitos || []).forEach(r => {
+    const dp = Math.round(r.dplus_cum || 0);
+    const dm = Math.round(r.dmoins_cum || 0);
+    const pauseBadge = (r.pause_min && r.pause_min > 0)
+      ? ` <span style="display:inline-block;font-size:10px;color:var(--sky);background:rgba(79,163,217,0.12);border:1px solid rgba(79,163,217,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-family:var(--font-display);">⏸ ${Math.round(r.pause_min)}min</span>`
+      : '';
+    const label = (r.nom && r.nom.trim())
+      ? `<strong style="color:var(--text);">${escapeHTMLSim(r.nom)}</strong>${pauseBadge}`
+      : `Ravito${pauseBadge}`;
+    tbody.innerHTML += `
+      <tr>
+        <td>${label}</td>
+        <td>${r.km.toFixed(1)} km</td>
+        <td style="color:var(--sun);font-family:var(--font-display);">${r.temps_fmt}</td>
+        <td class="range-col">${r.bas_fmt}</td>
+        <td class="range-col">${r.haut_fmt}</td>
+        <td class="dplus-col">+${dp} m</td>
+        <td class="dmoins-col">-${dm} m</td>
+      </tr>`;
+  });
+  tbody.innerHTML += `
+    <tr>
+      <td>Arrivée</td>
+      <td>${distTot.toFixed(1)} km</td>
+      <td>${data.temps_fmt}</td>
+      <td class="range-col">${data.bas_fmt}</td>
+      <td class="range-col">${data.haut_fmt}</td>
+      <td class="dplus-col">+${Math.round(dplusTot)} m</td>
+      <td class="dmoins-col">-${Math.round(dmoinsTot)} m</td>
+    </tr>`;
+
+  // Barres terrain
+  const tbars  = document.getElementById('terrainBars');
+  tbars.innerHTML = '';
+  const rep    = data.repartition || {};
+  const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+  ORDRE_T2.forEach(terrain => {
+    const r = rep[terrain];
+    if (!r) return;
+    tbars.innerHTML += `
+      <div class="terrain-bar-row">
+        <div class="terrain-icon">${TERRAIN_ICONS_S[terrain] || ''}</div>
+        <div class="terrain-label">${TERRAIN_LABELS_S[terrain]}</div>
+        <div class="terrain-track">
+          <div class="terrain-fill"
+               style="width:0%;background:${TERRAIN_COLORS[terrain]};opacity:0.75"
+               data-target="${(r.pct/maxPct)*100}"></div>
+        </div>
+        <div class="terrain-time">${r.temps_fmt}</div>
+        <div class="terrain-pct">${r.pct}%</div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.terrain-fill[data-target]').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 100);
+}
+
+// ── Graphique profil SVG avec courbes optionnelles + tooltip ───
+const TERRAIN_LABELS_TT = {
+  montee_raide: 'Montée raide',
+  montee_soutenue: 'Montée soutenue',
+  montee_douce: 'Montée douce',
+  plat: 'Plat',
+  descente_douce: 'Descente douce',
+  descente_soutenue: 'Descente soutenue',
+  descente_raide: 'Descente raide',
+};
+
+function dessinerProfilChart(data) {
+  if (!data) return;
+  window.lastSimData = data;
+
+  const svg = document.getElementById('profilChart');
+  const pts = data.profil_chart || [];
+  if (pts.length === 0) return;
+
+  const showAllure = document.getElementById('toggleAllure')?.checked || false;
+  const showFC     = document.getElementById('toggleFC')?.checked || false;
+
+  const W=680, H=200, padL=44, padR=44, padT=20, padB=40;
+  const cW=W-padL-padR, cH=H-padT-padB;
+
+  const alts   = pts.map(p => p.altitude);
+  const minA   = Math.min(...alts);
+  const maxA   = Math.max(...alts);
+  const rangeA = maxA - minA || 1;
+  const dist   = data.distance_km;
+  const profil = chargerProfil();
+  const fcmax  = profil?.fcmax || 193;
+
+  const couleur = v => {
+    const a = 60 / Math.max(v, 0.1);
+    if (a < 10) return '#FFC857';
+    if (a < 13) return '#6BB36B';
+    if (a < 18) return '#F39237';
+    return '#E55B5B';
+  };
+  const x = km => padL + (km / dist) * cW;
+  const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
+  const yPct = pct => padT + cH - (pct / 100) * cH;
+
+  // Calcul de D+ / D- cumulés et pente par point (pour le tooltip)
+  const pointsEnriched = pts.map((p, i) => {
+    let dplus = 0, dmoins = 0, pente = 0;
+    if (i > 0) {
+      // D+/- cumulés depuis le début
+      for (let k = 1; k <= i; k++) {
+        const dz = pts[k].altitude - pts[k-1].altitude;
+        if (dz > 0) dplus += dz;
+        else dmoins += -dz;
       }
+      // Pente locale entre ce point et le précédent
+      const dx_m = (p.dist_km - pts[i-1].dist_km) * 1000;
+      const dz   = p.altitude - pts[i-1].altitude;
+      pente = dx_m > 0 ? (dz / dx_m) * 100 : 0;
     }
+    return { ...p, dplus_cum: dplus, dmoins_cum: dmoins, pente };
+  });
 
-    function renderSimulations() {
-      if (currentSimulations.length === 0) {
-        return `<div class="sims-empty">
-          Aucune simulation épinglée. Va dans le simulateur et clique sur ⭐ pour en sauvegarder une.
+  let c = '';
+
+  // Grille verticale + labels distance
+  [0, 0.25, 0.5, 0.75, 1].forEach(p => {
+    const xp = padL + p * cW;
+    c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(244,241,232,0.06)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
+    c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#6E6A5E" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
+  });
+  // Axe Y gauche : altitude
+  [minA, (minA+maxA)/2, maxA].forEach(a => {
+    const yp = y(a);
+    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(244,241,232,0.05)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
+    c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="end">${Math.round(a)}m</text>`;
+  });
+  // Axe Y droit
+  if (showAllure || showFC) {
+    [0, 50, 100].forEach(p => {
+      const yp = yPct(p);
+      let label = `${p}%`;
+      if (showAllure && !showFC) {
+        // Allure entre 5'/km (100%) et 30'/km (0%)
+        const allure = 5 + (100 - p) * 0.25;
+        label = `${allure.toFixed(0)}'`;
+      }
+      c += `<text x="${W-padR+4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="start">${label}</text>`;
+    });
+  }
+
+  // Courbe altimétrique colorée
+  for (let i = 1; i < pts.length; i++) {
+    const p1 = pts[i-1], p2 = pts[i];
+    const col = couleur(p2.vitesse_kmh);
+    c += `<polygon points="${x(p1.dist_km)},${y(p1.altitude)} ${x(p2.dist_km)},${y(p2.altitude)} ${x(p2.dist_km)},${padT+cH} ${x(p1.dist_km)},${padT+cH}" fill="${col}" opacity="0.18"/>`;
+    c += `<line x1="${x(p1.dist_km)}" y1="${y(p1.altitude)}" x2="${x(p2.dist_km)}" y2="${y(p2.altitude)}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
+  }
+
+  // ── Courbe allure (min/km) ──
+  if (showAllure) {
+    let path = '';
+    pts.forEach((p, i) => {
+      // Allure en min/km
+      const allure = 60 / Math.max(p.vitesse_kmh, 0.1);
+      // Mapping 5'/km (rapide) → 100%, 30'/km (très lent) → 0%
+      const ratio = Math.max(0, Math.min(100, 100 - (allure - 5) / 0.25));
+      const px = x(p.dist_km), py = yPct(ratio);
+      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#FFD93D" stroke-width="2" stroke-dasharray="4,3" opacity="0.9"/>`;
+    c += `<text x="${W-padR+4}" y="${padT+8}" font-size="8" fill="#FFD93D" text-anchor="start" font-weight="bold">⏱ Allure</text>`;
+  }
+
+  // ── Courbe FC estimée ──
+  if (showFC) {
+    let path = '';
+    const vepGlobale = profil?.vep_globale || 9;
+    pts.forEach((p, i) => {
+      const intensite = Math.min(1.0, p.vitesse_kmh / (vepGlobale * 1.3));
+      const fcRatio = 0.65 + 0.30 * intensite;
+      const fcEstimee = fcRatio * 100;
+      const px = x(p.dist_km), py = yPct(fcEstimee);
+      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#FF6B9D" stroke-width="2" stroke-dasharray="2,2" opacity="0.9"/>`;
+    const yLabel = showAllure ? padT + 18 : padT + 8;
+    c += `<text x="${W-padR+4}" y="${yLabel}" font-size="8" fill="#FF6B9D" text-anchor="start" font-weight="bold">♥ FC</text>`;
+  }
+
+  // Bulles ravitos
+  (data.ravitos || []).forEach(r => {
+    const xR = x(r.km);
+    const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
+    const yR = Math.max(padT + 18, y(closest.altitude));
+    c += `
+      <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#FFC857" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
+      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0A0A0A" stroke="#FFC857" stroke-width="1.2"/>
+      <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#FFC857" stroke-width="1"/>
+      <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#FFC857" stroke-width="0.8"/>
+      <text x="${xR}" y="${yR+4}" font-size="7" fill="#FFC857" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
+  });
+
+  // ── Curseur invisible pour interaction (ligne verticale + groupe tooltip) ──
+  c += `
+    <line id="chartCursor" x1="0" y1="${padT}" x2="0" y2="${padT+cH}"
+          stroke="#FFC857" stroke-width="1" stroke-dasharray="3,3" opacity="0" pointer-events="none"/>
+    <circle id="chartCursorDot" cx="0" cy="0" r="4" fill="#FFC857" stroke="#0A0A0A" stroke-width="1.5" opacity="0" pointer-events="none"/>
+    <rect id="chartHotzone" x="${padL}" y="${padT}" width="${cW}" height="${cH}" fill="transparent" pointer-events="all" style="cursor:crosshair"/>
+  `;
+
+  svg.innerHTML = c;
+
+  // Stocker les données enrichies pour le tooltip
+  window.chartPointsEnriched = pointsEnriched;
+  window.chartConfig = { padL, padR, padT, padB, cW, cH, W, H, dist };
+
+  // Attacher les interactions tooltip
+  attacherTooltipGraphique();
+}
+
+// ── Tooltip curseur au survol du graphique ──────────────────
+const TERRAIN_TYPE_INFO = {
+  route:             { nom: 'Route',            emoji: '🛣️', color: '#888' },
+  piste:             { nom: 'Piste',            emoji: '🚵', color: '#6BB36B' },
+  sentier_large:     { nom: 'Sentier large',    emoji: '🥾', color: '#FFC857' },
+  sentier_montagne:  { nom: 'Sentier montagne', emoji: '⛰️', color: '#F39237' },
+  hors_trace:        { nom: 'Hors-trace',       emoji: '🌲', color: '#E55B5B' },
+};
+
+function attacherTooltipGraphique() {
+  const svg = document.getElementById('profilChart');
+  const hotzone = document.getElementById('chartHotzone');
+  const cursor = document.getElementById('chartCursor');
+  const cursorDot = document.getElementById('chartCursorDot');
+  const tooltip = document.getElementById('chartTooltip');
+  if (!hotzone || !cursor || !tooltip) return;
+
+  const cfg = window.chartConfig;
+  const pts = window.chartPointsEnriched;
+  if (!cfg || !pts) return;
+
+  const profil = chargerProfil();
+  const vepGlobale = profil?.vep_globale || 9;
+
+  hotzone.addEventListener('mousemove', e => {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = cfg.W / rect.width;
+    const mouseX_svg = (e.clientX - rect.left) * scaleX;
+
+    const distRatio = (mouseX_svg - cfg.padL) / cfg.cW;
+    const distKm = distRatio * cfg.dist;
+
+    const closest = pts.reduce((best, p) =>
+      Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best,
+      pts[0]
+    );
+
+    const cursorX = cfg.padL + (closest.dist_km / cfg.dist) * cfg.cW;
+    const minAlt = Math.min(...pts.map(p => p.altitude));
+    const maxAlt = Math.max(...pts.map(p => p.altitude));
+    const cursorY = cfg.padT + cfg.cH - ((closest.altitude - minAlt) / (maxAlt - minAlt || 1)) * cfg.cH;
+
+    cursor.setAttribute('x1', cursorX);
+    cursor.setAttribute('x2', cursorX);
+    cursor.setAttribute('opacity', '0.7');
+    cursorDot.setAttribute('cx', cursorX);
+    cursorDot.setAttribute('cy', cursorY);
+    cursorDot.setAttribute('opacity', '1');
+
+    // Type de terrain (technicité OSM) — fallback sur pente classique
+    const typeT = closest.type_terrain || 'sentier_large';
+    const tInfo = TERRAIN_TYPE_INFO[typeT] || TERRAIN_TYPE_INFO['sentier_large'];
+
+    // Pente
+    const penteFmt = closest.pente >= 0 ? `+${closest.pente.toFixed(1)}` : closest.pente.toFixed(1);
+    const penteColor = closest.pente >= 0 ? '#6BB36B' : '#4FA3D9';
+
+    // Lignes optionnelles : allure / FC selon coches
+    const showAllure = document.getElementById('toggleAllure')?.checked || false;
+    const showFC     = document.getElementById('toggleFC')?.checked || false;
+
+    let extraRows = '';
+    if (showAllure) {
+      const allure = 60 / Math.max(closest.vitesse_kmh, 0.1);
+      const mins = Math.floor(allure);
+      const secs = Math.round((allure - mins) * 60);
+      extraRows += `
+        <div class="tt-row">
+          <span class="tt-ic">⏱</span>
+          <span class="tt-lbl">Allure</span>
+          <strong style="color:#FFD93D">${mins}'${String(secs).padStart(2,'0')}"/km</strong>
         </div>`;
+    }
+    if (showFC) {
+      const intensite = Math.min(1.0, closest.vitesse_kmh / (vepGlobale * 1.3));
+      const fcRatio = 0.65 + 0.30 * intensite;
+      const fcBpm = Math.round(fcRatio * (profil?.fcmax || 193));
+      extraRows += `
+        <div class="tt-row">
+          <span class="tt-ic">♥</span>
+          <span class="tt-lbl">FC</span>
+          <strong style="color:#FF6B9D">${fcBpm} bpm</strong>
+        </div>`;
+    }
+
+    tooltip.innerHTML = `
+      <div class="tt-header">${closest.dist_km.toFixed(2)} km</div>
+      <div class="tt-row">
+        <span class="tt-ic">${tInfo.emoji}</span>
+        <span class="tt-lbl">Terrain</span>
+        <strong style="color:${tInfo.color}">${tInfo.nom}</strong>
+      </div>
+      <div class="tt-row">
+        <span class="tt-ic">📐</span>
+        <span class="tt-lbl">Pente</span>
+        <strong style="color:${penteColor}">${penteFmt}%</strong>
+      </div>
+      <div class="tt-row">
+        <span class="tt-ic">⛰</span>
+        <span class="tt-lbl">Altitude</span>
+        <strong>${Math.round(closest.altitude)} m</strong>
+      </div>
+      <div class="tt-row tt-row-split">
+        <span><span class="tt-ic">↗</span><strong style="color:#6BB36B">+${Math.round(closest.dplus_cum)}m</strong></span>
+        <span><span class="tt-ic">↘</span><strong style="color:#E55B5B">-${Math.round(closest.dmoins_cum)}m</strong></span>
+      </div>
+      ${extraRows}
+    `;
+
+    const chartRect = svg.getBoundingClientRect();
+    const mouseInChart = e.clientX - chartRect.left;
+    const showRight = mouseInChart < chartRect.width / 2;
+
+    tooltip.style.display = 'block';
+    if (showRight) {
+      tooltip.style.left = (e.clientX - chartRect.left + 20) + 'px';
+      tooltip.style.right = 'auto';
+    } else {
+      tooltip.style.left = 'auto';
+      tooltip.style.right = (chartRect.width - (e.clientX - chartRect.left) + 20) + 'px';
+    }
+    tooltip.style.top = (e.clientY - chartRect.top - 10) + 'px';
+  });
+
+  hotzone.addEventListener('mouseleave', () => {
+    cursor.setAttribute('opacity', '0');
+    cursorDot.setAttribute('opacity', '0');
+    tooltip.style.display = 'none';
+  });
+}
+
+// ── Envoi mail simulation ─────────────────────────────────────────
+function envoyerMailSimulation(data) {
+  const cat = data.categorie || {};
+  const params = {
+    to_email:   'sup.sumit@outlook.com',
+    date:       new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+    distance:   `${data.distance_km.toFixed(1)} km`,
+    denivelé:   `${Math.round(data.dplus_m)} m D+`,
+    categorie:  `${cat.emoji || ''} ${cat.nom || '—'}`,
+    temps_estime: data.temps_fmt,
+    coeff_course: `×${data.coefficient_course}`,
+    nb_ravitos:   (data.ravitos || []).length,
+    ravitos_km:   (data.ravitos || []).map(r => `${r.km.toFixed(1)}km → ${r.temps_fmt}`).join(' | '),
+  };
+  emailjs.send('sumit_outlook', 'template_6htljlf', params)
+    .then(() => console.log('✅ Simulation envoyée'))
+    .catch(e => console.warn('EmailJS:', e));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CARTE LEAFLET — affiche le tracé GPX
+// ══════════════════════════════════════════════════════════════
+let leafletMap = null;
+let trackPoints = [];
+
+async function chargerTrackPoints(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(e.target.result, 'text/xml');
+      const pts    = doc.querySelectorAll('trkpt');
+      const coords = [];
+      pts.forEach(pt => {
+        coords.push([
+          parseFloat(pt.getAttribute('lat')),
+          parseFloat(pt.getAttribute('lon'))
+        ]);
+      });
+      resolve(coords);
+    };
+    reader.readAsText(file);
+  });
+}
+
+function afficherCarte(coords) {
+  if (coords.length === 0) return;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+
+  leafletMap = L.map('leafletMap').setView(coords[0], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18,
+    crossOrigin: true
+  }).addTo(leafletMap);
+
+  const polyline = L.polyline(coords, { color: '#FFC857', weight: 3 }).addTo(leafletMap);
+
+  L.marker(coords[0], { title: 'Départ' }).addTo(leafletMap).bindPopup('🟢 Départ');
+  L.marker(coords[coords.length-1], { title: 'Arrivée' }).addTo(leafletMap).bindPopup('🔴 Arrivée');
+
+  leafletMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+
+  // Force resize après affichage
+  setTimeout(() => leafletMap.invalidateSize(), 100);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PDF v3 — Page unique A4 avec style SUM'IT
+// ══════════════════════════════════════════════════════════════
+
+// Couleurs (palette SUM'IT)
+const PDF_COLORS = {
+  bg:       [10, 10, 10],       // Noir
+  bg2:      [19, 19, 19],
+  bg3:      [26, 26, 26],
+  text:     [244, 241, 232],    // Blanc cassé
+  text2:    [184, 180, 166],
+  text3:    [110, 106, 94],
+  sun:      [255, 200, 87],
+  leaf:     [107, 179, 107],
+  sky:      [79, 163, 217],
+  danger:   [229, 91, 91],
+  warning:  [243, 146, 55],
+  line:     [40, 40, 40],
+};
+
+async function genererPDF() {
+  const { jsPDF } = window.jspdf;
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Coureur';
+  const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+
+  const btn = document.querySelector('.btn-pdf');
+  btn.innerHTML = '⏳ Génération...';
+  btn.disabled = true;
+
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const W = 210, H = 297;
+    const PAD = 12;
+    let y = 0;
+
+    // ═══ FOND NOIR GLOBAL ═══
+    pdf.setFillColor(...PDF_COLORS.bg);
+    pdf.rect(0, 0, W, H, 'F');
+
+    // ═══ BANNIÈRE HEADER avec topo en fond ═══
+    const HEADER_H = 32;
+
+    // Fond bannière
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.rect(0, 0, W, HEADER_H, 'F');
+
+    // Topo en filigrane (lignes courbes)
+    pdf.setDrawColor(...PDF_COLORS.text);
+    pdf.setLineWidth(0.15);
+    pdf.setGState(new pdf.GState({ opacity: 0.12 }));
+    for (let i = 0; i < 6; i++) {
+      const yo = 4 + i * 5;
+      pdf.lines(
+        [[40, -1], [40, 2], [40, -2], [40, 1], [40, -1]],
+        0, yo, [1, 1], 'S'
+      );
+    }
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+    // Bandeau dégradé fin en bas du header
+    const colors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
+    const segW = W / colors.length;
+    colors.forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(i * segW, HEADER_H - 0.6, segW, 0.6, 'F');
+    });
+
+    // Logo SUM'IT (rond avec dégradé simulé par 3 carrés)
+    const logoX = PAD, logoY = 8, logoSize = 16;
+    pdf.setFillColor(...PDF_COLORS.sun);
+    pdf.circle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 'F');
+    pdf.setTextColor(...PDF_COLORS.bg);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text('S', logoX + logoSize/2, logoY + logoSize/2 + 2, { align: 'center' });
+
+    // SUM'IT text
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.setFontSize(22);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text("SUM'IT", logoX + logoSize + 4, logoY + 8);
+
+    pdf.setFontSize(7);
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('PLAN YOUR PEAKS', logoX + logoSize + 4, logoY + 13);
+
+    // Côté droit : date + nom coureur
+    pdf.setFontSize(8);
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
+             W - PAD, logoY + 6, { align: 'right' });
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.sun);
+    pdf.setFontSize(10);
+    pdf.text(prenom, W - PAD, logoY + 12, { align: 'right' });
+
+    y = HEADER_H + 8;
+
+    // ═══ TITRE DE LA COURSE ═══
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(nomCourse, PAD, y);
+
+    // Sous-titre catégorie
+    const cat = window.lastSimData?.categorie || {};
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text(`${cat.emoji || ''} ${cat.nom || ''} · Simulation personnalisée`, PAD, y + 5);
+    y += 12;
+
+    // ═══ KPIs PRINCIPAUX (4 colonnes) ═══
+    const kpis = [
+      { label: 'TEMPS ESTIMÉ',  val: document.getElementById('resTemps').textContent,    color: PDF_COLORS.sun },
+      { label: 'ALLURE MOY.',   val: document.getElementById('resAllure').textContent,   color: PDF_COLORS.text },
+      { label: 'DISTANCE',      val: document.getElementById('fileDist').textContent,    color: PDF_COLORS.text },
+      { label: 'DÉNIVELÉ +',    val: document.getElementById('fileDplus').textContent,   color: PDF_COLORS.text },
+    ];
+
+    const kpiH = 22;
+    const kpiW = (W - 2*PAD) / 4;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.line);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'S');
+
+    kpis.forEach((kpi, i) => {
+      const kx = PAD + i * kpiW;
+
+      // Séparateur vertical
+      if (i > 0) {
+        pdf.setDrawColor(...PDF_COLORS.line);
+        pdf.line(kx, y + 3, kx, y + kpiH - 3);
       }
 
-      return currentSimulations.map(s => {
-        const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
-        const h = Math.floor(s.duree_s / 3600);
-        const m = Math.floor((s.duree_s % 3600) / 60);
-        const dureeFmt = `${h}h${String(m).padStart(2,'0')}`;
-        const profilType = s.type_profil || 'trail';
-        return `
-          <div class="sim-card">
-            <button class="btn-delete-sim" onclick="deleteSimulation(${s.id})" title="Supprimer">
-              <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-            <div class="sim-card-header">
-              <div>
-                <div class="sim-card-title">${escapeHTML(s.name)}</div>
-                <div class="sim-card-date">${date}</div>
-              </div>
-            </div>
-            <div class="sim-card-time">${dureeFmt}</div>
-            <div class="sim-card-meta">
-              <span>${s.dist_km.toFixed(1)} km</span>
-              <span>·</span>
-              <span>${Math.round(s.dplus_m)} m D+</span>
-            </div>
-            <span class="sim-card-profile-tag ${profilType}">${profilType==='trail'?'🏃 Trail':'🥾 Rando'}</span>
-            <button class="btn-open-sim" onclick="ouvrirSimulation(${s.id})">
-              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-              Ouvrir dans le simulateur
-            </button>
-          </div>
-        `;
-      }).join('');
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.text3);
+      pdf.text(kpi.label, kx + kpiW/2, y + 6, { align: 'center' });
+
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...kpi.color);
+      pdf.text(kpi.val, kx + kpiW/2, y + 15, { align: 'center' });
+    });
+    y += kpiH + 6;
+
+    // ═══ FOURCHETTES (2 colonnes vert/rouge) ═══
+    const fourchH = 16;
+    const fourchW = (W - 2*PAD - 4) / 2;
+
+    // Top condition (vert)
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.leaf);
+    pdf.setLineWidth(0.3);
+    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
+    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'S');
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.leaf);
+    pdf.text('TOP CONDITION', PAD + 4, y + 5);
+    pdf.setFontSize(13);
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.text(document.getElementById('fourchBas').textContent, PAD + 4, y + 12);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text('Tout se passe bien', PAD + 4, y + fourchH - 2);
+
+    // Jour difficile (rouge)
+    const dx = PAD + fourchW + 4;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'F');
+    pdf.setDrawColor(...PDF_COLORS.danger);
+    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
+    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'S');
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.danger);
+    pdf.text('JOUR DIFFICILE', dx + 4, y + 5);
+    pdf.setFontSize(13);
+    pdf.setTextColor(...PDF_COLORS.text);
+    pdf.text(document.getElementById('fourchHaut').textContent, dx + 4, y + 12);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text('Conditions dégradées', dx + 4, y + fourchH - 2);
+
+    y += fourchH + 6;
+
+    // ═══ PROFIL COUREUR ═══
+    if (profil && profil.archetype) {
+      const profH = 16;
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'F');
+      pdf.setDrawColor(...PDF_COLORS.sun);
+      pdf.setLineWidth(0.3);
+      pdf.setGState(new pdf.GState({ opacity: 0.4 }));
+      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'S');
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+      // Icône archétype (cercle doré)
+      pdf.setFillColor(...PDF_COLORS.sun);
+      pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+      pdf.circle(PAD + 8, y + profH/2, 5, 'F');
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('PROFIL COUREUR', PAD + 17, y + 5);
+
+      pdf.setFontSize(12);
+      pdf.setTextColor(...PDF_COLORS.text);
+      pdf.text(profil.archetype.nom || 'Combattant', PAD + 17, y + 11);
+
+      pdf.setFontSize(6.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...PDF_COLORS.text3);
+      const vepStr = profil.vep_globale ? `VEP ${profil.vep_globale.toFixed(1)} km/h` : '';
+      pdf.text(`${vepStr} · Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm · ${profil.nb_traces} traces`,
+               PAD + 17, y + 14.5);
+
+      y += profH + 6;
     }
 
-    function ouvrirSimulation(id) {
-      window.location.href = `simulateur.html?sim_id=${id}`;
+    // ═══ GRAPHIQUE PROFIL DE COURSE ═══
+    const chartEl = document.getElementById('profilChart');
+    if (chartEl) {
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('PROFIL ALTIMÉTRIQUE — VITESSE PRÉDITE', PAD, y);
+      y += 3;
+
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'background:#131313;padding:8px;width:680px;';
+      const clone = chartEl.cloneNode(true);
+      // Ne change pas les couleurs : on garde le rendu sombre comme le site
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      const canvas = await html2canvas(wrapper, { backgroundColor: '#131313', scale: 2 });
+      document.body.removeChild(wrapper);
+
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = Math.min(45, (canvas.height * (W - 2*PAD)) / canvas.width);
+      pdf.addImage(imgData, 'PNG', PAD, y, W - 2*PAD, imgH);
+      y += imgH + 5;
     }
 
-    async function deleteSimulation(id) {
-      if (!confirm('Supprimer cette simulation épinglée ?')) return;
+    // ═══ SCORE DE PENTE + RÉPARTITION TERRAIN (2 colonnes) ═══
+    if (profil && profil.profil) {
+      const colWidth = (W - 2*PAD - 4) / 2;
+      const colH = 50;
+
+      // ── Score de pente (gauche) ──
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(PAD, y, colWidth, colH, 1.5, 1.5, 'F');
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('SCORE DE PENTE (VS PLAT)', PAD + 3, y + 5);
+
+      const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+      const labelsT = {
+        montee_raide: 'M. raide', montee_soutenue: 'M. soutenue', montee_douce: 'M. douce',
+        plat: 'Plat',
+        descente_douce: 'D. douce', descente_soutenue: 'D. soutenue', descente_raide: 'D. raide',
+      };
+
+      let lineY = y + 9;
+      const barX = PAD + 26;
+      const barW = colWidth - 38;
+      const barCenter = barX + barW / 2;
+
+      ordreT.forEach(t => {
+        const p = profil.profil[t];
+        if (!p) return;
+        const ecart = p.ecart_plat_pct || 0;
+        const isPlat = (t === 'plat');
+
+        // Label
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(labelsT[t], PAD + 3, lineY + 1.5);
+
+        // Track (gris)
+        pdf.setFillColor(...PDF_COLORS.bg3);
+        pdf.rect(barX, lineY - 0.5, barW, 1.5, 'F');
+
+        // Ligne centrale (0%)
+        pdf.setDrawColor(...PDF_COLORS.text3);
+        pdf.setLineWidth(0.4);
+        pdf.line(barCenter, lineY - 1.5, barCenter, lineY + 2);
+
+        if (!isPlat) {
+          const widthPct = Math.min(50, Math.abs(ecart));
+          const fillW = (widthPct / 100) * barW;
+          if (ecart >= 0) {
+            pdf.setFillColor(...PDF_COLORS.leaf);
+            pdf.rect(barCenter, lineY - 0.5, fillW, 1.5, 'F');
+          } else {
+            pdf.setFillColor(...PDF_COLORS.danger);
+            pdf.rect(barCenter - fillW, lineY - 0.5, fillW, 1.5, 'F');
+          }
+        }
+
+        // Valeur
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'bold');
+        if (isPlat) pdf.setTextColor(...PDF_COLORS.text3);
+        else if (ecart >= 0) pdf.setTextColor(...PDF_COLORS.leaf);
+        else pdf.setTextColor(...PDF_COLORS.danger);
+        const sign = ecart > 0 ? '+' : '';
+        const display = isPlat ? '0%' : `${sign}${ecart.toFixed(1)}%`;
+        pdf.text(display, PAD + colWidth - 3, lineY + 1.5, { align: 'right' });
+
+        lineY += 5.5;
+      });
+
+      // ── Répartition terrain (droite) ──
+      const cx2 = PAD + colWidth + 4;
+      pdf.setFillColor(...PDF_COLORS.bg2);
+      pdf.roundedRect(cx2, y, colWidth, colH, 1.5, 1.5, 'F');
+
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...PDF_COLORS.sun);
+      pdf.text('RÉPARTITION DU TEMPS', cx2 + 3, y + 5);
+
+      const rep = window.lastSimData?.repartition || {};
+      const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+      const terrainColors = {
+        montee_raide: PDF_COLORS.danger,
+        montee_soutenue: PDF_COLORS.warning,
+        montee_douce: PDF_COLORS.leaf,
+        plat: PDF_COLORS.sun,
+        descente_douce: PDF_COLORS.leaf,
+        descente_soutenue: PDF_COLORS.warning,
+        descente_raide: PDF_COLORS.danger,
+      };
+
+      let lineY2 = y + 9;
+      const repBarX = cx2 + 28;
+      const repBarW = colWidth - 50;
+
+      ordreT.forEach(t => {
+        const r = rep[t];
+        if (!r) return;
+
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(labelsT[t], cx2 + 3, lineY2 + 1.5);
+
+        // Track
+        pdf.setFillColor(...PDF_COLORS.bg3);
+        pdf.rect(repBarX, lineY2 - 0.5, repBarW, 1.5, 'F');
+
+        // Fill
+        const fillW = (r.pct / maxPct) * repBarW;
+        const col = terrainColors[t] || PDF_COLORS.sun;
+        pdf.setFillColor(...col);
+        pdf.rect(repBarX, lineY2 - 0.5, fillW, 1.5, 'F');
+
+        // %
+        pdf.setFontSize(6.5);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...PDF_COLORS.text);
+        pdf.text(`${r.pct}%`, cx2 + colWidth - 3, lineY2 + 1.5, { align: 'right' });
+
+        lineY2 += 5.5;
+      });
+
+      y += colH + 5;
+    }
+
+    // ═══ TABLEAU RAVITAILLEMENTS ═══
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.sun);
+    pdf.text('TEMPS DE PASSAGE AUX RAVITAILLEMENTS', PAD, y);
+    y += 3;
+
+    // Header tableau
+    pdf.setFillColor(...PDF_COLORS.bg3);
+    pdf.rect(PAD, y, W - 2*PAD, 5, 'F');
+    pdf.setFontSize(6.5);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...PDF_COLORS.text2);
+    const colsX = [PAD + 2, 45, 75, 105, 135, 175];
+    ['POINT', 'DISTANCE', 'TEMPS', 'TOP', 'DIFFICILE', 'BATTERIE'].forEach((h, i) => {
+      pdf.text(h, colsX[i], y + 3.5);
+    });
+    y += 5;
+
+    // Lignes
+    const rows = document.querySelectorAll('#ravitoBody tr');
+    pdf.setFont('helvetica', 'normal');
+    rows.forEach((row, i) => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length === 6) {
+        if (i % 2 === 0) {
+          pdf.setFillColor(...PDF_COLORS.bg2);
+          pdf.rect(PAD, y, W - 2*PAD, 4.5, 'F');
+        }
+        pdf.setFontSize(6.5);
+
+        // Couleur ligne (arrivée en doré)
+        const isArrivee = cells[0].textContent.includes('Arrivée');
+        if (isArrivee) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(...PDF_COLORS.sun);
+        } else {
+          pdf.setFont('helvetica', 'normal');
+          pdf.setTextColor(...PDF_COLORS.text);
+        }
+
+        pdf.text(cells[0].textContent.substring(0,18), colsX[0], y + 3);
+        pdf.text(cells[1].textContent, colsX[1], y + 3);
+
+        // Temps en doré
+        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.sun);
+        pdf.text(cells[2].textContent, colsX[2], y + 3);
+
+        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.text2);
+        pdf.text(cells[3].textContent, colsX[3], y + 3);
+        pdf.text(cells[4].textContent, colsX[4], y + 3);
+
+        // Batterie : couleur selon valeur
+        const battTxt = cells[5].textContent;
+        const battNum = parseInt(battTxt);
+        if (battNum < 20) pdf.setTextColor(...PDF_COLORS.danger);
+        else if (battNum < 50) pdf.setTextColor(...PDF_COLORS.warning);
+        else pdf.setTextColor(...PDF_COLORS.leaf);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(battTxt, colsX[5], y + 3);
+
+        y += 4.5;
+      }
+    });
+
+    // ═══ FOOTER ═══
+    const footerY = H - 8;
+    pdf.setFillColor(...PDF_COLORS.bg2);
+    pdf.rect(0, footerY - 3, W, 11, 'F');
+
+    // Ligne dégradée
+    const fcolors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
+    const fsegW = W / fcolors.length;
+    fcolors.forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(i * fsegW, footerY - 3, fsegW, 0.4, 'F');
+    });
+
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.text("SUM'IT — Plan your peaks", PAD, footerY + 3);
+    pdf.setTextColor(...PDF_COLORS.text2);
+    pdf.text('sumit-web-nine.vercel.app', W - PAD, footerY + 3, { align: 'right' });
+
+    // Save
+    const filename = `SUMIT_${prenom}_${nomCourse.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
+    pdf.save(filename);
+
+  } catch(err) {
+    console.error('Erreur PDF:', err);
+    alert('Erreur lors de la génération du PDF : ' + err.message);
+  } finally {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Télécharger en PDF';
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL AVIS
+// ══════════════════════════════════════════════════════════════
+const ratings = { ratingPred: '', ratingProfil: '' };
+
+function ouvrirModal()  { document.getElementById('modalAvis').classList.add('active'); }
+function fermerModal()  { document.getElementById('modalAvis').classList.remove('active'); }
+
+function selectRating(group, btn, val) {
+  ratings[group] = val;
+  document.querySelectorAll(`#${group} .rating-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function envoyerAvis() {
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Anonyme';
+
+  // Récupération des fonctionnalités cochées
+  const features = [];
+  document.querySelectorAll('#modalFeatures .checkbox-item.checked').forEach(el => {
+    features.push(el.textContent.trim());
+  });
+
+  const params = {
+    to_email:        'sup.sumit@outlook.com',
+    prenom:          prenom,
+    niveau:          'Bêta-testeur simulateur',
+    note_prediction: ratings.ratingPred  || 'Non noté',
+    note_profil:     ratings.ratingProfil|| 'Non noté',
+    fonctionnalites: features.length > 0 ? features.join(', ') : 'Aucune sélection',
+    commentaire:     document.getElementById('modalCommentaire').value || 'Aucun',
+    email_testeur:   document.getElementById('modalEmail').value      || 'Non renseigné',
+    date:            new Date().toLocaleDateString('fr-FR'),
+  };
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
+    .then(() => {
+      document.getElementById('formAvis').style.display    = 'none';
+      document.getElementById('successAvis').style.display = 'block';
+      setTimeout(fermerModal, 2500);
+    })
+    .catch(err => alert("Erreur d'envoi : " + err.message));
+}
+
+// ── Épingler la simulation actuelle ──────────────────────────────
+async function epinglerSimulationActuelle() {
+  if (!isLoggedIn()) {
+    alert('Connecte-toi pour épingler des simulations.');
+    return;
+  }
+  if (!window.lastSimData) {
+    alert('Lance une simulation avant.');
+    return;
+  }
+
+  const btn = document.getElementById('btnPin');
+
+  // Mode édition : on met à jour la sim existante
+  if (window.editingSimId) {
+    btn.disabled = true;
+    document.getElementById('btnPinLabel').textContent = 'Mise à jour...';
+    try {
+      await updateSimulation(window.editingSimId, window.lastSimData);
+      btn.classList.add('pinned');
+      document.getElementById('btnPinLabel').textContent = '✓ Mise à jour';
+      setTimeout(() => {
+        document.getElementById('btnPinLabel').textContent = '✓ Simulation à jour';
+      }, 1500);
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+      btn.disabled = false;
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+    }
+    return;
+  }
+
+  // Mode création : nouvelle sim épinglée
+  const nomDefault = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+  const nom = prompt('Nom de la simulation à épingler :', nomDefault);
+  if (!nom || !nom.trim()) return;
+
+  btn.disabled = true;
+  document.getElementById('btnPinLabel').textContent = 'Enregistrement...';
+
+  try {
+    const data = window.lastSimData;
+    const simPayload = {
+      distance_km:    data.distance_km,
+      dplus_m:        data.dplus_m,
+      dmoins_m:       data.dmoins_m,
+      dep_km:         data.dep_km,
+      temps_total_s:  data.temps_total_s,
+      temps_bas_s:    data.temps_bas_s,
+      temps_haut_s:   data.temps_haut_s,
+      temps_fmt:      data.temps_fmt,
+      bas_fmt:        data.bas_fmt,
+      haut_fmt:       data.haut_fmt,
+      allure_moy:     data.allure_moy,
+      categorie:      data.categorie,
+      batt_finale:    data.batt_finale,
+      coefficient_course: data.coefficient_course,
+      profil_chart:   data.profil_chart,
+      ravitos:        data.ravitos,
+      repartition:    data.repartition,
+      repartition_terrain_type: data.repartition_terrain_type,
+    };
+
+    // GPX en base64 (pour pouvoir recalculer plus tard)
+    let gpxBase64 = '';
+    if (gpxFile) {
       try {
-        await supprimerSimulation(id);
-        await refreshSimulations();
-        renderUI();
+        const arrBuf = await gpxFile.arrayBuffer();
+        const bytes = new Uint8Array(arrBuf);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        gpxBase64 = btoa(bin);
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        console.warn('Impossible d\'encoder le GPX :', e);
       }
     }
 
-    // ── Réglages ───────────────────────────────────────────────
-    async function sauvegarderReglages() {
-      const btn = document.getElementById('btnSave');
-      const feedback = document.getElementById('saveFeedback');
-      const prenom = document.getElementById('setPrenom').value.trim();
-      const fcmax  = parseInt(document.getElementById('setFcmax').value);
+    syncRavitos();
+    const ravitosKm = document.getElementById('ravitos')?.value || '';
 
-      if (!prenom) {
-        alert('Le prénom ne peut pas être vide');
-        return;
-      }
-      if (!fcmax || fcmax < 100 || fcmax > 250) {
-        alert('FC max doit être entre 100 et 250 bpm');
-        return;
-      }
+    const res = await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload, gpxBase64, ravitosKm);
 
-      btn.disabled = true;
-      btn.textContent = 'Enregistrement...';
+    // On bascule en mode édition (la sim existe maintenant)
+    window.editingSimId = res.simulation_id;
+    window.editingSimName = nom.trim();
+    afficherBandeauEdition();
 
-      try {
-        await updateSettings({ prenom, fcmax });
-        currentUser.prenom = prenom;
-        currentUser.fcmax = fcmax;
-        setCachedUser(currentUser);
+    btn.classList.add('pinned');
+    document.getElementById('btnPinLabel').textContent = '✓ Épinglée';
+    setTimeout(() => {
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+      btn.classList.remove('pinned');
+      btn.disabled = false;
+    }, 1500);
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+    btn.disabled = false;
+    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+  }
+}
+</script>
 
-        feedback.classList.add('show');
-        setTimeout(() => feedback.classList.remove('show'), 2000);
-      } catch (e) {
-        alert('Erreur : ' + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Enregistrer';
-      }
-    }
-
-    // ── Strava déconnexion ────────────────────────────────────
-    async function deconnecterStravaAction() {
-      if (!confirm('Déconnecter ton compte Strava ? Tes activités déjà importées seront conservées.')) return;
-      try {
-        await deconnecterStrava();
-        currentUser.strava_connected = false;
-        renderUI();
-        alert('✅ Strava déconnecté');
-      } catch (e) {
-        alert('Erreur : ' + e.message);
-      }
-    }
-
-    function escapeHTML(s) {
-      return String(s || '')
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;');
-    }
-
-  </script>
 </body>
 </html>
