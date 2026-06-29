@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compare ta performance réelle à ta prédiction SUM'IT. Analyse l'écart par ravitaillement et affine ton modèle course après course.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Bilan réel vs prédit">
+  <meta property="og:description" content="Compare ta performance réelle à ta prédiction SUM'IT. Analyse l'écart par ravitaillement et affine ton modèle course après course.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/bilan.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Bilan réel vs prédit">
+  <meta name="twitter:description" content="Compare ta performance réelle à ta prédiction SUM'IT. Analyse l'écart par ravitaillement et affine ton modèle course après course.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Bilan Réel vs Prédit</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
@@ -210,6 +222,17 @@
       letter-spacing: 0.04em;
     }
     .calibration-card p { color: var(--text-2); font-size: 13px; line-height: 1.55; margin-bottom: 20px; }
+    .calib-warn {
+      background: rgba(79, 163, 217, 0.08);
+      border: 1px solid rgba(79, 163, 217, 0.25);
+      border-radius: 7px;
+      padding: 12px 15px;
+      margin-bottom: 14px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-2);
+    }
+    .calib-warn strong { color: var(--sky); }
     .calib-values {
       display: flex; align-items: center; gap: 20px;
       margin-bottom: 22px;
@@ -491,7 +514,7 @@
       </div>
 
       <!-- Comparaison par ravito -->
-      <div class="bilan-section-title">📍 Analyse par point de passage <span class="info-i" data-tip="Pour chaque ravitaillement, on compare ton temps de passage prédit à ton temps réel. Vert = tu étais plus rapide que prévu, rouge = plus lent. La comparaison s'arrête au km commun aux deux parcours.">i</span></div>
+      <div class="bilan-section-title">📍 Analyse par point de passage <span class="info-i" data-tip="Pour chaque ravitaillement, on compare ton temps de passage prédit à ton temps réel. Vert = tu étais plus rapide que prévu, rouge = plus lent. La comparaison s'arrête au km commun aux deux parcours."></span></div>
       <div class="bilan-dist-warn" id="bilanDistWarn" style="display:none;"></div>
       <table class="ravito-compare-table">
         <thead>
@@ -509,7 +532,7 @@
 
       <!-- Calibration -->
       <div class="calibration-card" id="calibrationCard">
-        <h3>🎯 Ajustement suggéré du modèle <span class="info-i" data-tip="Le coefficient course traduit l'écart entre ton allure d'entraînement et ton allure en compétition. Si tu as été plus lent que prévu, on l'augmente pour des prédictions plus prudentes ; plus rapide, on le baisse. Tu gardes le contrôle : rien n'est appliqué sans ta validation.">i</span></h3>
+        <h3>🎯 Ajustement suggéré du modèle <span class="info-i" data-tip="Le coefficient course traduit l'écart entre ton allure d'entraînement et ton allure en compétition. Si tu as été plus rapide que prévu, on l'augmente pour des prédictions plus rapides ; plus lent, on le baisse. L'ajustement est volontairement amorti pour ne pas surréagir à une seule course. Rien n'est appliqué sans ta validation."></span></h3>
         <p id="calibText"></p>
         <div class="calib-values">
           <div class="calib-box">
@@ -534,7 +557,7 @@
       <div class="bilan-comment-section">
         <label class="bilan-comment-label">
           📝 Commentaire personnel
-          <span class="info-i" data-tip="Note le contexte de ta course : météo, état de forme, nutrition, technicité du terrain… Ça t'aidera à comprendre l'écart entre la prédiction et la réalité quand tu reliras ce bilan plus tard.">i</span>
+          <span class="info-i" data-tip="Note le contexte de ta course : météo, état de forme, nutrition, technicité du terrain… Ça t'aidera à comprendre l'écart entre la prédiction et la réalité quand tu reliras ce bilan plus tard."></span>
         </label>
         <textarea id="bilanCommentaire" class="bilan-comment-input" maxlength="2000"
           placeholder="Ex : Course très technique en descente, grosse chaleur l'après-midi, mauvaise gestion de la nutrition (pas assez bu avant le km 15)…"></textarea>
@@ -547,6 +570,14 @@
     </div>
   </div>
 </div>
+
+<footer class="footer">
+  <div>
+    <div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div>
+    <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
+  </div>
+  <div class="footer-copy">© 2026 SUM'IT</div>
+</footer>
 
 <script src="../js/api-client.js"></script>
 <script src="../js/nav-user.js"></script>
@@ -818,14 +849,22 @@
 
     const calibText = document.getElementById('calibText');
     const diff = calib.coef_suggere - calib.coef_actuel;
+
+    // Avertissement double-effet : la course est déjà dans le profil
+    const avertDouble = calib.resultat_dans_profil
+      ? `<div class="calib-warn">ℹ️ <strong>Cette course nourrit déjà ton profil.</strong> En l'important comme résultat, tes vitesses de référence se sont déjà ajustées automatiquement. Le coefficient ci-dessous est un réglage <em>complémentaire et optionnel</em> : applique-le seulement si tes prédictions restent décalées après plusieurs courses. <a href="profil.html" style="color:var(--sun);">Voir mon profil</a></div>`
+      : '';
+
     if (Math.abs(diff) < 0.005) {
-      calibText.innerHTML = `Ton modèle est <strong>déjà bien calibré</strong> pour ce type de course ! L'écart entre prédit et réel est minime. Aucun ajustement nécessaire.`;
+      calibText.innerHTML = avertDouble + `Ton modèle est <strong>déjà bien calibré</strong> pour ce type de course ! L'écart entre prédit et réel est minime. Aucun ajustement nécessaire.`;
       document.getElementById('btnAppliquer').disabled = true;
     } else if (diff > 0) {
-      calibText.innerHTML = `Tu as été <strong>plus lent</strong> que prévu sur cette course. Ton modèle sous-estime la difficulté réelle : augmenter ton coefficient course rendra tes prochaines prédictions plus prudentes (temps un peu plus longs).`;
+      // coef augmente → on a été plus rapide que prévu
+      calibText.innerHTML = avertDouble + `Tu as été <strong>plus rapide</strong> que prévu sur cette course. Ton modèle te <strong>sous-estimait</strong> : augmenter ton coefficient course (de ${calib.coef_actuel.toFixed(3)} à ${calib.coef_suggere.toFixed(3)}) rendra tes prochaines prédictions un peu plus rapides, pour mieux coller à ta vraie performance.`;
       document.getElementById('btnAppliquer').disabled = false;
     } else {
-      calibText.innerHTML = `Tu as été <strong>plus rapide</strong> que prévu ! Ton modèle surestime la difficulté : baisser ton coefficient course rendra tes prochaines prédictions plus optimistes (temps un peu plus courts).`;
+      // coef baisse → on a été plus lent que prévu
+      calibText.innerHTML = avertDouble + `Tu as été <strong>plus lent</strong> que prévu sur cette course. Ton modèle te <strong>surestimait</strong> : baisser ton coefficient course (de ${calib.coef_actuel.toFixed(3)} à ${calib.coef_suggere.toFixed(3)}) rendra tes prochaines prédictions un peu plus prudentes (temps légèrement plus longs).`;
       document.getElementById('btnAppliquer').disabled = false;
     }
 
