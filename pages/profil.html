@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ton profil de coureur SUM'IT : vitesses par type de terrain, archétype, score de pente. Construit automatiquement depuis tes activités GPS et Strava.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Mon profil de coureur">
+  <meta property="og:description" content="Ton profil de coureur SUM'IT : vitesses par type de terrain, archétype, score de pente. Construit automatiquement depuis tes activités GPS et Strava.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/profil.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Mon profil de coureur">
+  <meta name="twitter:description" content="Ton profil de coureur SUM'IT : vitesses par type de terrain, archétype, score de pente. Construit automatiquement depuis tes activités GPS et Strava.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Mon profil</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
@@ -118,6 +130,16 @@
     .import-card p {
       font-size: 12px;
       color: var(--text-3);
+    }
+    .import-trust {
+      font-size: 12px;
+      color: var(--text-3);
+      line-height: 1.5;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(107, 179, 107, 0.06);
+      border: 1px solid rgba(107, 179, 107, 0.2);
+      border-radius: 6px;
     }
     .strava-status {
       font-size: 11px;
@@ -1275,10 +1297,10 @@
   <!-- ══ Footer ══ -->
   <footer class="footer">
     <div>
-      <div class="footer-logo">SUM<span>'IT</span></div>
-      <div class="footer-sub">PLAN YOUR PEAKS</div>
+      <div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div>
+      <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
     </div>
-    <div class="footer-copy">© 2025 SUM'IT — Beta</div>
+    <div class="footer-copy">© 2026 SUM'IT</div>
   </footer>
 
   <script src="../js/api-client.js"></script>
@@ -1404,6 +1426,7 @@
               <p class="strava-status ${currentUser.strava_connected?'connected':''}">✓ Strava connecté</p>
             </div>
           </div>
+          <p class="import-trust">🔒 Tes données restent privées : SUM'IT lit uniquement tes activités pour construire ton profil de coureur. Aucune donnée n'est revendue ni partagée. Tu peux déconnecter Strava ou supprimer ton compte à tout moment.</p>
         </div>
 
         <!-- Liste activités -->
@@ -1466,7 +1489,7 @@
             <span style="font-size:38px;">${archIcon}</span>
           </div>
           <div class="archetype-info">
-            <h3>Ton archétype <span class="info-i" data-tip="Ton archétype résume ta signature de coureur : sur quels terrains tu excelles. Il est recalculé à chaque import et peut évoluer avec ta forme.">i</span></h3>
+            <h3>Ton archétype <span class="info-i" data-tip="Ton archétype résume ta signature de coureur : sur quels terrains tu excelles. Il est recalculé à chaque import et peut évoluer avec ta forme."></span></h3>
             <div class="archetype-name">${arch.nom || 'Combattant'}</div>
             <div class="archetype-desc">${arch.desc || 'Polyvalent, régulier sur tous les terrains.'}</div>
             <button class="btn-voir-archetypes" onclick="ouvrirModalArchetypes()">📖 Voir les 8 archétypes</button>
@@ -1475,7 +1498,7 @@
 
         <!-- Score de pente -->
         <div class="terrain-section">
-          <h3>Score de pente <span class="info-i" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % par rapport à ton allure sur le plat (référence 0%). Positif = tu es plus performant que sur le plat, négatif = moins.">i</span></h3>
+          <h3>Score de pente <span class="info-i" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % par rapport à ton allure sur le plat (référence 0%). Positif = tu es plus performant que sur le plat, négatif = moins."></span></h3>
           <p class="desc">Écart de performance par type de terrain par rapport à ton allure sur le plat (référence 0%).</p>
           ${renderScorePente(profilData)}
         </div>
