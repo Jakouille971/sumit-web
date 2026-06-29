@@ -2418,8 +2418,26 @@ def bilan_comparer(
     ).first()
     coef_actuel = float(profil.coefficient_course) if profil else 1.10
 
-    ratio = temps_reel / temps_predit if temps_predit > 0 else 1.0
-    coef_suggere = float(max(1.0, min(1.40, coef_actuel * ratio)))
+    # Le coefficient MULTIPLIE la vitesse dans la simulation :
+    #   coef plus grand  → vitesse plus haute → temps plus court (plus rapide)
+    #   coef plus petit  → vitesse plus basse → temps plus long  (plus lent)
+    #
+    # Si le réel est PLUS RAPIDE que le prédit (temps_reel < temps_predit),
+    # le modèle nous sous-estimait → il faut AUGMENTER le coefficient.
+    # Le bon facteur correctif est donc temps_predit / temps_reel.
+    ratio_brut = temps_predit / temps_reel if temps_reel > 0 else 1.0
+
+    # Bridage de l'ampleur : on n'applique qu'une correction PARTIELLE et bornée,
+    # pour éviter les sauts violents sur une seule course (qui peut être atypique).
+    # - on ne corrige que 50 % de l'écart observé (amortissement)
+    # - le coefficient ne peut pas bouger de plus de ±0.08 d'un coup
+    # - bornes absolues : 1.00 à 1.40
+    AMORTISSEMENT = 0.5
+    SAUT_MAX = 0.08
+    ratio_amorti = 1.0 + (ratio_brut - 1.0) * AMORTISSEMENT
+    coef_cible = coef_actuel * ratio_amorti
+    delta = max(-SAUT_MAX, min(SAUT_MAX, coef_cible - coef_actuel))
+    coef_suggere = float(max(1.0, min(1.40, coef_actuel + delta)))
 
     return {
         "simulation": {
@@ -2450,7 +2468,9 @@ def bilan_comparer(
         "calibration": {
             "coef_actuel": round(coef_actuel, 3),
             "coef_suggere": round(coef_suggere, 3),
-            "ratio": round(ratio, 3),
+            "ratio": round(ratio_brut, 3),
+            "ecart_significatif": abs(coef_suggere - coef_actuel) >= 0.005,
+            "resultat_dans_profil": (resultat.type_profil == sim.type_profil),
         },
     }
 
