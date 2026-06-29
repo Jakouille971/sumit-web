@@ -1,5 +1,4 @@
 /* ═══════════════════════════════════════════════════════════
-/* ═══════════════════════════════════════════════════════════
    SUM'IT v2.1 — Plan your peaks
    Style : Fond noir + topo réaliste + accents jaune→vert→bleu
    ═══════════════════════════════════════════════════════════ */
@@ -738,12 +737,17 @@ select option { background: var(--bg-2); color: var(--text); }
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--text);
+  display: flex;
+  align-items: flex-end;
 }
-.footer-logo span {
-  background: var(--gradient-summit);
-  -webkit-background-clip: text; background-clip: text;
-  color: transparent;
+.footer-logo .logo-tri {
+  width: 0.5em;
+  height: 0.62em;
+  margin: 0 0.06em 0.08em;
+  display: block;
 }
+.footer-logo .logo-sum,
+.footer-logo .logo-it { align-self: flex-end; }
 .footer-sub {
   font-size: 12px;
   color: var(--text-3);
@@ -862,15 +866,23 @@ select option { background: var(--bg-2); color: var(--text); }
   border: 1px solid rgba(255, 200, 87, 0.4);
   color: var(--sun);
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 0;            /* masque tout texte interne (évite "VEP globalei") */
   font-weight: 700;
-  font-style: italic;
   cursor: help;
   position: relative;
   vertical-align: middle;
-  margin-left: 5px;
+  margin-left: 6px;
   transition: all 0.15s;
   user-select: none;
+  flex-shrink: 0;
+}
+/* Le "i" est dessiné en CSS, pas pris dans le flux du texte */
+.info-i::before {
+  content: 'i';
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
 }
 .info-i:hover { background: rgba(255, 200, 87, 0.25); }
 
