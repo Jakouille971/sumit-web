@@ -58,11 +58,34 @@ async def options_handler(request: Request, path: str):
 #  CONSTANTES
 # ══════════════════════════════════════════════════════════════
 
-MINETTI_TABLE = {
-    -25:1.28,-20:1.17,-15:1.08,-10:1.03,
-    -5:0.95,0:1.00,5:1.22,10:1.58,
-    15:2.14,20:2.90,25:3.94
+# ══════════════════════════════════════════════════════════════
+#  FACTEUR D'ÉQUIVALENCE-PENTE (≠ Minetti pur)
+# ══════════════════════════════════════════════════════════════
+# Ce facteur convertit vitesse réelle ↔ vitesse-équivalente-plat :
+#   - à l'analyse : vep = vitesse_réelle × facteur
+#   - à la simulation : vitesse = vep / facteur
+#
+# ⚠️ Ce n'est PAS la courbe de coût énergétique de Minetti (2002).
+# C'est un facteur d'équivalence-EFFORT maison, inspiré de Minetti mais
+# volontairement divergent, qui combine deux réalités du trail :
+#   • en MONTÉE : coût métabolique (proche de Minetti, un peu amorti au-delà de +20%)
+#   • en DESCENTE : coût MUSCULAIRE/TECHNIQUE du freinage excentrique (quadriceps),
+#     pas le coût métabolique. C'est pourquoi la courbe descendante fait un "U" :
+#     descendre en pente douce (~-10%) coûte moins que le plat (creux à 0.80),
+#     mais la descente raide redevient coûteuse à cause du freinage et de la
+#     technique (remontée jusqu'à 1.12 à -25%), sans atteindre les valeurs
+#     extrêmes de l'ancienne table.
+#
+# Ces valeurs sont à recalibrer sur des splits réels (fichiers FIT avec
+# temps de passage par section) quand ils seront disponibles.
+FACTEUR_EQUIVALENCE_PENTE = {
+    -25:1.12,-20:1.00,-15:0.88,-10:0.80,
+    -5:0.85,0:1.00,5:1.40,10:1.90,
+    15:2.40,20:2.70,25:3.20
 }
+
+# Alias rétro-compatible (déprécié, à retirer après migration complète)
+MINETTI_TABLE = FACTEUR_EQUIVALENCE_PENTE
 
 VEP_MAX = {
     'montee_raide':12.0,'montee_soutenue':13.0,'montee_douce':14.0,
@@ -88,6 +111,10 @@ CATEGORIES = [
 
 POIDS_TYPE = {'course':1.00,'resultat':1.00,'rando':1.00,'entrainement':0.70,'sortie':0.40}
 DEMI_VIE   = 180
+
+# Bornes du coefficient course (source unique pour éviter les divergences)
+COEF_MIN = 1.00
+COEF_MAX = 1.40
 
 ZONES_FC = {
     1:{'min':0.00,'max':0.65,'drain_h':0.02},
@@ -117,21 +144,59 @@ def terrain(p):
     elif p>=-15:return 'descente_soutenue'
     else:      return 'descente_raide'
 
-def minetti(p):
+def gap_factor(p):
+    """
+    Facteur d'équivalence-pente (Grade Adjusted Pace maison) à la pente p (en %).
+    Interpole linéairement dans FACTEUR_EQUIVALENCE_PENTE.
+    Voir le commentaire de FACTEUR_EQUIVALENCE_PENTE : ce n'est pas du Minetti pur.
+    """
     pc=max(-25,min(25,p))
-    ks=sorted(MINETTI_TABLE.keys())
+    ks=sorted(FACTEUR_EQUIVALENCE_PENTE.keys())
     for i in range(len(ks)-1):
         p1,p2=ks[i],ks[i+1]
         if p1<=pc<=p2:
             t=(pc-p1)/(p2-p1)
-            return MINETTI_TABLE[p1]+t*(MINETTI_TABLE[p2]-MINETTI_TABLE[p1])
+            return FACTEUR_EQUIVALENCE_PENTE[p1]+t*(FACTEUR_EQUIVALENCE_PENTE[p2]-FACTEUR_EQUIVALENCE_PENTE[p1])
     return 1.0
 
+# Alias rétro-compatible (déprécié)
+minetti = gap_factor
+
+def facteur_endurance(dist_km):
+    """
+    Facteur d'endurance CONTINU en fonction de la distance (loi de puissance).
+    Remplace les anciens paliers discrets qui créaient une discontinuité
+    artificielle (~13 % de saut entre une course de 24 km et une de 26 km).
+
+    Calé sur les points de référence historiques :
+      12 km → ~1.19 | 37 km → ~0.96 | 65 km → ~0.87 | 100 km → ~0.79 | 160 km → ~0.72
+    Plus la distance est longue, plus le facteur baisse (gestion de l'effort,
+    ralentissement inévitable sur ultra).
+    """
+    d = max(3.0, min(300.0, float(dist_km)))
+    return 1.9220 * (d ** -0.1935)
+
 def categorie(dist_km):
+    """
+    Renvoie la catégorie de distance pour l'AFFICHAGE (nom + emoji) et le
+    facteur d'endurance CONTINU (plus de saut aux frontières).
+    Le champ 'facteur' est désormais calculé en continu via facteur_endurance().
+    """
+    # Nom/emoji pour l'affichage (les bornes ne servent qu'au libellé)
     for c in CATEGORIES:
-        if c['min']<=dist_km<c['max']:
-            return c
-    return CATEGORIES[-1]
+        if c['min'] <= dist_km < c['max']:
+            base = c
+            break
+    else:
+        base = CATEGORIES[-1]
+    # On renvoie une copie avec le facteur continu
+    return {
+        'nom': base['nom'],
+        'emoji': base['emoji'],
+        'min': base['min'],
+        'max': base['max'],
+        'facteur': round(facteur_endurance(dist_km), 4),
+    }
 
 def zone_fc(fc,fcmax):
     r=fc/fcmax
@@ -190,14 +255,33 @@ def charger_gpx(data_bytes, fcmax=193):
         )
 
     df['duree_s']=df['t'].diff().dt.total_seconds().fillna(0) if df['t'].notna().any() else 1.0
+
+    # ── Clamp de la distance à un plafond physique ──
+    # Un saut GPS (perte de signal, tunnel, réflexion) peut créer une distance
+    # aberrante entre deux points. Sans correction, elle pollue dist_cum (distance
+    # totale → temps prédit) ET la pente locale. On plafonne dist_m à la distance
+    # maximale physiquement possible : VIT_MAX_MS × dt (avec une marge).
+    VIT_MAX_MS = 8.0  # 8 m/s ≈ 28.8 km/h : vitesse de pointe plausible en trail/descente
+    if 'duree_s' in df.columns:
+        plafond = (df['duree_s'] * VIT_MAX_MS).clip(lower=0)
+        # Là où le temps est nul/inconnu, on garde un plafond large par défaut
+        plafond = plafond.replace(0, np.nan).fillna(df['dist_m'].median() * 3 if df['dist_m'].median() > 0 else 50)
+        df['dist_m'] = df['dist_m'].clip(upper=plafond)
+
     df['vit_kmh']=(df['dist_m']/df['duree_s'].replace(0,np.nan)*3.6).clip(0,40).fillna(0)
 
-    # ── Lissage altitude : double pass pour lisser les pics GPS ──
-    # 1ère passe : médiane sur 15 points (élimine les outliers ponctuels)
-    # 2ème passe : moyenne sur 30 points (lissage doux pour les pentes)
-    df['alt']=df['alt'].rolling(15,center=True,min_periods=1).median()
-    df['alt']=df['alt'].rolling(30,center=True,min_periods=1).mean()
+    # ── Lissage altitude : moins agressif pour préserver le D+ réel ──
+    # L'ancien double lissage médiane(15)+moyenne(30) écrasait les micro-reliefs
+    # et sous-estimait le D+ de 10-20 % vs le D+ officiel des courses.
+    # On garde une médiane courte (élimine les outliers GPS ponctuels) suivie
+    # d'une moyenne courte (lissage doux), ce qui conserve mieux le dénivelé réel.
+    df['alt']=df['alt'].rolling(7,center=True,min_periods=1).median()
+    df['alt']=df['alt'].rolling(11,center=True,min_periods=1).mean()
     df['dz']=df['alt'].diff().fillna(0)
+    # Seuil de bruit : on ignore les micro-variations < 0.5 m (bruit du capteur
+    # baro/GPS) pour ne pas gonfler artificiellement le D+, sans écraser le relief.
+    SEUIL_DZ = 0.5
+    df['dz']=df['dz'].where(df['dz'].abs() >= SEUIL_DZ, 0.0)
     df['dp']=df['dz'].clip(lower=0)
     df['dm']=df['dz'].clip(upper=0).abs()
 
@@ -216,7 +300,7 @@ def charger_gpx(data_bytes, fcmax=193):
     df['pente']=(df['dz']/df['dist_m'].replace(0,np.nan)*100).replace([np.inf,-np.inf],0).fillna(0).clip(-80,80)
     df['pente_l']=df['pente'].rolling(10,center=True).mean().fillna(df['pente'])
     df['terrain']=df['pente_l'].apply(terrain)
-    df['cm']=df['pente_l'].apply(minetti)
+    df['cm']=df['pente_l'].apply(gap_factor)
     df['vep']=(df['vit_kmh']*df['cm']).clip(0,20)
     df['vep']=df.apply(lambda r:min(r['vep'],VEP_MAX.get(r['terrain'],18)),axis=1)
     df['vep']=df['vep'].rolling(15,center=True,min_periods=1).mean()
@@ -340,7 +424,7 @@ def coeff_course(traces, cible=0.87):
 
     me=float(np.average(fe,weights=pe)) if fe else 0.75
     mc=float(np.average(fc_,weights=pc)) if fc_ else cible
-    c=float(max(1.05,min(1.30,mc/me if me>0 else 1.10)))
+    c=float(max(COEF_MIN,min(COEF_MAX,mc/me if me>0 else 1.10)))
 
     return {
         'coefficient':round(c,3),
@@ -837,6 +921,7 @@ def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
     """
     dep_tot=float(df['dep_m'].sum())
     dp_tot =float(df['dp_cum'].max())
+    dist_tot=float(df['dist_cum'].max()) if 'dist_cum' in df.columns else 0.0
     batt=100.0
     drain_s=drain_h/3600
     dep=0.0
@@ -853,13 +938,29 @@ def simuler(df, profil, drain_h, cat, coeff=1.0, types_terrain=None):
         vn=profil.get(tr,{}).get('vep_norm',REF_VEP.get(tr,7.0))
         vr=vn*cat['facteur']*coeff
 
-        # Fatigue mécanique non-linéaire
+        # ── Fatigue mécanique : 2 composantes combinées ──
+        # (a) Composante DÉNIVELÉ : la descente répétée détruit les quadriceps.
+        #     Pilotée par la fraction de D+ déjà parcourue.
         rd=float(row['dp_cum'])/dp_tot if dp_tot>0 else 0
         if rd <= 0.30:
-            cm = 1.0
+            cm_denivele = 1.0
         else:
             facteur = ((rd - 0.30) / 0.70) ** 1.5
-            cm = 1.0 - 0.13 * facteur
+            cm_denivele = 1.0 - 0.13 * facteur
+
+        # (b) Composante DISTANCE/DURÉE absolue : sur une longue course même
+        #     roulante (peu de D+), l'usure s'installe avec les kilomètres.
+        #     Effet quasi nul jusqu'à ~25 km, puis croissant. Plafonné à -10 %.
+        dist_cum_pt = float(row['dist_cum']) if 'dist_cum' in row else 0.0
+        if dist_cum_pt <= 25:
+            cm_distance = 1.0
+        else:
+            # Au-delà de 25 km, perte progressive : -10 % atteint vers ~120 km
+            frac_dist = min((dist_cum_pt - 25) / 95.0, 1.0)
+            cm_distance = 1.0 - 0.10 * (frac_dist ** 1.2)
+
+        # Combinaison multiplicative (les deux fatigues se cumulent)
+        cm = cm_denivele * cm_distance
 
         # Fatigue batterie non-linéaire
         br=batt/100
@@ -960,11 +1061,22 @@ async def analyser_profil(
     cc=coeff_course(traces)
     arch=archetype(profil, profil_type)
 
+    # Score d'endurance (0-100) : proxy basé sur la distance moyenne des sorties
+    # et l'économie énergétique (drain faible = meilleure endurance).
+    # Remplace l'ancienne valeur codée en dur (85).
+    dist_moy = float(np.mean([t.get('dist_km', 0) for t in traces])) if traces else 0
+    # Composante distance : 0 km → 30, 50+ km → 100 (plafonné)
+    score_dist = min(100, 30 + dist_moy * 1.4)
+    # Composante drain : drain bas (0.05/h) bonifie, drain haut (0.30/h) pénalise
+    score_drain = max(0, 100 - (drain * 100 * 2.5)) if drain else 70
+    endurance_score = int(round(0.6 * score_dist + 0.4 * score_drain))
+    endurance_score = max(0, min(100, endurance_score))
+
     return {
         "status":"ok","nb_traces":len(traces),"traces":traces,
         "profil":profil,"drain_moy_h":drain,
         "coefficient_course":cc,"archetype":arch,
-        "endurance_score":85,"erreurs":erreurs,"profil_type":profil_type,
+        "endurance_score":endurance_score,"erreurs":erreurs,"profil_type":profil_type,
     }
 
 
@@ -2437,7 +2549,7 @@ def bilan_comparer(
     ratio_amorti = 1.0 + (ratio_brut - 1.0) * AMORTISSEMENT
     coef_cible = coef_actuel * ratio_amorti
     delta = max(-SAUT_MAX, min(SAUT_MAX, coef_cible - coef_actuel))
-    coef_suggere = float(max(1.0, min(1.40, coef_actuel + delta)))
+    coef_suggere = float(max(COEF_MIN, min(COEF_MAX, coef_actuel + delta)))
 
     return {
         "simulation": {
@@ -2485,7 +2597,7 @@ def appliquer_calibration(
     """Applique le coefficient suggéré au profil (après validation utilisateur)."""
     if profil_type not in ("trail", "rando"):
         raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
-    if not (1.0 <= coef_suggere <= 1.40):
+    if not (COEF_MIN <= coef_suggere <= COEF_MAX):
         raise HTTPException(400, detail="Coefficient hors limites (1.0 - 1.40)")
 
     profil = db.query(Profile).filter(
