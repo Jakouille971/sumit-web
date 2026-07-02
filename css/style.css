@@ -617,6 +617,23 @@ select option { background: var(--bg-2); color: var(--text); }
   width: 150px;
   flex-shrink: 0;
 }
+.score-estime {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: rgba(244, 241, 232, 0.06);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+.score-bar.is-estime .score-fill { opacity: 0.45; }
 .score-track {
   flex: 1;
   height: 6px;
