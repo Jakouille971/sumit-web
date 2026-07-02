@@ -482,6 +482,47 @@
       transition: all 0.2s;
     }
     .btn-add-ravito:hover { border-color: var(--sun); color: var(--sun); }
+    /* ── Bouton démo CCC ── */
+    .demo-cta { margin-top: 16px; }
+    .demo-cta-or {
+      display: flex; align-items: center; gap: 12px;
+      margin: 4px 0 14px;
+    }
+    .demo-cta-or::before, .demo-cta-or::after {
+      content: ''; flex: 1; height: 1px; background: var(--line);
+    }
+    .demo-cta-or span {
+      font-size: 11px; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .btn-demo-ccc {
+      width: 100%;
+      display: flex; align-items: center; gap: 14px;
+      background: linear-gradient(135deg, rgba(255,200,87,0.10), rgba(79,163,217,0.08));
+      border: 1px solid rgba(255,200,87,0.35);
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .btn-demo-ccc:hover {
+      border-color: var(--sun);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .demo-ccc-emoji { font-size: 30px; flex-shrink: 0; }
+    .demo-ccc-text { display: flex; flex-direction: column; gap: 3px; }
+    .demo-ccc-text strong {
+      font-family: var(--font-display);
+      font-size: 15px; font-weight: 700; color: var(--text);
+      letter-spacing: 0.02em;
+    }
+    .demo-ccc-text small { font-size: 11.5px; color: var(--text-2); }
+    .demo-cta-note {
+      font-size: 11px; color: var(--text-3);
+      text-align: center; margin-top: 10px; line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -549,6 +590,18 @@
         <p style="font-size:11px;margin-top:3px;opacity:0.5;">fichier .gpx</p>
       </div>
       <input type="file" id="fileGPX" accept=".gpx" style="display:none">
+
+      <div class="demo-cta">
+        <div class="demo-cta-or"><span>ou</span></div>
+        <button type="button" class="btn-demo-ccc" onclick="lancerDemoCCC()">
+          <span class="demo-ccc-emoji">🏔️</span>
+          <span class="demo-ccc-text">
+            <strong>Essayer avec la CCC</strong>
+            <small>101 km · 6100 m D+ · Courmayeur → Chamonix</small>
+          </span>
+        </button>
+        <p class="demo-cta-note">Lance une simulation complète sans compte, avec un profil de coureur d'exemple.</p>
+      </div>
 
       <div class="file-detected" id="fileInfo">
         <div class="file-detected-name" id="fileName">—</div>
@@ -809,6 +862,86 @@ emailjs.init('rc324sv1XWdtOjTM6');
 
 // Variables globales
 let gpxFile = null;
+
+// ══ DÉMO : CCC de l'UTMB ══════════════════════════════════════
+// Profil de coureur d'exemple (intermédiaire-confirmé, légèrement grimpeur)
+// Permet de lancer une simulation complète sans compte ni import.
+async function lancerDemoCCC() {
+  const btn = document.querySelector('.btn-demo-ccc');
+  const txtOrig = btn ? btn.querySelector('.demo-ccc-text strong').textContent : '';
+  if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+             btn.querySelector('.demo-ccc-text strong').textContent = 'Chargement de la CCC…'; }
+
+  try {
+    // 1) Récupérer le GPX d'exemple et le transformer en File
+    const resGpx = await fetch('../data/ccc-utmb.gpx');
+    if (!resGpx.ok) throw new Error('GPX CCC introuvable');
+    const gpxText = await resGpx.text();
+    gpxFile = new File([gpxText], 'CCC-UTMB.gpx', { type: 'application/gpx+xml' });
+
+    // 2) Charger le profil de coureur d'exemple dans la session
+    const resProfil = await fetch('../data/profil-demo.json');
+    if (!resProfil.ok) throw new Error('Profil démo introuvable');
+    const profilDemo = await resProfil.json();
+    sessionStorage.setItem('sumit_profil', JSON.stringify({
+      profil:      profilDemo.profil,
+      drain_moy_h: profilDemo.drain_moy_h,
+      coefficient: profilDemo.coefficient,
+      archetype:   profilDemo.archetype,
+      fcmax:       profilDemo.fcmax,
+      prenom:      profilDemo.prenom,
+      nb_traces:   profilDemo.nb_traces,
+      vep_globale: profilDemo.vep_globale,
+      profil_type: profilDemo.profil_type,
+      is_demo:     true,
+      timestamp:   Date.now(),
+    }));
+
+    // 3) Afficher l'aperçu fichier + le profil dans la sidebar
+    if (document.getElementById('fileInfo')) {
+      document.getElementById('fileInfo').classList.add('show');
+      document.getElementById('fileName').textContent = 'CCC 2025 — UTMB';
+      document.getElementById('fileDist').textContent  = '~98 km';
+      document.getElementById('fileDplus').textContent = '~5900 m';
+      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = 'Ultra 🔴';
+    }
+    afficherProfilSidebar();
+
+    // 4) Pré-remplir les ravitos officiels de la CCC (km + noms)
+    const ravitosCCC = [
+      [14.5, 'Refuge Bertone'],
+      [27.0, 'Arnouvaz'],
+      [40.5, 'La Fouly'],
+      [53.0, 'Champex-Lac'],
+      [69.5, 'Trient'],
+      [80.5, 'Vallorcine'],
+    ];
+    const list = document.getElementById('ravitosList');
+    if (list) {
+      list.innerHTML = '';
+      ravitosCCC.forEach(([km, nom]) => list.appendChild(creerLigneRavito(km, nom, '')));
+      syncRavitos();
+    }
+
+    // 5) Nom de course (si champ présent)
+    if (document.getElementById('nomCourse')) {
+      document.getElementById('nomCourse').value = 'CCC — UTMB (démo)';
+    }
+
+    // 6) Lancer la simulation
+    if (btn) btn.querySelector('.demo-ccc-text strong').textContent = 'Simulation en cours…';
+    await lancerSimulation();
+
+  } catch (e) {
+    alert('Erreur lors du chargement de la démo : ' + e.message);
+  } finally {
+    if (btn) {
+      btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+      btn.querySelector('.demo-ccc-text strong').textContent = txtOrig || 'Essayer avec la CCC';
+    }
+  }
+}
+
 
 // ══ Gestion dynamique des ravitos / points d'intérêt ══════════
 let _ravitoSeq = 0;
@@ -1173,12 +1306,20 @@ function chargerFichier(file) {
 // ── Profil sidebar ─────────────────────────────────────────────────
 function afficherProfilSidebar() {
   const p = chargerProfil();
+  const descEl = document.querySelector('#dropzoneSim') ? document.querySelectorAll('.step-desc')[2] : null;
   if (p && p.profil) {
     // Utilise la même VEP globale que sur la page profil
     const vep = p.vep_globale ? p.vep_globale.toFixed(1) : '—';
     document.getElementById('profilVEP').textContent   = `${vep} km/h`;
     document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1)} %/h`;
     document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2)}`;
+    // Indiquer si c'est le profil d'exemple
+    const stepDescs = document.querySelectorAll('.step-desc');
+    if (stepDescs[2]) {
+      stepDescs[2].innerHTML = p.is_demo
+        ? '<span style="color:var(--sun);">⚡ Profil d\'exemple (démo)</span>'
+        : 'Issu de ton analyse GPX.';
+    }
   } else {
     document.getElementById('profilVEP').textContent   = '—';
     document.getElementById('profilDrain').textContent = '—';
