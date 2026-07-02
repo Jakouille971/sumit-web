@@ -331,8 +331,18 @@ def charger_gpx(data_bytes, fcmax=193):
         df.loc[df['vit_kmh'] > seuil_max, 'vit_kmh'] = np.nan
         df['vit_kmh'] = df['vit_kmh'].interpolate().fillna(v_med)
 
-    # Exclure arrêts (vitesse < 1 km/h pendant > 30 sec)
-    df=df[~((df['vit_kmh']<1.0)&(df['duree_s']>0))].copy()
+    # ── Distance cumulée totale : calculée AVANT tout filtrage ──
+    # ⚠️ Le filtre des arrêts (ci-dessous) retire des points, mais leur distance
+    # NE DOIT PAS disparaître du cumul (sinon la distance totale est sous-estimée,
+    # ~10 % de perte en trail où l'on passe beaucoup de temps sous 1 km/h en
+    # montée raide). On fige donc la distance cumulée réelle ici, sur tous les
+    # points, avant d'exclure les arrêts pour le calcul des allures.
+    df['dist_cum']=df['dist_m'].cumsum()/1000
+
+    # Exclure les arrêts UNIQUEMENT pour le calcul des allures/VEP (pas la distance).
+    # Un arrêt = vitesse < 1 km/h. On ne les retire pas du DataFrame (ça amputerait
+    # la distance) : on neutralise leur contribution aux allures en les marquant.
+    df['est_arret'] = (df['vit_kmh'] < 1.0) & (df['duree_s'] > 0)
 
     df['pente']=(df['dz']/df['dist_m'].replace(0,np.nan)*100).replace([np.inf,-np.inf],0).fillna(0).clip(-80,80)
     df['pente_l']=df['pente'].rolling(10,center=True).mean().fillna(df['pente'])
@@ -340,9 +350,12 @@ def charger_gpx(data_bytes, fcmax=193):
     df['cm']=df['pente_l'].apply(gap_factor)
     df['vep']=(df['vit_kmh']*df['cm']).clip(0,20)
     df['vep']=df.apply(lambda r:min(r['vep'],VEP_MAX.get(r['terrain'],18)),axis=1)
+    # Les points d'arrêt ne comptent pas dans le lissage des VEP (allure faussée)
+    df.loc[df['est_arret'], 'vep'] = np.nan
     df['vep']=df['vep'].rolling(15,center=True,min_periods=1).mean()
+    # Combler les NaN résiduels (arrêts en bord de série sans voisin valide)
+    df['vep']=df['vep'].ffill().bfill().fillna(0)
 
-    df['dist_cum']=df['dist_m'].cumsum()/1000
     df['t_h']=df['duree_s'].cumsum()/3600
     df['dep_m']=df['dist_m']*df['cm']
     df['dep_cum']=df['dep_m'].cumsum()/1000
