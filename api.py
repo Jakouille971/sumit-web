@@ -257,21 +257,24 @@ def charger_gpx(data_bytes, fcmax=193):
     a_timestamps = df['t'].notna().any()
     df['duree_s']=df['t'].diff().dt.total_seconds().fillna(0) if a_timestamps else 1.0
 
-    # ── Clamp de la distance à un plafond physique ──
-    # Un saut GPS (perte de signal, tunnel, réflexion) peut créer une distance
-    # aberrante entre deux points. Sans correction, elle pollue dist_cum (distance
-    # totale → temps prédit) ET la pente locale. On plafonne dist_m à la distance
-    # maximale physiquement possible : VIT_MAX_MS × dt.
+    # ── Correction des sauts GPS (distance aberrante ponctuelle) ──
+    # Un vrai saut GPS (perte de signal, réflexion) crée une distance ÉNORME et
+    # ponctuelle entre deux points (ex : 300 m d'un coup). On corrige uniquement
+    # ces outliers absolus, en remplaçant leur distance par la médiane locale.
     #
-    # ⚠️ On n'applique ce clamp QUE si la trace a de vrais timestamps. Pour une
-    # trace de PARCOURS (planification, sans <time>), duree_s vaut 1s par défaut
-    # et le plafond tronquerait à tort les points légitimement espacés (>8 m).
-    VIT_MAX_MS = 8.0  # 8 m/s ≈ 28.8 km/h : vitesse de pointe plausible en trail/descente
-    if a_timestamps:
-        plafond = (df['duree_s'] * VIT_MAX_MS).clip(lower=0)
-        # Là où le temps est nul (points dupliqués), on garde un plafond large
-        plafond = plafond.replace(0, np.nan).fillna(df['dist_m'].median() * 3 if df['dist_m'].median() > 0 else 50)
-        df['dist_m'] = df['dist_m'].clip(upper=plafond)
+    # ⚠️ On NE clampe PLUS sur la vitesse (dist ≤ 8 m/s × dt). C'était trop
+    # destructeur : certaines traces (parcours "Trace de Trail", exports avec
+    # timestamps artificiels) ont des temps faux mais des DISTANCES correctes.
+    # Clamper sur la vitesse tronquait alors ~9 % de la distance réelle. La
+    # distance parcourue est une donnée fiable qu'on préserve ; seuls les sauts
+    # géographiquement impossibles sont corrigés.
+    SEUIL_SAUT_M = 200.0  # au-delà de 200 m entre 2 points GPS = saut aberrant
+    med_dist = df['dist_m'][df['dist_m'] > 0].median()
+    if pd.notna(med_dist) and med_dist > 0:
+        sauts = df['dist_m'] > SEUIL_SAUT_M
+        if sauts.any():
+            # Remplace la distance des sauts par la médiane (déplacement typique)
+            df.loc[sauts, 'dist_m'] = med_dist
 
     df['vit_kmh']=(df['dist_m']/df['duree_s'].replace(0,np.nan)*3.6).clip(0,40).fillna(0)
 
