@@ -1,0 +1,73 @@
+{
+  "profil": {
+    "montee_raide": {
+      "vep_brute": 7.03,
+      "vep_norm": 7.4,
+      "dist_km": 45,
+      "cv": 0.09,
+      "ecart_plat_pct": -22.1,
+      "signe": ""
+    },
+    "montee_soutenue": {
+      "vep_brute": 7.5,
+      "vep_norm": 7.9,
+      "dist_km": 60,
+      "cv": 0.09,
+      "ecart_plat_pct": -16.8,
+      "signe": ""
+    },
+    "montee_douce": {
+      "vep_brute": 8.17,
+      "vep_norm": 8.6,
+      "dist_km": 70,
+      "cv": 0.09,
+      "ecart_plat_pct": -9.5,
+      "signe": ""
+    },
+    "plat": {
+      "vep_brute": 9.03,
+      "vep_norm": 9.5,
+      "dist_km": 40,
+      "cv": 0.09,
+      "ecart_plat_pct": 0.0,
+      "signe": "+"
+    },
+    "descente_douce": {
+      "vep_brute": 8.74,
+      "vep_norm": 9.2,
+      "dist_km": 55,
+      "cv": 0.09,
+      "ecart_plat_pct": -3.2,
+      "signe": ""
+    },
+    "descente_soutenue": {
+      "vep_brute": 7.69,
+      "vep_norm": 8.1,
+      "dist_km": 40,
+      "cv": 0.09,
+      "ecart_plat_pct": -14.7,
+      "signe": ""
+    },
+    "descente_raide": {
+      "vep_brute": 6.65,
+      "vep_norm": 7.0,
+      "dist_km": 30,
+      "cv": 0.09,
+      "ecart_plat_pct": -26.3,
+      "signe": ""
+    }
+  },
+  "drain_moy_h": 0.085,
+  "coefficient": 1.12,
+  "archetype": {
+    "key": "grimpeur",
+    "nom": "Le Grimpeur",
+    "desc": "Profil d'exemple : à l'aise en montée, c'est le terrain de jeu idéal pour la CCC."
+  },
+  "fcmax": 188,
+  "prenom": "Coureur démo",
+  "nb_traces": 12,
+  "vep_globale": 8.6,
+  "profil_type": "trail",
+  "is_demo": true
+}
