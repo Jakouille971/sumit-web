@@ -445,7 +445,26 @@
       color: var(--text);
       margin-bottom: 4px;
       letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+    .btn-recalc {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--line-2);
+      color: var(--text-3);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 5px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-recalc:hover:not(:disabled) { border-color: var(--sun); color: var(--sun); }
+    .btn-recalc:disabled { opacity: 0.6; cursor: default; }
     .terrain-section .desc {
       color: var(--text-3);
       font-size: 12px;
@@ -1498,7 +1517,7 @@
 
         <!-- Score de pente -->
         <div class="terrain-section">
-          <h3>Score de pente <span class="info-i" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % par rapport à ton allure sur le plat (référence 0%). Positif = tu es plus performant que sur le plat, négatif = moins."></span></h3>
+          <h3>Score de pente <span class="info-i" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % par rapport à ton allure sur le plat (référence 0%). Positif = tu es plus performant que sur le plat, négatif = moins. Les terrains marqués 'estimé' n'ont pas assez de données mesurées et sont déduits de ton niveau global."></span><button class="btn-recalc" onclick="forcerRecalcul()" title="Recalcule ton profil avec la dernière version de l'algorithme">↻ Recalculer</button></h3>
           <p class="desc">Écart de performance par type de terrain par rapport à ton allure sur le plat (référence 0%).</p>
           ${renderScorePente(profilData)}
         </div>
@@ -1542,6 +1561,7 @@
         if (!data) return;
         const ecart = data.ecart_plat_pct || 0;
         const isPlat = (t === 'plat');
+        const estime = data.estime === true;
         const widthPct = Math.min(50, Math.abs(ecart));
 
         let fillClass = 'positive';
@@ -1550,10 +1570,13 @@
         else if (ecart < 0) { fillClass = 'negative'; valClass = 'negative'; }
 
         const display = isPlat ? '0%' : `${ecart > 0 ? '+' : ''}${ecart.toFixed(1)}%`;
+        const labelExtra = estime
+          ? ` <span class="score-estime" title="Estimé : pas assez de données mesurées sur ce terrain. Importe une sortie avec ce type de pente pour affiner.">estimé</span>`
+          : '';
 
         html += `
-          <div class="score-bar">
-            <div class="score-label">${labels[t]}</div>
+          <div class="score-bar${estime ? ' is-estime' : ''}">
+            <div class="score-label">${labels[t]}${labelExtra}</div>
             <div class="score-track">
               ${isPlat ? '' : `<div class="score-fill ${fillClass}" style="width:${widthPct}%;"></div>`}
             </div>
@@ -1565,6 +1588,23 @@
     }
 
     // ── Tabs ────────────────────────────────────────────────────
+    async function forcerRecalcul() {
+      const btn = document.querySelector('.btn-recalc');
+      if (btn) { btn.disabled = true; btn.textContent = '↻ Recalcul…'; }
+      try {
+        await recalculerProfil(currentProfilType);
+        // Refetch les données utilisateur (le profil a changé côté serveur)
+        currentUser = await fetchMe();
+        renderUI();
+        await refreshActivites();
+        await refreshEvolution();
+        if (btn) { btn.textContent = '✓ À jour'; setTimeout(() => { btn.textContent = '↻ Recalculer'; btn.disabled = false; }, 2000); }
+      } catch (e) {
+        alert('Erreur lors du recalcul : ' + e.message);
+        if (btn) { btn.textContent = '↻ Recalculer'; btn.disabled = false; }
+      }
+    }
+
     async function switchTab(type) {
       currentProfilType = type;
       renderUI();
@@ -2562,6 +2602,7 @@
       window.deleteActivite          = deleteActivite;
       window.ouvrirDetailActivite    = ouvrirDetailActivite;
       window.ouvrirModalArchetypes   = ouvrirModalArchetypes;
+      window.forcerRecalcul          = forcerRecalcul;
       window.fermerModalArchetypes   = fermerModalArchetypes;
       window.fermerDetailActivite    = fermerDetailActivite;
       window.fermerEditActivite      = fermerEditActivite;
