@@ -874,13 +874,13 @@ async function lancerDemoCCC() {
 
   try {
     // 1) Récupérer le GPX d'exemple et le transformer en File
-    const resGpx = await fetch('../data/ccc-utmb.gpx');
+    const resGpx = await fetch('../assets/ccc-utmb.gpx');
     if (!resGpx.ok) throw new Error('GPX CCC introuvable');
     const gpxText = await resGpx.text();
     gpxFile = new File([gpxText], 'CCC-UTMB.gpx', { type: 'application/gpx+xml' });
 
     // 2) Charger le profil de coureur d'exemple dans la session
-    const resProfil = await fetch('../data/profil-demo.json');
+    const resProfil = await fetch('../assets/profil-demo.json');
     if (!resProfil.ok) throw new Error('Profil démo introuvable');
     const profilDemo = await resProfil.json();
     sessionStorage.setItem('sumit_profil', JSON.stringify({
