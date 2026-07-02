@@ -356,6 +356,12 @@ async function rebuildEvolution(profilType = 'trail') {
   return apiFetch(`/api/evolution/rebuild?profil_type=${profilType}`, { method: 'POST' });
 }
 
+async function recalculerProfil(profilType = 'trail') {
+  const fd = new FormData();
+  fd.append('profil_type', profilType);
+  return apiFetch('/api/profil/recalculer', { method: 'POST', body: fd });
+}
+
 // ── Bilan : Réel vs Prédit (#9) ──────────────────────────────
 async function getBilanCandidats() {
   return apiFetch('/api/bilan/candidats');
@@ -617,6 +623,7 @@ if (typeof window !== 'undefined') {
   // Évolution
   window.getEvolution          = getEvolution;
   window.rebuildEvolution      = rebuildEvolution;
+  window.recalculerProfil      = recalculerProfil;
   // Bilan (Réel vs Prédit)
   window.getBilanCandidats     = getBilanCandidats;
   window.comparerBilan         = comparerBilan;
