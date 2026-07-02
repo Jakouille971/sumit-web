@@ -254,17 +254,22 @@ def charger_gpx(data_bytes, fcmax=193):
             df.loc[i,'lat'],  df.loc[i,'lon']
         )
 
-    df['duree_s']=df['t'].diff().dt.total_seconds().fillna(0) if df['t'].notna().any() else 1.0
+    a_timestamps = df['t'].notna().any()
+    df['duree_s']=df['t'].diff().dt.total_seconds().fillna(0) if a_timestamps else 1.0
 
     # ── Clamp de la distance à un plafond physique ──
     # Un saut GPS (perte de signal, tunnel, réflexion) peut créer une distance
     # aberrante entre deux points. Sans correction, elle pollue dist_cum (distance
     # totale → temps prédit) ET la pente locale. On plafonne dist_m à la distance
-    # maximale physiquement possible : VIT_MAX_MS × dt (avec une marge).
+    # maximale physiquement possible : VIT_MAX_MS × dt.
+    #
+    # ⚠️ On n'applique ce clamp QUE si la trace a de vrais timestamps. Pour une
+    # trace de PARCOURS (planification, sans <time>), duree_s vaut 1s par défaut
+    # et le plafond tronquerait à tort les points légitimement espacés (>8 m).
     VIT_MAX_MS = 8.0  # 8 m/s ≈ 28.8 km/h : vitesse de pointe plausible en trail/descente
-    if 'duree_s' in df.columns:
+    if a_timestamps:
         plafond = (df['duree_s'] * VIT_MAX_MS).clip(lower=0)
-        # Là où le temps est nul/inconnu, on garde un plafond large par défaut
+        # Là où le temps est nul (points dupliqués), on garde un plafond large
         plafond = plafond.replace(0, np.nan).fillna(df['dist_m'].median() * 3 if df['dist_m'].median() > 0 else 50)
         df['dist_m'] = df['dist_m'].clip(upper=plafond)
 
@@ -278,12 +283,44 @@ def charger_gpx(data_bytes, fcmax=193):
     df['alt']=df['alt'].rolling(7,center=True,min_periods=1).median()
     df['alt']=df['alt'].rolling(11,center=True,min_periods=1).mean()
     df['dz']=df['alt'].diff().fillna(0)
-    # Seuil de bruit : on ignore les micro-variations < 0.5 m (bruit du capteur
-    # baro/GPS) pour ne pas gonfler artificiellement le D+, sans écraser le relief.
-    SEUIL_DZ = 0.5
-    df['dz']=df['dz'].where(df['dz'].abs() >= SEUIL_DZ, 0.0)
-    df['dp']=df['dz'].clip(lower=0)
-    df['dm']=df['dz'].clip(upper=0).abs()
+
+    # ── Comptage du D+/D- par HYSTÉRÉSIS (seuil cumulé, pas par point) ──
+    # ⚠️ NE PAS seuiller chaque dz individuellement : sur une trace enregistrée
+    # à 1 point/seconde, chaque montée légitime vaut ~0,2 m par point. Un seuil
+    # par point (dz >= 0,5 m) mettait alors 100 % des incréments à zéro et
+    # écrasait le D+ (bug : 1720 m → 8 m). On accumule donc la variation et on
+    # ne valide un gain/perte qu'une fois franchi un seuil cumulé (SEUIL_DZ),
+    # ce qui filtre le bruit du capteur SANS détruire le dénivelé réel.
+    SEUIL_DZ = 2.0  # mètres de variation cumulée avant de valider un segment
+    alt_vals = df['alt'].values
+    dp_arr = np.zeros(len(alt_vals))
+    dm_arr = np.zeros(len(alt_vals))
+    if len(alt_vals) > 1:
+        ref = alt_vals[0]          # altitude de référence du segment courant
+        sens = 0                   # +1 montée, -1 descente, 0 indéterminé
+        for i in range(1, len(alt_vals)):
+            delta = alt_vals[i] - ref
+            if sens >= 0 and delta >= SEUIL_DZ:
+                # On valide une montée cumulée
+                dp_arr[i] = delta
+                ref = alt_vals[i]; sens = 1
+            elif sens <= 0 and delta <= -SEUIL_DZ:
+                # On valide une descente cumulée
+                dm_arr[i] = -delta
+                ref = alt_vals[i]; sens = -1
+            elif (sens > 0 and delta < 0) or (sens < 0 and delta > 0):
+                # Changement de direction : on repart de ce point
+                ref = alt_vals[i-1]
+                # Réévalue immédiatement le delta depuis le nouveau ref
+                delta2 = alt_vals[i] - ref
+                if delta2 >= SEUIL_DZ:
+                    dp_arr[i] = delta2; ref = alt_vals[i]; sens = 1
+                elif delta2 <= -SEUIL_DZ:
+                    dm_arr[i] = -delta2; ref = alt_vals[i]; sens = -1
+                else:
+                    sens = 0
+    df['dp'] = dp_arr
+    df['dm'] = dm_arr
 
     # ── Filtrage outliers de vitesse (3 sigma) ──
     # Élimine les points avec une vitesse aberrante (perte GPS, tunnel...)
@@ -352,7 +389,11 @@ def analyser_trace(df, date0, type_sortie, fcmax, types_terrain=None):
     scores={}
     for t in ORDRE_TERRAINS:
         sub=df[df['terrain']==t]
-        if len(sub)<20: continue
+        # Seuil abaissé de 20 à 8 points : sur une sortie peu vallonnée, exiger
+        # 20 points par type de terrain écartait à tort les montées/descentes,
+        # ce qui faussait l'archétype (ex : "Descendeur" par défaut faute de
+        # données de montée). 8 points suffisent pour une médiane stable.
+        if len(sub)<8: continue
         vb=float(sub['vep'].median())
         vn=vb/cat['facteur']
         tr=[]
@@ -463,6 +504,37 @@ def agreger(traces):
             'f_basse':round(float(max(0.05,cm*0.8)),3),
             'f_haute':round(float(min(0.30,cm*1.2)),3),
         }
+
+    # ── Combler les terrains manquants par interpolation ──
+    # Si un type de terrain n'a aucune donnée (ex : aucune montée raide dans les
+    # traces), le laisser absent fausse l'archétype (qui ne "voit" alors que les
+    # terrains présents → bascule artificielle vers Descendeur/Grimpeur).
+    # On estime la VEP manquante depuis les terrains voisins via un facteur
+    # physiologique de référence (REF_VEP), pour garder un profil complet.
+    presents = [t for t in ORDRE_TERRAINS if t in profil]
+    if presents:
+        # Niveau global du coureur : ratio moyen entre sa VEP et la VEP de référence
+        ratios = []
+        for t in presents:
+            ref = REF_VEP.get(t, 7.5)
+            if ref > 0:
+                ratios.append(profil[t]['vep_norm'] / ref)
+        niveau = float(np.median(ratios)) if ratios else 1.0
+        # Moyenne des incertitudes pour les terrains comblés
+        cm_moy = float(np.mean([ (profil[t]['f_basse']+profil[t]['f_haute'])/2 for t in presents ]))
+
+        for t in ORDRE_TERRAINS:
+            if t not in profil:
+                # VEP estimée = niveau du coureur × VEP de référence du terrain
+                vep_est = round(REF_VEP.get(t, 7.5) * niveau, 2)
+                profil[t] = {
+                    'vep_norm': vep_est,
+                    'vep_std': 0.0,
+                    'nb_courses': 0,
+                    'f_basse': round(max(0.05, cm_moy*0.9), 3),
+                    'f_haute': round(min(0.35, cm_moy*1.4), 3),
+                    'estime': True,   # marqueur : valeur interpolée, pas mesurée
+                }
 
     # Étape 2 : score de pente = écart % vs VEP plat de l'utilisateur
     # Hypothèse : sur du plat, VEP_user ≈ vitesse réelle. Sur pente,
@@ -1896,6 +1968,23 @@ def delete_activity(
     _recalculer_profil_user(db, user, profil_type)
 
     return {"status": "ok"}
+
+
+@app.post("/api/profil/recalculer")
+def recalculer_profil(
+    profil_type: str = Form("trail"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Force le recalcul complet du profil (toutes les activités) pour un type donné.
+    Utile après une mise à jour de l'algorithme : applique les corrections aux
+    profils existants sans avoir à réimporter les activités.
+    """
+    if profil_type not in ("trail", "rando"):
+        raise HTTPException(400, detail="profil_type doit être 'trail' ou 'rando'")
+    _recalculer_profil_user(db, user, profil_type)
+    return {"status": "ok", "profil_type": profil_type}
 
 
 @app.post("/api/evolution/rebuild")
