@@ -3,19 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Gère ton compte SUM'IT, tes simulations épinglées et tes connexions Strava.">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="SUM'IT — Mon compte">
-  <meta property="og:description" content="Gère ton compte SUM'IT, tes simulations épinglées et tes connexions Strava.">
-  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/compte.html">
-  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
-  <meta property="og:site_name" content="SUM'IT">
-  <meta property="og:locale" content="fr_FR">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="SUM'IT — Mon compte">
-  <meta name="twitter:description" content="Gère ton compte SUM'IT, tes simulations épinglées et tes connexions Strava.">
-  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
-  <title>SUM'IT — Mon compte</title>
+  <title>Mon compte | SUM'IT</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="../css/style.css">
   <style>
@@ -333,29 +321,6 @@
     }
     .btn-delete-sim:hover { border-color: var(--danger); color: var(--danger); }
     .btn-delete-sim svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; }
-
-    .btn-open-sim {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--gradient-summit);
-      color: var(--bg);
-      font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 8px 14px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.2s;
-      margin-top: 14px;
-      width: 100%;
-      justify-content: center;
-    }
-    .btn-open-sim:hover { transform: translateY(-1px); opacity: 0.95; }
-    .btn-open-sim svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; }
     .sims-empty {
       grid-column: 1 / -1;
       text-align: center;
@@ -417,9 +382,9 @@
   <!-- ══ Nav ══ -->
   <nav class="nav">
     <a href="/" class="nav-logo">
-      <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
+      <div class="nav-logo-icon">S</div>
       <div class="nav-logo-text">
-        <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
+        <div class="nav-logo-name">SUM<span>'IT</span></div>
         <div class="nav-logo-sub">Plan your peaks</div>
       </div>
     </a>
@@ -449,15 +414,14 @@
   <!-- ══ Footer ══ -->
   <footer class="footer">
     <div>
-      <div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div>
-      <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
+      <div class="footer-logo">SUM<span>'IT</span></div>
+      <div class="footer-sub">PLAN YOUR PEAKS</div>
     </div>
-    <div class="footer-copy">© 2026 SUM'IT</div>
+    <div class="footer-copy">© 2025 SUM'IT — Beta</div>
   </footer>
 
   <script src="../js/api-client.js"></script>
   <script src="../js/nav-user.js"></script>
-  <script src="../js/onboarding.js"></script>
   <script>
 
     let currentUser = null;
@@ -655,17 +619,9 @@
               <span>${Math.round(s.dplus_m)} m D+</span>
             </div>
             <span class="sim-card-profile-tag ${profilType}">${profilType==='trail'?'🏃 Trail':'🥾 Rando'}</span>
-            <button class="btn-open-sim" onclick="ouvrirSimulation(${s.id})">
-              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-              Ouvrir dans le simulateur
-            </button>
           </div>
         `;
       }).join('');
-    }
-
-    function ouvrirSimulation(id) {
-      window.location.href = `simulateur.html?sim_id=${id}`;
     }
 
     async function deleteSimulation(id) {
