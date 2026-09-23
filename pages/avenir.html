@@ -3,55 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="La feuille de route de SUM'IT : les fonctionnalités en ligne et à venir pour les traileurs et randonneurs.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — À venir">
+  <meta property="og:description" content="La feuille de route de SUM'IT : les fonctionnalités en ligne et à venir pour les traileurs et randonneurs.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/avenir.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — À venir">
+  <meta name="twitter:description" content="La feuille de route de SUM'IT : les fonctionnalités en ligne et à venir pour les traileurs et randonneurs.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — À venir</title>
   <link rel="stylesheet" href="../css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
+    /* === Hero Roadmap : composant .page-hero commun, contenu centré === */
+    .coming-hero-bg { display: none; }
+    .coming-hero-content {
+      position: relative;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 var(--hero-pad);
+      text-align: center;
+      z-index: 2;
+    }
+    .coming-hero-content .section-tag { margin: 0 auto 24px; }
+    .coming-hero-content h1 {
+      font-family: var(--font-hero);
+      font-size: clamp(56px, 8vw, 118px);
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      line-height: 0.88;
+      margin-bottom: 24px;
+      text-wrap: balance;
+    }
+    .coming-hero-content h1 em { font-style: normal; color: inherit; background: none; -webkit-background-clip: initial; background-clip: initial; }
+    .coming-hero-content p {
+      font-size: 17px;
+      color: var(--text-2);
+      line-height: 1.65;
+      max-width: 60ch;
+      margin: 0 auto 32px;
+    }
+
+    /* === Notification email === */
+    .notify-wrap {
+      display: flex;
+      gap: 10px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .notify-wrap input {
+      flex: 1;
+      padding: 14px 16px;
+    }
+    .notify-wrap button {
+      background: var(--sun);
+      color: var(--ink);
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.005em;
+      text-transform: none;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+      white-space: nowrap;
+    }
+    .notify-wrap button:hover { transform: translateY(-1px); opacity: 0.95; }
+    .notify-success {
+      display: none;
+      max-width: 480px;
+      margin: 16px auto 0;
+      padding: 14px 18px;
+      background: var(--leaf-soft);
+      border: 1px solid rgba(107, 179, 107, 0.3);
+      border-radius: 4px;
+      color: var(--leaf);
+      font-size: 14px;
+      text-align: center;
+    }
+    .notify-success.active { display: block; }
+
+    /* === Roadmap timeline === */
+    .roadmap-section {
+      padding: 100px 80px;
+      max-width: 1280px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 2;
+    }
+    .roadmap-inner { max-width: 1100px; margin: 0 auto; }
+
     body { padding-top: 64px; }
 
     /* ── Hero plein écran avec montagnes ── */
-    .coming-hero {
-      position: relative;
-      overflow: hidden;
-      min-height: 420px;
-      display: flex;
-      align-items: flex-end;
-    }
+    
 
-    .coming-hero-bg {
-      position: absolute; inset: 0;
-      background: linear-gradient(160deg, #1B3D5E 0%, #0D2A40 40%, #091820 100%);
-    }
+    
 
-    .coming-hero-bg::after {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 60% 35%, rgba(0,200,224,0.06) 0%, transparent 60%),
-                  radial-gradient(ellipse at 20% 70%, rgba(17,34,54,0.8) 0%, transparent 50%);
-    }
+    
 
-    .coming-hero-mountain { position: absolute; bottom: 0; left: 0; right: 0; }
+    
 
-    .coming-hero-content {
-      position: relative; z-index: 2;
-      padding: 0 80px 60px; max-width: 700px;
-    }
+    
 
-    .coming-hero h1 {
-      font-family: var(--font-display);
-      font-size: clamp(42px, 6vw, 72px);
-      font-weight: 500;
-      color: var(--white);
-      line-height: 1.0;
-      letter-spacing: -0.01em;
-      margin-bottom: 16px;
-    }
-    .coming-hero h1 em { color: var(--cyan); font-style: normal; display: block; }
+    
+    
 
-    .coming-hero p {
-      font-size: 15px; font-weight: 300;
-      color: var(--mist); line-height: 1.7;
-      max-width: 480px; margin-bottom: 32px;
-    }
+    
 
     /* ── Notification email ── */
     .notify-wrap {
@@ -59,13 +124,13 @@
     }
     .notify-wrap input {
       flex: 1; border-right: none;
-      font-family: var(--font-body);
+      font-family: 'Inter', sans-serif;
     }
     .notify-wrap button {
-      background: var(--cyan); color: var(--navy);
-      font-family: var(--font-display); font-size: 11px;
-      font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
-      padding: 0 22px; border: none; cursor: pointer; white-space: nowrap;
+      background: var(--sun); color: var(--ink);
+      font-family: var(--font-display); font-size: 16px;
+      font-weight: 700; letter-spacing: 0.005em; text-transform: none;
+      padding: 0 22px; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;
       transition: opacity 0.2s;
     }
     .notify-wrap button:hover { opacity: 0.88; }
@@ -73,15 +138,15 @@
     .notify-success {
       display: none;
       font-family: var(--font-display);
-      font-size: 13px; color: var(--green);
+      font-size: 13px; color: var(--leaf);
       letter-spacing: 0.06em; margin-top: 10px;
     }
 
     /* ── Roadmap ── */
     .roadmap-section {
       padding: 80px;
-      background: var(--navy2);
-      border-top: 0.5px solid var(--border);
+      background: var(--bg-2);
+      border-top: 1px solid var(--line);
     }
 
     .roadmap-inner { max-width: 1120px; margin: 0 auto; }
@@ -98,7 +163,7 @@
       left: 28px;
       top: 0; bottom: 0;
       width: 0.5px;
-      background: var(--border);
+      background: var(--line);
     }
 
     .roadmap-version {
@@ -116,8 +181,8 @@
     .version-dot {
       width: 56px;
       height: 56px;
-      border: 0.5px solid var(--cyan);
-      background: var(--navy2);
+      border: 1px solid var(--sun);
+      background: var(--bg-2);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -126,24 +191,24 @@
       z-index: 1;
     }
 
-    .version-dot.gold { border-color: var(--gold); }
-    .version-dot.slate { border-color: var(--slate); }
+    .version-dot.gold { border-color: var(--sun); }
+    .version-dot.slate { border-color: var(--text-2); }
 
     .version-dot-text {
       font-family: var(--font-display);
       font-size: 16px;
       font-weight: 500;
-      color: var(--cyan);
+      color: var(--sun);
       letter-spacing: 0.06em;
     }
-    .version-dot.gold  .version-dot-text { color: var(--gold); }
-    .version-dot.slate .version-dot-text { color: var(--slate); }
+    .version-dot.gold  .version-dot-text { color: var(--sun); }
+    .version-dot.slate .version-dot-text { color: var(--text-2); }
 
     .version-info h3 {
       font-family: var(--font-display);
       font-size: 22px;
       font-weight: 500;
-      color: var(--white);
+      color: var(--text);
       letter-spacing: 0.02em;
       margin-bottom: 4px;
     }
@@ -151,7 +216,7 @@
     .version-subtitle {
       font-size: 13px;
       font-weight: 300;
-      color: var(--slate);
+      color: var(--text-2);
     }
 
     .version-tag {
@@ -160,12 +225,12 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       padding: 3px 10px;
-      border: 0.5px solid;
+      border: 1px solid;
       margin-left: 12px;
     }
-    .tag-current  { border-color: var(--cyan);  color: var(--cyan);  }
-    .tag-soon     { border-color: var(--gold);  color: var(--gold);  }
-    .tag-future   { border-color: var(--slate); color: var(--slate); }
+    .tag-current  { border-color: var(--sun);  color: var(--sun);  }
+    .tag-soon     { border-color: var(--sun);  color: var(--sun);  }
+    .tag-future   { border-color: var(--text-2); color: var(--text-2); }
 
     /* Cards features */
     .features-grid {
@@ -176,59 +241,91 @@
     }
 
     .feature-card {
-      background: var(--navy3);
-      border: 0.5px solid var(--border);
-      padding: 20px 22px;
-      transition: border-color 0.2s;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
     }
-    .feature-card:hover { border-color: var(--border2); }
-    .feature-card.cyan-card  { border-left: 2px solid var(--cyan);  }
-    .feature-card.gold-card  { border-left: 2px solid var(--gold);  }
-    .feature-card.slate-card { border-left: 2px solid var(--slate); }
+    .feature-card:hover { border-color: var(--line-2); transform: translateY(-2px); }
+    .feature-card.cyan-card  { border-left: 3px solid var(--sun);  }
+    .feature-card.gold-card  { border-left: 3px solid var(--leaf);  }
+    .feature-card.slate-card { border-left: 3px solid var(--sky); }
+
+    /* Lueur décorative en haut à droite */
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .cyan-card::before { background: radial-gradient(circle, rgba(255, 200, 87, 0.10) 0%, transparent 70%); }
+    .gold-card::before { background: radial-gradient(circle, rgba(107, 179, 107, 0.10) 0%, transparent 70%); }
+    .slate-card::before { background: radial-gradient(circle, rgba(79, 163, 217, 0.10) 0%, transparent 70%); }
 
     .feature-card-tag {
       font-family: var(--font-display);
       font-size: 10px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 10px;
+      letter-spacing: 0.16em;
+      margin-bottom: 18px;
+      position: relative; z-index: 1;
     }
-    .cyan-card  .feature-card-tag { color: var(--cyan);  }
-    .gold-card  .feature-card-tag { color: var(--gold);  }
-    .slate-card .feature-card-tag { color: var(--slate); }
+    .cyan-card  .feature-card-tag { color: var(--sun);  }
+    .gold-card  .feature-card-tag { color: var(--leaf);  }
+    .slate-card .feature-card-tag { color: var(--sky); }
 
     .feature-card-icon {
-      width: 36px; height: 36px;
-      border: 0.5px solid var(--border);
+      width: 56px; height: 56px;
+      border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 14px;
-      background: rgba(255,255,255,0.02);
+      margin-bottom: 20px;
+      position: relative; z-index: 1;
     }
-    .feature-card-icon svg { width: 18px; height: 18px; fill: none; stroke-width: 1.5; }
-    .cyan-card  .feature-card-icon svg { stroke: var(--cyan);  }
-    .gold-card  .feature-card-icon svg { stroke: var(--gold);  }
-    .slate-card .feature-card-icon svg { stroke: var(--slate); }
+    .cyan-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(255, 200, 87, 0.22) 0%, rgba(255, 200, 87, 0.05) 100%);
+      border: 1px solid rgba(255, 200, 87, 0.35);
+    }
+    .gold-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(107, 179, 107, 0.22) 0%, rgba(107, 179, 107, 0.05) 100%);
+      border: 1px solid rgba(107, 179, 107, 0.35);
+    }
+    .slate-card .feature-card-icon {
+      background: linear-gradient(135deg, rgba(79, 163, 217, 0.22) 0%, rgba(79, 163, 217, 0.05) 100%);
+      border: 1px solid rgba(79, 163, 217, 0.35);
+    }
+    .feature-card-icon svg { width: 26px; height: 26px; fill: none; stroke-width: 1.8; }
+    .cyan-card  .feature-card-icon svg { stroke: var(--sun);  }
+    .gold-card  .feature-card-icon svg { stroke: var(--leaf);  }
+    .slate-card .feature-card-icon svg { stroke: var(--sky); }
 
     .feature-card h4 {
       font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 8px;
-      letter-spacing: 0.02em;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: 0.01em;
+      position: relative; z-index: 1;
     }
 
     .feature-card p {
       font-size: 13px;
-      font-weight: 300;
-      color: var(--slate);
-      line-height: 1.65;
+      font-weight: 400;
+      color: var(--text-2);
+      line-height: 1.7;
+      position: relative; z-index: 1;
     }
 
     /* ── CTA final ── */
     .cta-section {
-      background: var(--navy3);
-      border-top: 0.5px solid var(--border);
+      background: var(--bg-3);
+      border-top: 1px solid var(--line);
       padding: 80px;
       text-align: center;
     }
@@ -237,22 +334,22 @@
       font-family: var(--font-display);
       font-size: 36px;
       font-weight: 500;
-      color: var(--white);
+      color: var(--text);
       margin-bottom: 12px;
       letter-spacing: 0.02em;
     }
-    .cta-section h2 em { color: var(--cyan); font-style: normal; }
+    .cta-section h2 em { color: var(--sun); font-style: normal; }
 
     .cta-section p {
       font-size: 15px;
       font-weight: 300;
-      color: var(--slate);
+      color: var(--text-2);
       margin-bottom: 32px;
       line-height: 1.7;
     }
 
     @media (max-width: 900px) {
-      .coming-hero-content { padding: 0 24px 48px; }
+      
       .roadmap-section { padding: 48px 24px; }
       .features-grid { grid-template-columns: 1fr; margin-left: 44px; }
       .roadmap-timeline::before { left: 20px; }
@@ -261,13 +358,13 @@
     }
   </style>
 </head>
-<body>
+<body data-page="avenir">
 
 <nav class="nav">
   <a href="../index.html" class="nav-logo">
-    <div class="nav-logo-icon">S</div>
+    <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
     <div class="nav-logo-text">
-      <div class="nav-logo-name">SUM<span>'IT</span></div>
+      <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
       <div class="nav-logo-sub">Plan your peaks</div>
     </div>
   </a>
@@ -281,88 +378,11 @@
 </nav>
 
 <!-- ══ HERO ══ -->
-<div class="coming-hero">
+<div class="page-hero coming-hero">
   <div class="coming-hero-bg"></div>
 
   <!-- Montagnes style illustration -->
-  <svg class="coming-hero-mountain" viewBox="0 0 1440 320"
-       xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax meet"
-       style="display:block; width:100%; height:320px;">
-    <defs>
-      <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#2A4A6A" stop-opacity="0.5"/>
-        <stop offset="100%" stop-color="#1A3050" stop-opacity="0.7"/>
-      </linearGradient>
-      <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1E3D5C" stop-opacity="0.8"/>
-        <stop offset="100%" stop-color="#132840" stop-opacity="0.95"/>
-      </linearGradient>
-      <linearGradient id="cg3" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0E2030" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="#091820" stop-opacity="1"/>
-      </linearGradient>
-      <linearGradient id="cgsnow" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#C8DCE8" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#2A4A6A" stop-opacity="0"/>
-      </linearGradient>
-      <linearGradient id="cgfade" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0D1B2A" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
-      </linearGradient>
-    </defs>
-
-    <!-- Couche lointaine -->
-    <path d="M0,320 L0,180 C120,155 240,165 360,145 C480,125 600,108 720,102
-             C840,96 960,112 1080,98 C1200,84 1320,70 1440,75 L1440,320 Z"
-          fill="url(#cg1)"/>
-
-    <!-- Couche intermédiaire -->
-    <path d="M0,320 L0,220 C80,205 160,215 240,198 C320,181 400,162 480,155
-             C560,148 640,165 720,155 C800,145 880,128 960,122
-             C1040,116 1120,130 1200,122 C1280,114 1360,100 1440,96
-             L1440,320 Z"
-          fill="url(#cg2)"/>
-    <ellipse cx="720" cy="152" rx="50" ry="20" fill="url(#cgsnow)" opacity="0.45"/>
-    <ellipse cx="960" cy="120" rx="40" ry="16" fill="url(#cgsnow)" opacity="0.4"/>
-
-    <!-- Couche sapins -->
-    <path d="M0,320 L0,258 C60,245 120,252 180,242 C240,232 300,218 360,212
-             C420,206 480,218 540,210 C600,202 660,188 720,182
-             C780,176 840,190 900,182 C960,174 1020,160 1080,155
-             C1140,150 1200,162 1260,156 C1320,150 1380,138 1440,135
-             L1440,320 Z"
-          fill="url(#cg3)"/>
-
-    <!-- Sapins silhouette -->
-    <g fill="#060F18" opacity="0.95">
-      <polygon points="40,258  48,238  56,258"/>
-      <polygon points="55,260  65,236  75,260"/>
-      <polygon points="75,256  88,230  101,256"/>
-      <polygon points="105,258 120,232 135,258"/>
-      <polygon points="140,254 158,226 176,254"/>
-      <polygon points="182,256 203,228 224,256"/>
-      <polygon points="232,252 256,222 280,252"/>
-      <polygon points="290,254 318,223 346,254"/>
-      <polygon points="358,250 390,218 422,250"/>
-      <polygon points="432,252 468,219 504,252"/>
-      <polygon points="516,248 556,214 596,248"/>
-      <polygon points="608,250 652,215 696,250"/>
-      <polygon points="710,246 758,210 806,246"/>
-      <polygon points="820,248 872,212 924,248"/>
-      <polygon points="938,244 994,207 1050,244"/>
-      <polygon points="1065,246 1125,208 1185,246"/>
-      <polygon points="1200,242 1264,204 1328,242"/>
-      <polygon points="1340,244 1390,210 1440,244"/>
-    </g>
-
-    <!-- Avant-plan très sombre -->
-    <path d="M0,320 L0,290 C120,278 240,284 360,279 C480,274 600,265 720,262
-             C840,259 960,268 1080,264 C1200,260 1320,250 1440,248
-             L1440,320 Z"
-          fill="#060F18" opacity="0.98"/>
-
-    <rect x="0" y="268" width="1440" height="52" fill="url(#cgfade)"/>
-  </svg>
+  
 
   <div class="coming-hero-content">
     <div class="section-tag" style="margin-bottom:20px;">Roadmap SUM'IT</div>
@@ -396,7 +416,7 @@
 
     <div class="roadmap-timeline">
 
-      <!-- ══ V1 — ACTUELLE ══ -->
+      <!-- ══ V1 — EN LIGNE ══ -->
       <div class="roadmap-version">
         <div class="version-header">
           <div class="version-dot">
@@ -407,7 +427,7 @@
               Fondations
               <span class="version-tag tag-current">En ligne</span>
             </h3>
-            <div class="version-subtitle">L'algorithme de base — profil coureur et simulation de course</div>
+            <div class="version-subtitle">L'algorithme de base — profil coureur, simulation et imports</div>
           </div>
         </div>
         <div class="features-grid">
@@ -417,7 +437,7 @@
               <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <h4>Analyse GPX multi-traces</h4>
-            <p>Import de tes traces Garmin, Strava ou Komoot. Calcul de la VEP par terrain avec le modèle Minetti.</p>
+            <p>Import de tes traces avec calcul de la VEP par terrain via un modèle d'équivalence-pente inspiré de Minetti, et pondération par catégorie de course.</p>
           </div>
           <div class="feature-card cyan-card">
             <div class="feature-card-tag">Profil</div>
@@ -425,7 +445,7 @@
               <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
             <h4>Archétype coureur</h4>
-            <p>Grimpeur, Descendeur, Explosif, Équilibré, Tenace — ton profil type avec forces et axes de progression.</p>
+            <p>Grimpeur, Descendeur, Explosif, Équilibré, Tenace — ton profil type avec score de pente détaillé.</p>
           </div>
           <div class="feature-card cyan-card">
             <div class="feature-card-tag">Simulation</div>
@@ -436,33 +456,57 @@
             <p>Prédiction des temps de passage aux ravitaillements avec fourchette basse/haute et batterie énergétique.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Algorithme</div>
+            <div class="feature-card-tag">Comptes</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
-            <h4>Modèle fatigue FC</h4>
-            <p>Coefficient course/entraînement calibré sur ta fréquence cardiaque réelle. Fatigue mécanique + batterie.</p>
+            <h4>Compte Google + persistance</h4>
+            <p>Connexion sécurisée avec Google. Ton profil trail/rando est sauvegardé et restauré à chaque visite.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Graphique</div>
+            <div class="feature-card-tag">Import</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
             </div>
-            <h4>Profil de course coloré</h4>
-            <p>Graphique altimétrique coloré par allure, avec bulles ravitaillement et zones de difficulté.</p>
+            <h4>Import GPX & Strava</h4>
+            <p>Dropzone fichier GPX classique ou connexion directe à ton compte Strava avec recherche et filtres avancés.</p>
           </div>
           <div class="feature-card cyan-card">
-            <div class="feature-card-tag">Profil</div>
+            <div class="feature-card-tag">PDF</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             </div>
-            <h4>Double profil Trail / Rando</h4>
-            <p>Un profil trail running et un profil randonnée distincts, avec paramètres adaptés à chaque pratique.</p>
+            <h4>Export PDF</h4>
+            <p>Rapport complet de ta simulation avec graphique altimétrique, ravitos, profil coureur — à imprimer ou partager.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Simu</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <h4>Simulations épinglées</h4>
+            <p>Sauvegarde tes simulations importantes, ré-ouvre-les pour les recalculer avec ton profil mis à jour.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Terrain</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2l-7 11h14L12 2zM12 13l-7 9h14l-7-9z"/></svg>
+            </div>
+            <h4>Technicité OpenStreetMap</h4>
+            <p>Classification automatique du terrain (route, piste, sentier, montagne) affichée dans la tooltip du graphique.</p>
+          </div>
+          <div class="feature-card cyan-card">
+            <div class="feature-card-tag">Tour</div>
+            <div class="feature-card-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.6-8 11.6z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <h4>Onboarding guidé</h4>
+            <p>Un tour en 5 étapes pour découvrir SUM'IT : import → profil → simulation → épinglage. Accessible depuis Mon compte.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══ V2 — BIENTÔT ══ -->
+      <!-- ══ V2 — LIVRÉE ══ -->
       <div class="roadmap-version">
         <div class="version-header">
           <div class="version-dot gold">
@@ -470,65 +514,41 @@
           </div>
           <div class="version-info">
             <h3>
-              Enrichissement
-              <span class="version-tag tag-soon">Bientôt</span>
+              Comparaison & analyse
+              <span class="version-tag tag-current">En ligne</span>
             </h3>
-            <div class="version-subtitle">Plus de données, plus de précision, premiers exports</div>
+            <div class="version-subtitle">Comparer, suivre, analyser ta progression</div>
           </div>
         </div>
         <div class="features-grid">
           <div class="feature-card gold-card">
-            <div class="feature-card-tag">Export</div>
+            <div class="feature-card-tag">Comparaison</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
             </div>
-            <h4>Export PDF</h4>
-            <p>Télécharge un rapport complet de ta simulation — à imprimer le jour J ou partager avec ton coach.</p>
+            <h4>Comparer mes simulations</h4>
+            <p>Sélectionne 2-3 sims épinglées et affiche-les côte à côte : graphiques superposés, KPIs comparés. Idéal pour planifier la saison.</p>
           </div>
           <div class="feature-card gold-card">
-            <div class="feature-card-tag">Nutrition</div>
+            <div class="feature-card-tag">Statistiques</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
             </div>
-            <h4>Conseils nutritionnels</h4>
-            <p>Apports caloriques et hydratation recommandés par tranche horaire selon ta batterie énergétique estimée.</p>
+            <h4>Stats globales coureur</h4>
+            <p>Évolution de ta VEP, ton drain énergétique et ton coefficient course sur 12 mois. Vois ta progression dans le temps.</p>
           </div>
           <div class="feature-card gold-card">
-            <div class="feature-card-tag">Import</div>
+            <div class="feature-card-tag">Apprentissage</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
-            <h4>Import automatique Strava</h4>
-            <p>Connexion directe à ton compte Strava — tes nouvelles activités sont importées automatiquement.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Import</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            </div>
-            <h4>Import automatique Garmin</h4>
-            <p>Synchronisation avec Garmin Connect pour récupérer tes traces avec FC, cadence et puissance.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Météo</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/></svg>
-            </div>
-            <h4>Intégration météo</h4>
-            <p>Coefficient météo intégré à la simulation — chaleur, vent et altitude adaptent automatiquement les prédictions.</p>
-          </div>
-          <div class="feature-card gold-card">
-            <div class="feature-card-tag">Accès</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            </div>
-            <h4>Plans &amp; tarifs</h4>
-            <p>Version gratuite et Athlete Premium — avec 14 jours d'essai offerts. Historique illimité et simulations sauvegardées.</p>
+            <h4>Réel vs prédit</h4>
+            <p>Importe ta course finie et compare les temps réels avec ceux prédits. L'algo s'auto-calibre pour devenir plus précis.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══ V3 — IA ══ -->
+      <!-- ══ V3 — À VENIR ══ -->
       <div class="roadmap-version">
         <div class="version-header">
           <div class="version-dot slate">
@@ -536,83 +556,43 @@
           </div>
           <div class="version-info">
             <h3>
-              Intelligence
+              Partage & mobile
               <span class="version-tag tag-future">À venir</span>
             </h3>
-            <div class="version-subtitle">IA, coaching personnalisé et entraînement adaptatif</div>
-          </div>
-        </div>
-        <div class="features-grid">
-          <div class="feature-card slate-card">
-            <div class="feature-card-tag">IA</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M16.24 7.76a6 6 0 0 1 0 8.49M4.93 19.07a10 10 0 0 1 0-14.14M7.76 16.24a6 6 0 0 1 0-8.49"/></svg>
-            </div>
-            <h4>Coach IA personnalisé</h4>
-            <p>Conseils d'entraînement générés par IA basés sur ton profil, tes objectifs de course et ta progression.</p>
-          </div>
-          <div class="feature-card slate-card">
-            <div class="feature-card-tag">Entraînement</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-            </div>
-            <h4>Plan d'entraînement</h4>
-            <p>Plan personnalisé sur 8 à 16 semaines avant ta course cible, adapté à ton profil et tes contraintes.</p>
-          </div>
-          <div class="feature-card slate-card">
-            <div class="feature-card-tag">Analyse</div>
-            <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
-            </div>
-            <h4>Suivi de progression</h4>
-            <p>Graphiques d'évolution de tes scores au fil du temps — vois ta progression sur chaque type de terrain.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ V4 — SOCIAL ══ -->
-      <div class="roadmap-version" style="margin-bottom:0;">
-        <div class="version-header">
-          <div class="version-dot slate">
-            <div class="version-dot-text">V4</div>
-          </div>
-          <div class="version-info">
-            <h3>
-              Communauté
-              <span class="version-tag tag-future">Vision</span>
-            </h3>
-            <div class="version-subtitle">Social, coaching multi-athlètes et diffusion</div>
+            <div class="version-subtitle">Rendre SUM'IT social et utilisable le jour J</div>
           </div>
         </div>
         <div class="features-grid">
           <div class="feature-card slate-card">
             <div class="feature-card-tag">Social</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
             </div>
-            <h4>Suivre d'autres athlètes</h4>
-            <p>Suis les profils de tes coéquipiers, compare les archétypes et observe la progression dans le temps.</p>
+            <h4>Partage public d'une simulation</h4>
+            <p>Génère un lien public partageable pour montrer ta simulation à tes amis, ton coach ou sur les réseaux. Pas besoin de compte côté lecteur.</p>
           </div>
           <div class="feature-card slate-card">
-            <div class="feature-card-tag">Coach</div>
+            <div class="feature-card-tag">Mobile</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </div>
-            <h4>Profil Coach</h4>
-            <p>Gestion de plusieurs athlètes depuis un seul tableau de bord — idéal pour les coachs trail.</p>
+            <h4>Mode "Race Day" mobile</h4>
+            <p>Le jour J, sors le téléphone : affichage en direct de tes objectifs de passage par km avec batterie restante. Utilisable en course.</p>
           </div>
           <div class="feature-card slate-card">
-            <div class="feature-card-tag">Accès</div>
+            <div class="feature-card-tag">App</div>
             <div class="feature-card-icon">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="3" ry="3"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
             </div>
-            <h4>Diffusion de l'application</h4>
-            <p>Version gratuite et Athlete Premium disponibles au grand public — App Store, Google Play et web.</p>
+            <h4>Application mobile native</h4>
+            <p>Version iOS et Android pour avoir SUM'IT toujours à portée de main, avec notifications et mode hors-ligne.</p>
           </div>
         </div>
       </div>
 
     </div>
+
+</div>
   </div>
 </div>
 
@@ -636,18 +616,20 @@
 
 <footer class="footer">
   <div>
-    <div class="footer-logo">SUM<span>'IT</span></div>
+    <div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div>
     <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
   </div>
   <div style="display:flex; gap:24px; align-items:center;">
-    <a href="../index.html#questionnaire" style="font-size:12px; color:var(--slate);">Donner mon avis</a>
+    <a href="../index.html#questionnaire" style="font-size:12px; color:var(--text-2);">Donner mon avis</a>
     <div class="footer-copy">© 2026 SUM'IT</div>
   </div>
 </footer>
 
 <script src="../js/main.js"></script>
 <script>
-emailjs.init('YOUR_PUBLIC_KEY');
+// Garde-fou : si le CDN d'EmailJS est bloqué (bloqueur de pub, réseau filtré),
+// le reste de la page doit continuer à fonctionner.
+if (window.emailjs) emailjs.init('rc324sv1XWdtOjTM6');
 
 function sInscrire() {
   const email = document.getElementById('notifyEmail').value.trim();
@@ -663,7 +645,9 @@ function sInscrire() {
     source:         'Page À venir — notification roadmap',
   };
 
-  emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_NOTIF_ID', params)
+  if (!window.emailjs) { alert("L'envoi est indisponible pour le moment (service de messagerie bloqué). Réessaie plus tard."); return; }
+
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
     .then(() => {
       document.getElementById('notifyWrap').style.display   = 'none';
       document.getElementById('notifySuccess').style.display = 'block';
@@ -676,5 +660,8 @@ function sInscrire() {
 }
 </script>
 
+  <script src="../js/api-client.js"></script>
+  <script src="../js/nav-user.js"></script>
+  <script src="../js/onboarding.js"></script>
 </body>
 </html>
