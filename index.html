@@ -3,198 +3,339 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0B1424">
+  <meta name="description" content="SUM'IT prédit ton temps de course en trail et rando à partir de tes activités GPS. Profil de coureur personnalisé, simulation par ravitaillement, calibration sur tes résultats réels.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Prédicteur de temps trail & rando">
+  <meta property="og:description" content="SUM'IT prédit ton temps de course en trail et rando à partir de tes activités GPS. Profil de coureur personnalisé, simulation par ravitaillement, calibration sur tes résultats réels.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Prédicteur de temps trail & rando">
+  <meta name="twitter:description" content="SUM'IT prédit ton temps de course en trail et rando à partir de tes activités GPS. Profil de coureur personnalisé, simulation par ravitaillement, calibration sur tes résultats réels.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Plan your peaks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/style.css">
   <!-- EmailJS -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
-    /* ══ Questionnaire ══════════════════════════════════ */
-    .survey-section {
-      background: var(--navy2);
-      border-top: 0.5px solid var(--border);
-      border-bottom: 0.5px solid var(--border);
-      padding: 80px;
+    /* ═══ ACCUEIL ═══════════════════════════════════════════════
+       Le hero est la CCC elle-même : profil réel, frontale qui avance
+       au rythme des temps prédits, ciel qui suit l'heure de passage. */
+
+    a.btn-primary, a.btn-ghost { display: inline-flex; align-items: center; justify-content: center; }
+
+    /* ── Hero « la course » ── */
+    .run {
+      --sky-a: #12325C; --sky-b: #1D4A7A; --sky-c: #3A6EA3;
+      --glow: rgba(255,236,200,.16); --glow-x: 60%; --stars: 0;
+      position: relative;
+      isolation: isolate;
+      min-height: 100svh;
+      display: grid;
+      grid-template-rows: auto minmax(320px, 1fr) auto;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .run-sky {
+      position: absolute; inset: 0; z-index: -1;
+      background:
+        radial-gradient(55% 60% at var(--glow-x) 82%, var(--glow), transparent 72%),
+        linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 55%, var(--sky-c) 100%);
+    }
+    .run-stars {
+      position: absolute; inset: 0 0 40% 0; z-index: -1;
+      opacity: var(--stars);
+      background:
+        radial-gradient(1.3px 1.3px at 7% 18%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 14% 42%, rgba(255,255,255,.7), transparent 60%),
+        radial-gradient(1.6px 1.6px at 22% 9%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 31% 33%, rgba(255,255,255,.6), transparent 60%),
+        radial-gradient(1.2px 1.2px at 38% 64%, rgba(255,255,255,.7), transparent 60%),
+        radial-gradient(1px 1px at 46% 21%, rgba(255,255,255,.8), transparent 60%),
+        radial-gradient(1.5px 1.5px at 53% 47%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 61% 12%, rgba(255,255,255,.7), transparent 60%),
+        radial-gradient(1.2px 1.2px at 67% 38%, rgba(255,255,255,.6), transparent 60%),
+        radial-gradient(1.7px 1.7px at 74% 23%, #fff, transparent 60%),
+        radial-gradient(1px 1px at 81% 56%, rgba(255,255,255,.55), transparent 60%),
+        radial-gradient(1.3px 1.3px at 88% 14%, rgba(255,255,255,.9), transparent 60%),
+        radial-gradient(1px 1px at 93% 41%, rgba(255,255,255,.6), transparent 60%),
+        radial-gradient(1px 1px at 97% 7%, rgba(255,255,255,.7), transparent 60%);
     }
 
-    .survey-inner {
-      max-width: 800px;
+    .run-copy {
+      width: 100%;
+      max-width: 1400px;
       margin: 0 auto;
-    }
-
-    .survey-grid {
+      padding: calc(var(--nav-h) + clamp(28px, 6vh, 72px)) var(--hero-pad) 8px;
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+      gap: 28px 56px;
+      align-items: end;
+      position: relative;
+      z-index: 3;
     }
-
-    .survey-field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .run h1 {
+      font-family: var(--font-hero);
+      font-weight: 800;
+      font-size: clamp(54px, 6.5vw, 108px);
+      line-height: 0.86;
+      letter-spacing: -0.012em;
+      max-width: 17ch;
+      text-wrap: balance;
+      color: #F4F8FC;
+      text-shadow: 0 2px 30px rgba(5, 10, 22, 0.35);
     }
+    .run-lede {
+      max-width: 44ch;
+      font-size: clamp(16px, 1.2vw, 18px);
+      line-height: 1.6;
+      color: rgba(234, 240, 247, 0.86);
+      margin: 0 0 22px;
+    }
+    .run-act { padding-bottom: 6px; }
 
-    .survey-field.full { grid-column: 1 / -1; }
+    .run-stage {
+      position: relative;
+      min-height: 320px;
+      outline: none;
+      touch-action: pan-y;
+      cursor: ew-resize;
+    }
+    .run-stage:focus-visible { outline: 2px solid var(--sun); outline-offset: -6px; border-radius: 8px; }
+    .run-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
+    .run-back-far { fill: color-mix(in srgb, var(--sky-c) 34%, #0B1424); }
+    .run-back-mid { fill: color-mix(in srgb, var(--sky-c) 18%, #0B1424); }
+    .run-halo { opacity: calc(0.35 + var(--stars) * 0.6); }
 
-    .survey-label {
+    /* Panneaux jaunes : un par ravito, s'allument au passage */
+    .post {
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0;
+      pointer-events: none;
+    }
+    .post-pole {
+      position: absolute; left: -1px; bottom: 0;
+      width: 2px;
+      background: rgba(234, 240, 247, 0.32);
+      transition: background 0.4s;
+    }
+    .post-plate {
+      position: absolute; left: -1px;
+      display: flex; align-items: baseline; gap: 10px;
+      white-space: nowrap;
       font-family: var(--font-display);
-      font-size: 10px;
-      color: var(--slate);
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+      font-size: 13.5px; font-weight: 700;
+      padding: 5px 24px 5px 10px;
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+      background: rgba(255, 197, 61, 0.16);
+      color: rgba(255, 213, 120, 0.8);
+      transform-origin: left bottom;
+      transition: background 0.35s, color 0.35s, transform 0.35s cubic-bezier(.2,1.6,.4,1);
     }
+    .post-time { font-family: var(--font-hero); font-size: 17px; font-weight: 800; letter-spacing: 0.01em; }
+    .post.is-reached .post-plate { background: var(--sun); color: var(--ink); transform: scale(1.04); }
+    .post.is-reached .post-pole  { background: rgba(255, 197, 61, 0.75); }
+    .post.is-finish .post-plate  { background: #F4F8FC; color: var(--ink); }
 
-    .survey-field textarea {
-      resize: vertical;
-      min-height: 90px;
-      font-family: var(--font-body);
+    /* Étiquette qui suit la frontale */
+    .run-tag {
+      position: absolute; left: 0; top: 0;
+      z-index: 4;
+      display: flex; flex-direction: column; align-items: center;
+      pointer-events: none;
+      transform: translate(-50%, 0);
+      will-change: transform;
     }
-
-    .rating-group {
-      display: flex;
-      gap: 8px;
+    .run-tag strong {
+      font-family: var(--font-hero);
+      font-size: clamp(30px, 3.2vw, 44px);
+      font-weight: 800;
+      line-height: 1;
+      color: #F4F8FC;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
     }
-
-    .rating-btn {
-      flex: 1;
-      padding: 10px 6px;
-      border: 0.5px solid var(--border);
-      background: transparent;
-      color: var(--slate);
+    .run-tag span {
+      display: flex; gap: 10px;
       font-family: var(--font-display);
+      font-size: 13px; font-weight: 600;
+      color: var(--text-2);
+      margin-top: 3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .run-foot {
+      position: relative; z-index: 3;
+      background: var(--bg);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: baseline;
+      gap: 24px;
+      padding: 14px var(--hero-pad) 28px;
       font-size: 13px;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
+      color: var(--text-3);
     }
-    .rating-btn:hover,
-    .rating-btn.selected {
-      border-color: var(--cyan);
-      color: var(--cyan);
-      background: var(--cyan-glow);
+    .run-end { font-family: var(--font-display); font-weight: 700; font-size: 14px; color: var(--text-2); }
+    .run-caption { text-align: center; max-width: 72ch; margin: 0 auto; line-height: 1.5; }
+    .run-caption button {
+      background: none; border: 0; color: var(--sun); cursor: pointer;
+      font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+      margin-left: 6px; padding: 2px;
     }
 
-    .checkbox-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+    /* ── Sept pentes ── */
+    .slopes { padding: clamp(80px, 11vw, 150px) var(--hero-pad) clamp(70px, 9vw, 120px); max-width: 1400px; margin: 0 auto; }
+    .slopes-head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px 64px; align-items: end; margin-bottom: 56px; }
+    .slopes-head .section-title { margin-bottom: 0; }
+    .slopes-head .section-sub { margin-bottom: 18px; }
+    .seg { display: inline-flex; padding: 4px; gap: 4px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; }
+    .seg button {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      color: var(--text-2); background: transparent; border: 0; border-radius: 7px;
+      padding: 9px 16px; cursor: pointer; transition: background 0.2s, color 0.2s;
     }
+    .seg button:hover { color: var(--text); }
+    .seg button[aria-pressed="true"] { background: var(--bg-4); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
 
+    .slope-fig { position: relative; }
+    .slope-svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .slope-cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, 1fr); pointer-events: none; }
+    .slope-col { position: relative; }
+    .slope-lbl {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      width: 100%;
+    }
+    .slope-name { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text-2); line-height: 1.2; }
+    .slope-name small { display: block; font-size: 12.5px; color: var(--text-3); font-weight: 500; }
+    .slope-speed { font-family: var(--font-hero); font-size: clamp(30px, 3.4vw, 50px); font-weight: 800; line-height: 1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+    .slope-speed i { font-style: normal; font-family: var(--font-display); font-size: 13px; font-weight: 600; color: var(--text-3); margin-left: 3px; }
+    .slope-vep { font-size: 13px; color: var(--text-3); margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .slope-vep b { font-weight: 700; }
+    .slope-vep b.up { color: var(--leaf); }
+    .slope-vep b.down { color: var(--danger); }
+    .slope-note { margin-top: 28px; font-size: 14px; color: var(--text-3); max-width: 70ch; }
+
+    /* ── Trois étapes sur un sentier ── */
+    .trail { position: relative; padding: clamp(70px, 9vw, 130px) var(--hero-pad); background: linear-gradient(180deg, var(--bg) 0%, #0E1A2E 100%); border-top: 1px solid var(--line); }
+    .trail-inner { max-width: 1400px; margin: 0 auto; }
+    .trail-path { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; position: relative; margin-top: 56px; }
+    .trail-path::before {
+      content: ''; position: absolute; top: 21px; left: 22px; right: 10%;
+      border-top: 2px dashed rgba(234, 240, 247, 0.22);
+    }
+    .trail-step { position: relative; }
+    .trail-mark {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-family: var(--font-hero); font-size: 24px; font-weight: 800;
+      background: var(--bg); border: 2px solid var(--sun); color: var(--sun);
+      position: relative; z-index: 1; margin-bottom: 22px;
+    }
+    .trail-step h3 { font-family: var(--font-hero); font-size: clamp(30px, 2.8vw, 40px); font-weight: 800; line-height: 1; margin-bottom: 12px; }
+    .trail-step p { color: var(--text-2); font-size: 16px; line-height: 1.65; max-width: 38ch; }
+    .trail-step p small { display: block; margin-top: 10px; font-size: 14px; color: var(--text-3); }
+    .trail-cta { margin-top: 56px; }
+
+    /* ── Archétypes ── */
+    .archs { padding: clamp(80px, 10vw, 140px) var(--hero-pad); max-width: 1400px; margin: 0 auto; }
+    .arch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 44px 32px; margin-top: 56px; }
+    .arch { display: grid; grid-template-columns: 64px 1fr; gap: 16px; align-items: start; }
+    .arch-badge {
+      width: 64px; height: 64px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 30px;
+      background: radial-gradient(circle at 35% 30%, #22375A, #111E33 70%);
+      box-shadow: inset 0 0 0 1px var(--line-2), 0 10px 24px -12px rgba(0, 0, 0, 0.8);
+    }
+    .arch h3 { font-family: var(--font-hero); font-size: 28px; font-weight: 800; line-height: 1; margin: 6px 0 8px; }
+    .arch p { font-size: 15px; color: var(--text-2); line-height: 1.55; }
+
+    /* ── Avis bêta ── */
+    .survey-section { border-top: 1px solid var(--line); background: #0D182B; padding: clamp(70px, 9vw, 120px) var(--hero-pad); }
+    .survey-inner { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
+    .survey-intro .section-sub { margin-bottom: 0; }
+    .survey-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 16px; margin-bottom: 18px; }
+    .survey-field { display: flex; flex-direction: column; gap: 8px; }
+    .survey-field.full { grid-column: 1 / -1; }
+    .survey-label { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--text-2); }
+    .survey-field textarea { resize: vertical; min-height: 96px; }
+    .rating-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .rating-btn {
+      flex: 1 1 auto; min-width: 44px;
+      padding: 10px 10px; border: 1px solid var(--line-2); background: var(--bg-2);
+      color: var(--text-2); font-family: var(--font-display); font-size: 14px; font-weight: 600;
+      border-radius: 8px; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; text-align: center;
+    }
+    .rating-btn:hover { border-color: rgba(234, 240, 247, 0.35); color: var(--text); }
+    .rating-btn.selected { border-color: var(--sun); color: var(--ink); background: var(--sun); }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
     .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 12px;
-      border: 0.5px solid var(--border);
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--slate);
-      transition: all 0.2s;
-      user-select: none;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 13px; border: 1px solid var(--line-2); border-radius: 999px;
+      cursor: pointer; font-size: 14px; color: var(--text-2);
+      transition: border-color 0.2s, color 0.2s, background 0.2s; user-select: none;
     }
-    .checkbox-item:hover,
-    .checkbox-item.checked {
-      border-color: var(--cyan);
-      color: var(--cyan);
-      background: var(--cyan-glow);
-    }
+    .checkbox-item:hover { border-color: rgba(234, 240, 247, 0.35); color: var(--text); }
+    .checkbox-item.checked { border-color: var(--leaf); color: var(--text); background: var(--leaf-soft); }
+    .checkbox-item.checked::before { content: '✓'; color: var(--leaf); font-weight: 700; }
     .checkbox-item input { display: none; }
+    .survey-send { width: 100%; padding: 16px; margin-top: 6px; }
+    .survey-success { display: none; padding: 40px; border: 1px solid rgba(47, 203, 127, 0.4); background: var(--leaf-soft); border-radius: 14px; }
+    .survey-success-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--leaf); display: grid; place-items: center; margin-bottom: 16px; }
+    .survey-success-icon svg { width: 24px; height: 24px; stroke: var(--ink); fill: none; stroke-width: 2.4; }
+    .survey-success h3 { font-family: var(--font-hero); font-size: 34px; font-weight: 800; margin-bottom: 8px; }
+    .survey-success p { font-size: 15px; color: var(--text-2); }
 
-    .survey-success {
-      display: none;
-      text-align: center;
-      padding: 40px;
-      border: 0.5px solid var(--border2);
-      background: var(--cyan-glow);
+    /* ── Responsive ── */
+    @media (max-width: 1100px) {
+      .arch-grid { grid-template-columns: repeat(2, 1fr); }
+      .slopes-head { grid-template-columns: 1fr; }
     }
-
-    .survey-success-icon {
-      width: 48px;
-      height: 48px;
-      border: 0.5px solid var(--cyan);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
+    @media (max-width: 980px) {
+      .run-copy { grid-template-columns: 1fr; align-items: start; }
+      .run-lede { margin-top: 0; }
     }
-    .survey-success-icon svg { width: 24px; height: 24px; stroke: var(--cyan); fill: none; stroke-width: 1.5; }
-
-    .survey-success h3 {
-      font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 8px;
+    @media (max-width: 860px) {
+      .survey-inner { grid-template-columns: 1fr; gap: 36px; }
+      .trail-path { grid-template-columns: 1fr; gap: 40px; }
+      .trail-path::before { top: 22px; bottom: 22px; left: 21px; right: auto; border-top: 0; border-left: 2px dashed rgba(234, 240, 247, 0.22); }
+      .trail-step { padding-left: 70px; }
+      .trail-mark { position: absolute; left: 0; top: -4px; }
+      .run-foot { grid-template-columns: 1fr 1fr; }
+      .run-caption { grid-column: 1 / -1; grid-row: 2; text-align: left; margin: 0; }
+      .run-foot .run-end:last-child { text-align: right; }
     }
-
-    .survey-success p { font-size: 13px; color: var(--slate); }
-
-    /* ══ Section "Comment ça marche" ═══════════════════ */
-    .how-section {
-      background: var(--navy3);
-      border-top: 0.5px solid var(--border);
-      padding: 80px;
-    }
-
-    .how-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border);
-      margin-top: 48px;
-    }
-
-    .how-card {
-      background: var(--navy2);
-      padding: 36px 32px;
-    }
-
-    .how-num {
-      width: 36px;
-      height: 36px;
-      border: 0.5px solid var(--cyan);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--cyan);
-    }
-
-    .how-card h3 {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 500;
-      color: var(--white);
-      margin-bottom: 10px;
-      letter-spacing: 0.02em;
-    }
-
-    .how-card p {
-      font-size: 14px;
-      font-weight: 300;
-      color: var(--slate);
-      line-height: 1.7;
-    }
-
-    @media (max-width: 768px) {
-      .survey-section, .how-section { padding: 48px 24px; }
+    @media (max-width: 700px) {
+      .run-copy { padding-top: calc(var(--nav-h) + 28px); }
+      .run { grid-template-rows: auto minmax(280px, 42vh) auto; }
+      .run-stage { min-height: 280px; }
+      .post:not(.is-current) .post-plate { display: none; }
+      .post:not(.is-current) .post-pole { height: 10px !important; opacity: 0.6; }
+      .run-tag strong { font-size: 30px; }
+      .slope-cols { position: static; grid-template-columns: 1fr; gap: 0; margin-top: 18px; }
+      .slope-lbl { position: static; transform: none; flex-direction: row; justify-content: space-between; align-items: baseline; text-align: left; padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .slope-lbl > div { display: flex; flex-direction: column; }
+      .slope-speed { margin-top: 0; font-size: 34px; }
+      .slope-vep { text-align: right; }
+      .arch-grid { grid-template-columns: 1fr; gap: 28px; }
       .survey-grid { grid-template-columns: 1fr; }
-      .how-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body>
+<body data-page="home">
 
 <!-- ── Navigation ── -->
 <nav class="nav">
-  <a href="index.html" class="nav-logo">
-    <div class="nav-logo-icon">S</div>
+  <a href="index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+    <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
     <div class="nav-logo-text">
-      <div class="nav-logo-name">SUM<span>'IT</span></div>
+      <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
       <div class="nav-logo-sub">Plan your peaks</div>
     </div>
   </a>
@@ -207,525 +348,590 @@
   <button class="nav-cta" onclick="window.location.href='pages/profil.html'">Commencer</button>
 </nav>
 
-<!-- ══ HERO avec montagne style illustration ═════════════════════════════ -->
-<section class="hero">
-  <div class="hero-bg"></div>
+<main>
+<!-- ══ HERO : la CCC en direct ══════════════════════════════════ -->
+<section class="run" id="run" aria-labelledby="runTitle">
+  <div class="run-sky" aria-hidden="true"></div>
+  <div class="run-stars" aria-hidden="true"></div>
 
-  <!-- Montagne style illustration vectorielle — plusieurs couches + sapins -->
-  <svg class="hero-mountain" viewBox="0 0 1440 520" xmlns="http://www.w3.org/2000/svg"
-       preserveAspectRatio="xMidYMax meet"
-       style="display:block; width:100%; height:520px; position:absolute; bottom:0;">
-    <defs>
-      <!-- Couches de brume progressives -->
-      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#1A3A5C" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
-      </linearGradient>
-
-      <!-- Couche 1 : montagnes très lointaines (presque brume) -->
-      <linearGradient id="c1" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#2A4A6A" stop-opacity="0.55"/>
-        <stop offset="100%" stop-color="#1A3050" stop-opacity="0.75"/>
-      </linearGradient>
-
-      <!-- Couche 2 -->
-      <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#1E3D5C" stop-opacity="0.75"/>
-        <stop offset="100%" stop-color="#132840" stop-opacity="0.9"/>
-      </linearGradient>
-
-      <!-- Couche 3 -->
-      <linearGradient id="c3" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#162E48" stop-opacity="0.88"/>
-        <stop offset="100%" stop-color="#0E2035" stop-opacity="1"/>
-      </linearGradient>
-
-      <!-- Couche 4 : forêt sapins foncée -->
-      <linearGradient id="c4" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#0E2030" stop-opacity="0.95"/>
-        <stop offset="100%" stop-color="#091820" stop-opacity="1"/>
-      </linearGradient>
-
-      <!-- Couche 5 : avant-plan très sombre -->
-      <linearGradient id="c5" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#091820" stop-opacity="1"/>
-        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
-      </linearGradient>
-
-      <!-- Neige -->
-      <linearGradient id="sn" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#C8DCE8" stop-opacity="0.6"/>
-        <stop offset="100%" stop-color="#2A4A6A"  stop-opacity="0"/>
-      </linearGradient>
-
-      <!-- Fondu bas -->
-      <linearGradient id="fd" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%"   stop-color="#0D1B2A" stop-opacity="0"/>
-        <stop offset="100%" stop-color="#0D1B2A" stop-opacity="1"/>
-      </linearGradient>
-    </defs>
-
-    <!-- ══ COUCHE 1 : Massifs très lointains, brumeux ══ -->
-    <path d="
-      M0,520 L0,300
-      C60,280 100,260 150,250
-      C200,240 240,255 280,240
-      C320,225 360,200 400,195
-      C440,190 480,205 520,195
-      C560,185 600,165 640,160
-      C680,155 720,170 760,162
-      C800,154 840,135 880,130
-      C920,125 960,140 1000,132
-      C1040,124 1080,108 1120,105
-      C1160,102 1200,118 1240,110
-      C1280,102 1320,88  1360,85
-      C1400,82  1430,92  1440,90
-      L1440,520 Z
-    " fill="url(#c1)"/>
-
-    <!-- Neige sur les plus hauts sommets couche 1 -->
-    <ellipse cx="880"  cy="128" rx="45" ry="18" fill="url(#sn)" opacity="0.5"/>
-    <ellipse cx="1120" cy="103" rx="38" ry="14" fill="url(#sn)" opacity="0.45"/>
-    <ellipse cx="640"  cy="158" rx="35" ry="12" fill="url(#sn)" opacity="0.4"/>
-
-    <!-- ══ COUCHE 2 : Massifs intermédiaires ══ -->
-    <path d="
-      M0,520 L0,360
-      C40,345 80,330 120,320
-      C160,310 200,325 240,308
-      C280,291 320,270 360,262
-      C400,254 440,268 480,255
-      C520,242 555,220 590,215
-      C625,210 660,228 695,218
-      C730,208 765,188 800,182
-      C835,176 870,192 905,184
-      C940,176 975,158 1010,153
-      C1045,148 1080,162 1115,155
-      C1150,148 1185,132 1220,128
-      C1255,124 1290,138 1330,132
-      C1370,126 1410,115 1440,112
-      L1440,520 Z
-    " fill="url(#c2)"/>
-
-    <!-- Neige couche 2 -->
-    <ellipse cx="590"  cy="212" rx="40" ry="15" fill="url(#sn)" opacity="0.5"/>
-    <ellipse cx="800"  cy="180" rx="35" ry="13" fill="url(#sn)" opacity="0.45"/>
-    <ellipse cx="1010" cy="150" rx="30" ry="11" fill="url(#sn)" opacity="0.4"/>
-
-    <!-- ══ COUCHE 3 : Massifs proches + Dent Parrachée ══ -->
-    <path d="
-      M0,520 L0,400
-      C30,388 60,375 90,365
-      C120,355 155,368 185,352
-      C215,336 240,315 265,308
-      C290,301 318,316 342,302
-      C366,288 385,268 405,260
-      C425,252 448,265 468,252
-      C488,239 505,220 525,214
-
-      C540,208 548,195 556,182
-      C562,172 566,158 570,145
-      C574,132 576,118 578,105
-      C580,92  581,80  583,68
-      C585,55  587,42  589,30
-      C591,18  593,10  595,4
-      C597,10  599,18  601,30
-      C603,42  605,56  607,70
-      C609,84  611,96  613,108
-      C615,120 617,132 620,142
-      C624,155 629,165 635,175
-      C642,187 650,196 660,205
-      C672,215 686,222 700,228
-      C718,236 738,240 755,235
-      C772,230 785,218 800,212
-      C818,205 838,202 855,196
-      C875,189 892,178 908,172
-      C928,165 948,168 965,162
-      C985,155 1000,142 1018,137
-      C1038,131 1058,140 1075,134
-      C1095,127 1112,115 1130,110
-      C1150,104 1170,112 1192,106
-      C1215,100 1238,88  1262,85
-      C1286,82  1310,90  1340,86
-      C1370,82  1408,75  1440,72
-      L1440,520 Z
-    " fill="url(#c3)"/>
-
-    <!-- Neige Dent Parrachée (sommet ~595,4) -->
-    <path d="
-      M583,68 C585,55 587,42 589,30 C591,18 593,10 595,4
-      C597,10 599,18 601,30 C603,42 605,56 607,70
-      C604,58 600,35 595,8 C590,35 586,58 583,68 Z
-    " fill="url(#sn)" opacity="0.7"/>
-    <ellipse cx="595" cy="45" rx="22" ry="28" fill="url(#sn)" opacity="0.35"/>
-
-    <!-- ══ COUCHE 4 : Collines avec forêt de sapins ══ -->
-    <!-- Collines de base -->
-    <path d="
-      M0,520 L0,430
-      C50,415 100,405 150,398
-      C200,391 250,400 300,390
-      C350,380 400,365 450,358
-      C500,351 545,362 585,352
-      C620,343 650,330 680,322
-      C710,314 740,325 770,316
-      C800,307 830,292 865,286
-      C900,280 930,290 960,283
-      C990,276 1020,263 1055,258
-      C1090,253 1120,262 1155,256
-      C1190,250 1220,238 1255,234
-      C1290,230 1325,240 1370,235
-      C1400,231 1425,226 1440,224
-      L1440,520 Z
-    " fill="url(#c4)"/>
-
-    <!-- Sapins gauche — silhouettes triangulaires groupées -->
-    <!-- Groupe 1 : très gauche -->
-    <g fill="#091520" opacity="0.95">
-      <polygon points="20,430  26,410  32,430"/>
-      <polygon points="28,432  35,408  42,432"/>
-      <polygon points="38,428  46,405  54,428"/>
-      <polygon points="50,430  59,403  68,430"/>
-      <polygon points="64,426  74,400  84,426"/>
-      <polygon points="80,428  92,398  104,428"/>
-      <polygon points="98,426  112,395  126,426"/>
-      <polygon points="118,424 134,392  150,424"/>
-      <polygon points="142,422 160,388  178,422"/>
-      <polygon points="170,420 190,385  210,420"/>
-      <polygon points="200,418 222,382  244,418"/>
-      <polygon points="235,416 260,378  285,416"/>
-      <polygon points="272,414 300,374  328,414"/>
-      <polygon points="312,412 343,370  374,412"/>
-      <polygon points="356,410 390,368  424,410"/>
-    </g>
-
-    <!-- Groupe 2 : zone centrale gauche (hauteurs variées) -->
-    <g fill="#091520" opacity="0.9">
-      <polygon points="400,415 412,392  424,415"/>
-      <polygon points="418,418 432,394  446,418"/>
-      <polygon points="440,412 456,388  472,412"/>
-      <polygon points="464,416 480,390  496,416"/>
-      <polygon points="490,410 508,385  526,410"/>
-    </g>
-
-    <!-- Groupe 3 : centre -->
-    <g fill="#0A1620" opacity="0.88">
-      <polygon points="530,355 542,332  554,355"/>
-      <polygon points="548,358 562,333  576,358"/>
-      <polygon points="568,352 584,328  600,352"/>
-      <polygon points="590,356 606,330  622,356"/>
-      <polygon points="614,350 632,325  650,350"/>
-      <polygon points="640,353 660,327  680,353"/>
-      <polygon points="668,348 690,322  712,348"/>
-      <polygon points="700,351 724,324  748,351"/>
-      <polygon points="735,346 762,318  789,346"/>
-      <polygon points="775,349 804,320  833,349"/>
-    </g>
-
-    <!-- Groupe 4 : droite -->
-    <g fill="#091520" opacity="0.92">
-      <polygon points="845,292 860,268  875,292"/>
-      <polygon points="862,295 879,270  896,295"/>
-      <polygon points="882,290 901,264  920,290"/>
-      <polygon points="905,293 926,266  947,293"/>
-      <polygon points="932,288 955,261  978,288"/>
-      <polygon points="962,291 987,263  1012,291"/>
-      <polygon points="996,286 1024,257  1052,286"/>
-      <polygon points="1032,289 1062,259  1092,289"/>
-      <polygon points="1072,284 1105,253  1138,284"/>
-      <polygon points="1116,287 1151,255  1186,287"/>
-      <polygon points="1162,282 1200,249  1238,282"/>
-      <polygon points="1210,285 1250,252  1290,285"/>
-      <polygon points="1262,280 1305,246  1348,280"/>
-      <polygon points="1318,283 1364,247  1410,283"/>
-      <polygon points="1378,278 1408,246  1440,278"/>
-    </g>
-
-    <!-- ══ COUCHE 5 : Avant-plan très sombre ══ -->
-    <path d="
-      M0,520 L0,470
-      C80,460 160,452 240,448
-      C320,444 400,455 480,450
-      C560,445 640,435 720,432
-      C800,429 880,440 960,436
-      C1040,432 1120,420 1200,418
-      C1280,416 1360,425 1440,422
-      L1440,520 Z
-    " fill="url(#c5)"/>
-
-    <!-- Sapins avant-plan (les plus sombres et grands) -->
-    <g fill="#060F18" opacity="1">
-      <polygon points="0,470   10,445   20,470"/>
-      <polygon points="15,472  27,444   39,472"/>
-      <polygon points="35,468  50,438   65,468"/>
-      <polygon points="58,471  76,440   94,471"/>
-      <polygon points="85,466  106,434  127,466"/>
-      <polygon points="118,469 142,436  166,469"/>
-      <polygon points="155,464 182,430  209,464"/>
-      <polygon points="196,467 226,432  256,467"/>
-      <polygon points="242,462 276,426  310,462"/>
-      <polygon points="295,465 332,428  369,465"/>
-      <polygon points="355,460 396,423  437,460"/>
-      <polygon points="422,463 466,425  510,463"/>
-      <polygon points="496,458 544,420  592,458"/>
-      <polygon points="578,461 629,422  680,461"/>
-      <polygon points="668,456 724,416  780,456"/>
-      <polygon points="766,459 826,419  886,459"/>
-      <polygon points="872,454 936,413  1000,454"/>
-      <polygon points="986,457 1054,415  1122,457"/>
-      <polygon points="1108,452 1180,410  1252,452"/>
-      <polygon points="1238,455 1314,412  1390,455"/>
-      <polygon points="1376,450 1408,415  1440,450"/>
-    </g>
-
-    <!-- Fondu global bas -->
-    <rect x="0" y="430" width="1440" height="90" fill="url(#fd)"/>
-  </svg>
-
-  <div class="hero-content">
-    <div class="hero-tag">Trail running · Randonnée · Analyse GPX</div>
-    <h1>
-      Plan your
-      <em>peaks.</em>
-    </h1>
-    <p class="hero-sub">
-      Importe tes traces GPX, découvre ton profil de coureur et simule
-      tes prochaines courses — ravitaillements trail ou points d'intérêt rando.
-    </p>
-    <div class="hero-btns">
-      <button class="btn-primary" onclick="window.location.href='pages/profil.html'">
-        Commencer gratuitement
-      </button>
-      <button class="btn-ghost" onclick="window.location.href='pages/simulateur.html'">
-        Voir une démo
-      </button>
+  <div class="run-copy">
+    <h1 id="runTitle">Sache à quelle heure tu passeras chaque col.</h1>
+    <div class="run-act">
+      <p class="run-lede">SUM'IT apprend ton allure sur tes propres traces GPX, en montée, en descente et quand la fatigue s'installe. Puis il prédit tes heures de passage sur n'importe quel parcours.</p>
+      <div class="hero-btns">
+        <a class="btn-primary" href="pages/simulateur.html?demo=ccc">Essayer sur la CCC</a>
+        <a class="btn-ghost" href="pages/profil.html">Créer mon profil</a>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-val">7</div>
-        <div class="hero-stat-label">Types de terrain</div>
+  </div>
+
+  <div class="run-stage" id="runStage" tabindex="0"
+       aria-label="Profil de la CCC. Survole ou utilise les flèches gauche et droite pour voir le temps prédit à chaque kilomètre.">
+    <svg class="run-svg" id="runSvg" aria-hidden="true"></svg>
+    <div id="runPosts" aria-hidden="true"></div>
+    <div class="run-tag" id="runTag" aria-hidden="true">
+      <strong id="tagTime">0 h 00</strong>
+      <span><b id="tagKm">km 0,0</b><b id="tagAlt">1 221 m</b></span>
+    </div>
+  </div>
+
+  <div class="run-foot">
+    <span class="run-end">Courmayeur</span>
+    <p class="run-caption">Profil réel de la CCC : 98 km et 5 740 m de dénivelé positif. Temps de course prédits par SUM'IT pour un coureur d'exemple parti à 9 h.<button type="button" id="runReplay">Rejouer</button></p>
+    <span class="run-end">Chamonix</span>
+  </div>
+  <p class="sr-only" id="runSummary" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">
+    Temps prédits pour le coureur d'exemple : Refuge Bertone en 3 h 42, Arnouvaz en 5 h 37, La Fouly en 8 h 40, Champex-Lac en 11 h 49, Trient en 15 h 47, Vallorcine en 19 h 14, arrivée à Chamonix en 24 h 53.
+  </p>
+</section>
+
+<!-- ══ Sept pentes, sept allures ═══════════════════════════════ -->
+<section class="slopes" aria-labelledby="slopesTitle">
+  <div class="slopes-head">
+    <h2 class="section-title" id="slopesTitle">Sur chaque pente, tu es un autre coureur.</h2>
+    <div>
+      <p class="section-sub">Dans une montée à 18 %, on avance à 3 ou 4 km/h pour un effort comparable à 9 km/h sur le plat. SUM'IT mesure cette vitesse équivalente plat (la VEP) sur sept types de pente, à partir de tes propres sorties.</p>
+      <div class="seg" role="group" aria-label="Choisir un profil d'exemple">
+        <button type="button" data-profil="grimpeur" aria-pressed="true">⛰️ Un grimpeur</button>
+        <button type="button" data-profil="descendeur" aria-pressed="false">🏂 Un descendeur</button>
       </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">VEP</div>
-        <div class="hero-stat-label">Modèle Minetti</div>
+    </div>
+  </div>
+
+  <div class="slope-fig">
+    <svg class="slope-svg" id="slopeSvg" viewBox="0 0 1400 470" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+    <div class="slope-cols" id="slopeCols"></div>
+  </div>
+  <p class="slope-note">Vitesses réelles sur le terrain, et entre parenthèses l'écart d'efficacité par rapport au plat. Deux coureurs aussi rapides sur le plat peuvent finir une même course à plusieurs heures d'écart.</p>
+</section>
+
+<!-- ══ Trois étapes ════════════════════════════════════════════ -->
+<section class="trail" aria-labelledby="trailTitle">
+  <div class="trail-inner">
+    <h2 class="section-title" id="trailTitle">De tes sorties à ton roadbook.</h2>
+    <p class="section-sub">Plus tu importes de sorties variées, plus la prédiction te ressemble.</p>
+    <ol class="trail-path" role="list">
+      <li class="trail-step">
+        <div class="trail-mark" aria-hidden="true">1</div>
+        <h3>Importe tes sorties</h3>
+        <p>Les GPX de ta montre, ou tes activités Strava en un clic. Montées, descentes, longues sorties : tout compte.<small>Tes traces restent privées et ne servent qu'à ton profil.</small></p>
+      </li>
+      <li class="trail-step">
+        <div class="trail-mark" aria-hidden="true">2</div>
+        <h3>Découvre ton profil</h3>
+        <p>Ta VEP sur les sept pentes, ta résistance à la fatigue, ton archétype. Il se recalcule à chaque nouvelle sortie.</p>
+      </li>
+      <li class="trail-step">
+        <div class="trail-mark" aria-hidden="true">3</div>
+        <h3>Simule ta course</h3>
+        <p>Charge le GPX de l'épreuve, place tes ravitos et tes pauses. Tu obtiens tes heures de passage avec une fourchette haute et basse.</p>
+      </li>
+    </ol>
+    <div class="hero-btns trail-cta">
+      <a class="btn-primary" href="pages/profil.html">Créer mon profil</a>
+      <a class="btn-ghost" href="pages/simulateur.html?demo=ccc">Voir la simulation de la CCC</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Archétypes ══════════════════════════════════════════════ -->
+<section class="archs" aria-labelledby="archsTitle">
+  <h2 class="section-title" id="archsTitle">Huit façons de courir la montagne.</h2>
+  <p class="section-sub">Ton profil te range dans une famille de coureurs. Elle dit où tu gagnes du temps, et où tu en perds.</p>
+  <div class="arch-grid">
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🐐</div><div><h3>Le Cabri</h3><p>Plus ça monte raide, plus tu es dans ton élément.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">⛰️</div><div><h3>Le Grimpeur</h3><p>Tu avales le dénivelé. Les longues montées sont ton terrain.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🤸</div><div><h3>Le Funambule</h3><p>Plus la descente est technique, plus tu vas vite.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🏂</div><div><h3>Le Descendeur</h3><p>Tu reprends en descente le temps laissé dans les montées.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">⚖️</div><div><h3>L'Équilibré</h3><p>La même aisance partout, sans point faible marqué.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🚂</div><div><h3>Le Diesel</h3><p>Tu pars calmement et tu tiens des heures.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🛼</div><div><h3>Le Rouleur</h3><p>Rapide sur le plat et les portions roulantes, freiné par le relief.</p></div></article>
+    <article class="arch"><div class="arch-badge" aria-hidden="true">🔥</div><div><h3>Le Tenace</h3><p>Tu ne lâches rien. Ta force, c'est la durée.</p></div></article>
+  </div>
+</section>
+</main>
+
+<!-- ══ QUESTIONNAIRE BÊTA-TESTEURS ════════════════════════════ -->
+<section class="survey-section" id="questionnaire" aria-labelledby="surveyTitle">
+  <div class="survey-inner">
+    <div class="survey-intro">
+      <h2 class="section-title" id="surveyTitle">SUM'IT est en bêta. Dis-nous ce qui cloche.</h2>
+      <p class="section-sub">Chaque retour sert directement à affiner l'algorithme : une prédiction trop optimiste, un profil qui ne te ressemble pas, une fonctionnalité qui te manque.</p>
+    </div>
+
+    <div>
+      <div id="surveyForm">
+        <div class="survey-grid">
+          <div class="survey-field">
+            <label class="survey-label" for="s_prenom">Prénom</label>
+            <input type="text" id="s_prenom" placeholder="Ex : Jake" autocomplete="given-name">
+          </div>
+          <div class="survey-field">
+            <label class="survey-label" for="s_niveau">Niveau en trail</label>
+            <select id="s_niveau">
+              <option value="">Choisis ton niveau</option>
+              <option value="debutant">Débutant (premiers trails)</option>
+              <option value="intermediaire">Intermédiaire (trails réguliers)</option>
+              <option value="avance">Avancé (compétiteur)</option>
+              <option value="elite">Élite (podiums)</option>
+            </select>
+          </div>
+
+          <div class="survey-field full">
+            <span class="survey-label" id="lblPred">Les temps prédits te semblent-ils justes ? (1 : pas du tout, 5 : très justes)</span>
+            <div class="rating-group" id="ratingPrediction" role="group" aria-labelledby="lblPred">
+              <button type="button" class="rating-btn" onclick="selectRating('ratingPrediction', this, '1')">1</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingPrediction', this, '2')">2</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingPrediction', this, '3')">3</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingPrediction', this, '4')">4</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingPrediction', this, '5')">5</button>
+            </div>
+          </div>
+
+          <div class="survey-field full">
+            <span class="survey-label" id="lblProf">Ton profil (archétype, scores) te ressemble-t-il ? (1 à 5)</span>
+            <div class="rating-group" id="ratingProfil" role="group" aria-labelledby="lblProf">
+              <button type="button" class="rating-btn" onclick="selectRating('ratingProfil', this, '1')">1</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingProfil', this, '2')">2</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingProfil', this, '3')">3</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingProfil', this, '4')">4</button>
+              <button type="button" class="rating-btn" onclick="selectRating('ratingProfil', this, '5')">5</button>
+            </div>
+          </div>
+
+          <div class="survey-field full">
+            <span class="survey-label">Ce que tu aimerais voir arriver</span>
+            <div class="checkbox-group" id="checkFeatures">
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Import automatique Strava</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Import automatique Garmin</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Conseils nutritionnels</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Export PDF de la simulation</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Coach IA personnalisé</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Intégration météo</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Suivi d'autres athlètes</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Application mobile</div>
+              <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0">Profil Coach (multi-athlètes)</div>
+            </div>
+          </div>
+
+          <div class="survey-field full">
+            <label class="survey-label" for="s_commentaire">Ton retour : bugs, améliorations, impressions</label>
+            <textarea id="s_commentaire" placeholder="Ex : sur mon dernier 40 km, la prédiction était 20 minutes trop optimiste en descente."></textarea>
+          </div>
+
+          <div class="survey-field full">
+            <label class="survey-label" for="s_email">Ton email, si tu veux être prévenu des nouveautés (facultatif)</label>
+            <input type="email" id="s_email" placeholder="ton@email.com" autocomplete="email">
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary survey-send" onclick="envoyerQuestionnaire()">Envoyer mon avis</button>
       </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">Trail + Rando</div>
-        <div class="hero-stat-label">Double profil</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-val">±</div>
-        <div class="hero-stat-label">Fourchettes dynamiques</div>
+
+      <div class="survey-success" id="surveySuccess" role="status">
+        <div class="survey-success-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <h3>Merci, c'est envoyé.</h3>
+        <p>Ton avis part directement à l'équipe SUM'IT et servira à la prochaine version de l'algorithme.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Features ── -->
-<div class="features">
-  <div class="feat">
-    <div class="feat-num">01 — Profil</div>
-    <h3>Analyse de ton style</h3>
-    <p>Grimpeur, descendeur, équilibré... Découvre tes forces et faiblesses sur chaque type de terrain depuis tes propres traces GPX.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">02 — Prédiction</div>
-    <h3>Simulation de course</h3>
-    <p>Temps estimé avec fourchette basse et haute personnalisées, batterie énergétique et graphique de profil coloré kilomètre par kilomètre.</p>
-  </div>
-  <div class="feat">
-    <div class="feat-num">03 — Passage</div>
-    <h3>Ravitos &amp; points clés</h3>
-    <p>Temps de passage précis aux ravitaillements trail ou points d'intérêt rando, avec état de ta réserve d'énergie.</p>
-  </div>
-</div>
-
-<!-- ── Comment ça marche ── -->
-<div class="how-section">
-  <div style="max-width:1120px; margin:0 auto;">
-    <div class="section-tag">Comment ça marche</div>
-    <h2 class="section-title">Trois étapes pour <em>prédire ta course</em></h2>
-    <p class="section-sub">Un algorithme calibré sur tes propres performances, pas sur des moyennes génériques.</p>
-    <div class="how-grid">
-      <div class="how-card">
-        <div class="how-num">1</div>
-        <h3>Importe tes GPX</h3>
-        <p>Glisse tes traces depuis Garmin, Strava ou Komoot. Plus tu en importes, plus ton profil est précis et fiable.</p>
-      </div>
-      <div class="how-card">
-        <div class="how-num">2</div>
-        <h3>Découvre ton profil</h3>
-        <p>L'algorithme calcule ta VEP par terrain, ton modèle de fatigue et ton archétype de coureur.</p>
-      </div>
-      <div class="how-card">
-        <div class="how-num">3</div>
-        <h3>Simule ta course</h3>
-        <p>Importe la trace de ta prochaine course, entre tes ravitos et obtiens tes temps de passage avec fourchette haute/basse.</p>
-      </div>
-    </div>
-    <div style="text-align:center; margin-top:48px;">
-      <button class="btn-primary" onclick="window.location.href='pages/profil.html'">
-        Créer mon profil
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ QUESTIONNAIRE BÊTA-TESTEURS ════════════════════════════════════ -->
-<div class="survey-section" id="questionnaire">
-  <div class="survey-inner">
-
-    <div class="section-tag">Bêta-testeurs</div>
-    <h2 class="section-title">Ton avis nous est <em>précieux</em></h2>
-    <p class="section-sub">
-      SUM'IT est en phase de test. Partage ton expérience pour nous aider à améliorer l'algorithme et les fonctionnalités.
-    </p>
-
-    <!-- Formulaire -->
-    <div id="surveyForm">
-      <div class="survey-grid">
-
-        <!-- Prénom -->
-        <div class="survey-field">
-          <label class="survey-label">Prénom</label>
-          <input type="text" id="s_prenom" placeholder="Ex : Jake">
-        </div>
-
-        <!-- Niveau -->
-        <div class="survey-field">
-          <label class="survey-label">Niveau trail</label>
-          <select id="s_niveau">
-            <option value="">— Sélectionne —</option>
-            <option value="debutant">Débutant (premiers trails)</option>
-            <option value="intermediaire">Intermédiaire (trails régulier)</option>
-            <option value="avance">Avancé (compétiteur)</option>
-            <option value="elite">Élite (podiums)</option>
-          </select>
-        </div>
-
-        <!-- Note pertinence prédiction -->
-        <div class="survey-field full">
-          <label class="survey-label">Pertinence des prédictions de temps — note de 1 à 5</label>
-          <div class="rating-group" id="ratingPrediction">
-            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '1')">1 — Pas du tout</button>
-            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '2')">2 — Peu pertinent</button>
-            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '3')">3 — Moyen</button>
-            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '4')">4 — Pertinent</button>
-            <button class="rating-btn" onclick="selectRating('ratingPrediction', this, '5')">5 — Très pertinent</button>
-          </div>
-        </div>
-
-        <!-- Note profil coureur -->
-        <div class="survey-field full">
-          <label class="survey-label">Pertinence du profil coureur (archétype, scores) — note de 1 à 5</label>
-          <div class="rating-group" id="ratingProfil">
-            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '1')">1</button>
-            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '2')">2</button>
-            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '3')">3</button>
-            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '4')">4</button>
-            <button class="rating-btn" onclick="selectRating('ratingProfil', this, '5')">5</button>
-          </div>
-        </div>
-
-        <!-- Fonctionnalités souhaitées -->
-        <div class="survey-field full">
-          <label class="survey-label">Fonctionnalités que tu souhaiterais voir dans SUM'IT</label>
-          <div class="checkbox-group" id="checkFeatures">
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="import_strava">Import automatique Strava
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="import_garmin">Import automatique Garmin
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="nutrition">Conseils nutritionnels
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="pdf">Export PDF de la simulation
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="coach_ia">Coach IA personnalisé
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="meteo">Intégration météo
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="social">Suivi d'autres athlètes
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="appli_mobile">Application mobile
-            </label>
-            <label class="checkbox-item" onclick="toggleCheck(this)">
-              <input type="checkbox" value="coaching">Profil Coach (multi-athlètes)
-            </label>
-          </div>
-        </div>
-
-        <!-- Commentaire libre -->
-        <div class="survey-field full">
-          <label class="survey-label">Commentaires libres — améliorations, bugs, impressions</label>
-          <textarea id="s_commentaire" placeholder="Tes retours nous aident directement à améliorer l'algorithme..."></textarea>
-        </div>
-
-        <!-- Email optionnel -->
-        <div class="survey-field full">
-          <label class="survey-label">Ton email (optionnel — pour te tenir informé des mises à jour)</label>
-          <input type="email" id="s_email" placeholder="ton@email.com">
-        </div>
-
-      </div>
-
-      <button class="btn-primary" style="width:100%; padding:16px; margin-top:8px;"
-              onclick="envoyerQuestionnaire()">
-        Envoyer mon avis
-      </button>
-    </div>
-
-    <!-- Message succès -->
-    <div class="survey-success" id="surveySuccess">
-      <div class="survey-success-icon">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
-      <h3>Merci pour ton retour !</h3>
-      <p>Ton avis a été envoyé à l'équipe SUM'IT.<br>Il nous aide directement à améliorer l'algorithme.</p>
-    </div>
-
-  </div>
-</div>
-
 <!-- ── Footer ── -->
 <footer class="footer">
   <div>
-    <div class="footer-logo">SUM<span>'IT</span></div>
-    <div class="footer-sub">Plan your peaks · Trail &amp; Rando</div>
+    <div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div>
+    <div class="footer-sub">Plan your peaks. Trail et randonnée.</div>
   </div>
-  <div style="display:flex; gap:24px; align-items:center;">
-    <a href="pages/avenir.html" style="font-size:12px; color:var(--slate);">À venir</a>
-    <a href="#questionnaire"    style="font-size:12px; color:var(--slate);">Donner mon avis</a>
+  <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+    <a href="pages/avenir.html" style="font-size:14px; color:var(--text-2);">À venir</a>
+    <a href="#questionnaire"    style="font-size:14px; color:var(--text-2);">Donner mon avis</a>
     <div class="footer-copy">© 2026 SUM'IT</div>
   </div>
 </footer>
 
 <script src="js/main.js"></script>
 <script>
-// ══════════════════════════════════════════════
-//  EmailJS — initialisation
-//  Remplace 'YOUR_PUBLIC_KEY' par ta clé EmailJS
-// ══════════════════════════════════════════════
-emailjs.init('YOUR_PUBLIC_KEY');
+/* ══════════════════════════════════════════════════════════════
+   HERO — la CCC en direct
+   Données réelles : profil GPX + temps prédits par le moteur SUM'IT
+   (api.py → simuler) pour le profil d'exemple. [km, altitude, minutes]
+   ══════════════════════════════════════════════════════════════ */
+const CCC  = {"pts":[[0.01,1221,0],[0.24,1210,2],[0.47,1219,4],[0.71,1226,6],[0.94,1224,8],[1.18,1242,11],[1.42,1255,14],[1.65,1274,17],[1.88,1300,21],[2.12,1329,26],[2.35,1358,30],[2.58,1386,34],[2.82,1417,39],[3.06,1453,44],[3.29,1478,48],[3.53,1507,52],[3.76,1522,55],[3.99,1551,59],[4.23,1584,64],[4.46,1622,69],[4.7,1663,74],[4.93,1730,81],[5.17,1771,87],[5.4,1826,93],[5.63,1877,99],[5.87,1948,106],[6.1,1981,110],[6.34,1962,112],[6.57,1966,115],[6.81,1981,119],[7.04,1998,122],[7.28,2035,127],[7.51,2104,134],[7.75,2182,140],[7.98,2263,147],[8.22,2341,154],[8.45,2417,161],[8.69,2493,167],[8.92,2562,174],[9.15,2527,176],[9.4,2478,178],[9.63,2457,179],[9.87,2400,182],[10.1,2354,184],[10.34,2309,186],[10.56,2323,189],[10.81,2324,191],[11.04,2314,193],[11.27,2300,194],[11.51,2277,196],[11.75,2253,198],[11.97,2246,199],[12.21,2232,201],[12.44,2185,203],[12.68,2105,205],[12.91,2025,208],[13.15,1970,210],[13.38,2008,215],[13.62,2016,218],[13.85,1997,220],[14.09,1992,221],[14.32,1976,223],[14.56,1966,224],[14.79,1965,226],[15.02,1955,228],[15.27,1935,229],[15.49,1934,231],[15.73,1938,233],[15.96,1963,237],[16.2,1983,240],[16.43,1973,242],[16.67,1953,244],[16.91,1934,245],[17.14,1928,247],[17.38,1951,251],[17.61,1960,253],[17.84,1971,256],[18.07,1982,259],[18.31,1991,261],[18.55,1987,263],[18.78,2009,267],[19.02,1977,269],[19.26,1949,270],[19.49,1932,272],[19.72,1922,274],[19.96,1932,276],[20.19,1944,279],[20.42,1972,283],[20.66,2023,289],[20.9,2029,292],[21.13,2017,294],[21.37,1999,295],[21.6,2015,298],[21.84,2045,303],[22.07,2056,306],[22.3,2029,307],[22.54,2037,310],[22.77,2050,312],[23.01,2039,314],[23.24,2041,316],[23.48,2042,318],[23.71,2042,320],[23.95,2024,322],[24.18,2017,323],[24.41,2003,325],[24.65,1977,327],[24.89,1932,329],[25.12,1900,331],[25.36,1845,333],[25.59,1795,335],[25.82,1772,337],[26.06,1785,340],[26.29,1840,346],[26.53,1890,352],[26.76,1937,358],[27.0,1952,361],[27.24,1962,363],[27.46,1984,367],[27.7,2032,373],[27.93,2072,378],[28.17,2122,384],[28.41,2178,391],[28.64,2225,397],[28.87,2275,403],[29.11,2324,409],[29.34,2393,416],[29.58,2452,424],[29.82,2497,429],[30.05,2516,433],[30.29,2492,435],[30.52,2469,437],[30.75,2444,438],[30.99,2412,440],[31.22,2388,442],[31.46,2362,444],[31.69,2321,446],[31.93,2289,448],[32.16,2284,450],[32.4,2258,452],[32.63,2239,453],[32.87,2197,456],[33.1,2153,458],[33.34,2106,461],[33.57,2078,462],[33.81,2051,464],[34.04,2031,466],[34.28,2006,468],[34.51,1968,470],[34.74,1952,472],[34.98,1983,477],[35.21,1995,480],[35.45,1977,482],[35.68,1948,484],[35.92,1916,486],[36.16,1868,488],[36.39,1834,490],[36.63,1764,493],[36.86,1720,496],[37.09,1682,498],[37.32,1682,500],[37.56,1670,502],[37.8,1648,504],[38.03,1637,506],[38.27,1627,508],[38.5,1620,509],[38.73,1625,512],[38.97,1617,513],[39.2,1605,515],[39.44,1600,517],[39.68,1599,519],[39.91,1578,521],[40.14,1574,522],[40.38,1559,524],[40.61,1545,526],[40.85,1541,528],[41.09,1545,530],[41.32,1526,532],[41.56,1517,534],[41.78,1517,536],[42.02,1478,538],[42.26,1457,540],[42.49,1440,542],[42.72,1426,544],[42.96,1399,546],[43.19,1379,547],[43.43,1386,550],[43.66,1382,552],[43.9,1407,557],[44.13,1414,560],[44.37,1376,562],[44.6,1336,564],[44.84,1327,566],[45.07,1321,568],[45.31,1315,570],[45.55,1307,572],[45.78,1289,573],[46.01,1278,575],[46.25,1258,577],[46.49,1210,580],[46.72,1207,582],[46.95,1202,584],[47.19,1193,585],[47.42,1171,587],[47.66,1159,589],[47.89,1148,591],[48.12,1131,593],[48.36,1125,595],[48.6,1114,597],[48.83,1113,599],[49.07,1096,601],[49.3,1066,603],[49.53,1058,605],[49.77,1079,609],[50.0,1112,614],[50.23,1128,619],[50.49,1172,626],[50.71,1196,630],[50.96,1222,635],[51.2,1266,642],[51.46,1294,648],[51.67,1338,654],[51.89,1382,661],[52.11,1409,667],[52.35,1402,669],[52.58,1419,673],[52.82,1446,679],[53.05,1467,683],[53.29,1476,686],[53.52,1473,688],[53.76,1474,691],[53.99,1475,693],[54.23,1489,697],[54.46,1490,699],[54.7,1501,703],[54.93,1500,705],[55.16,1482,707],[55.4,1462,709],[55.64,1440,711],[55.87,1432,713],[56.1,1416,715],[56.34,1406,717],[56.58,1398,719],[56.81,1394,722],[57.04,1383,725],[57.28,1358,727],[57.51,1332,729],[57.75,1331,733],[57.98,1340,736],[58.22,1350,739],[58.45,1359,742],[58.69,1372,746],[58.92,1392,751],[59.16,1412,756],[59.39,1449,762],[59.63,1495,770],[59.86,1548,779],[60.09,1599,787],[60.33,1615,793],[60.57,1612,796],[60.8,1666,804],[61.03,1720,812],[61.27,1807,821],[61.5,1856,829],[61.74,1879,834],[61.98,1906,840],[62.21,1931,846],[62.44,1956,851],[62.68,1982,857],[62.91,1998,861],[63.15,2032,867],[63.39,2016,871],[63.62,1987,873],[63.86,1934,877],[64.09,1881,880],[64.32,1877,883],[64.56,1850,885],[64.79,1833,887],[65.03,1789,890],[65.27,1734,893],[65.5,1714,896],[65.73,1688,898],[65.97,1655,900],[66.2,1631,903],[66.44,1609,906],[66.67,1576,908],[66.91,1535,911],[67.14,1526,914],[67.4,1528,918],[67.61,1532,921],[67.84,1533,923],[68.08,1462,927],[68.31,1371,930],[68.55,1334,933],[68.79,1292,936],[69.02,1309,940],[69.26,1308,943],[69.48,1297,945],[69.72,1303,948],[69.96,1310,951],[70.19,1318,955],[70.43,1327,958],[70.66,1337,961],[70.89,1370,968],[71.13,1423,977],[71.36,1518,986],[71.6,1618,995],[71.83,1684,1005],[72.07,1745,1015],[72.3,1807,1024],[72.53,1869,1034],[72.77,1922,1043],[73.01,1962,1051],[73.24,2005,1059],[73.47,2024,1064],[73.71,2027,1067],[73.94,2034,1070],[74.18,2054,1075],[74.42,2050,1079],[74.65,2005,1083],[74.88,1982,1085],[75.12,1937,1088],[75.35,1886,1092],[75.59,1835,1095],[75.83,1786,1098],[76.06,1775,1101],[76.29,1762,1103],[76.53,1756,1105],[76.77,1769,1110],[77.0,1774,1113],[77.23,1764,1116],[77.47,1736,1119],[77.7,1691,1122],[77.94,1668,1124],[78.17,1636,1127],[78.41,1579,1131],[78.64,1511,1134],[78.88,1451,1138],[79.11,1398,1141],[79.34,1346,1145],[79.58,1284,1148],[79.82,1288,1152],[80.05,1277,1154],[80.28,1279,1157],[80.52,1284,1160],[80.75,1288,1163],[80.99,1291,1166],[81.22,1301,1169],[81.46,1325,1175],[81.69,1323,1177],[81.93,1324,1180],[82.16,1339,1184],[82.39,1353,1188],[82.63,1364,1192],[82.87,1378,1196],[83.1,1385,1200],[83.33,1403,1205],[83.57,1423,1210],[83.81,1434,1214],[84.04,1451,1219],[84.28,1469,1223],[84.51,1476,1227],[84.75,1466,1230],[84.98,1451,1232],[85.21,1438,1234],[85.45,1443,1238],[85.68,1478,1245],[85.92,1526,1254],[86.15,1571,1263],[86.39,1628,1272],[86.62,1682,1282],[86.86,1720,1290],[87.09,1699,1293],[87.32,1634,1296],[87.56,1579,1300],[87.8,1514,1304],[88.03,1464,1307],[88.26,1488,1313],[88.5,1527,1321],[88.74,1520,1324],[88.97,1526,1327],[89.2,1538,1332],[89.44,1563,1338],[89.67,1582,1343],[89.91,1583,1346],[90.14,1636,1356],[90.38,1692,1366],[90.61,1723,1373],[90.85,1763,1381],[91.08,1804,1390],[91.32,1844,1398],[91.55,1882,1406],[91.79,1869,1410],[92.02,1820,1414],[92.26,1778,1417],[92.49,1745,1420],[92.73,1717,1423],[92.96,1676,1426],[93.2,1628,1429],[93.43,1588,1433],[93.67,1548,1436],[93.9,1463,1440],[94.14,1417,1443],[94.37,1394,1446],[94.6,1375,1448],[94.84,1356,1451],[95.07,1338,1453],[95.31,1298,1456],[95.54,1251,1460],[95.78,1206,1463],[96.01,1201,1466],[96.25,1170,1469],[96.48,1140,1472],[96.72,1122,1474],[96.95,1092,1477],[97.19,1054,1480],[97.42,1044,1483],[97.65,1042,1485],[97.89,1042,1488],[98.13,1041,1491],[98.36,1041,1493]],"ravitos":[{"nom":"Refuge Bertone","km":14.1,"alt":1989,"min":222},{"nom":"Arnouvaz","km":25.8,"alt":1771,"min":337},{"nom":"La Fouly","km":39.8,"alt":1593,"min":520},{"nom":"Champex-Lac","km":55.4,"alt":1466,"min":709},{"nom":"Trient","km":69.6,"alt":1300,"min":947},{"nom":"Vallorcine","km":80.1,"alt":1276,"min":1154}],"total_min":1493,"dplus":5742,"dist":98.4};
+const BACK = {"far":[0.021,0.056,0.103,0.163,0.232,0.302,0.366,0.413,0.441,0.456,0.464,0.467,0.477,0.494,0.526,0.575,0.629,0.683,0.737,0.789,0.838,0.872,0.878,0.869,0.847,0.819,0.787,0.745,0.7,0.665,0.635,0.611,0.594,0.579,0.571,0.574,0.588,0.611,0.642,0.668,0.693,0.732,0.769,0.811,0.856,0.9,0.951,0.988,0.998,1.0,0.99,0.969,0.928,0.87,0.807,0.747,0.683,0.616,0.554,0.504,0.467,0.443,0.43,0.43,0.43,0.439,0.455,0.484,0.516,0.548,0.57,0.588,0.596,0.597,0.586,0.571,0.564,0.571,0.596,0.629,0.671,0.721,0.772,0.813,0.831,0.828,0.813,0.785,0.747,0.699,0.647,0.61,0.595,0.587,0.586,0.589,0.601,0.612,0.62,0.613,0.593,0.565,0.523,0.471,0.42,0.361,0.302,0.251,0.2,0.161,0.13,0.105,0.084,0.066,0.052,0.04,0.028,0.016,0.006,0.0],"mid":[0.005,0.015,0.027,0.042,0.06,0.079,0.1,0.12,0.14,0.162,0.184,0.207,0.228,0.248,0.268,0.288,0.306,0.322,0.336,0.353,0.368,0.382,0.397,0.412,0.427,0.442,0.456,0.471,0.483,0.495,0.507,0.517,0.526,0.535,0.545,0.563,0.578,0.591,0.608,0.628,0.648,0.666,0.685,0.708,0.732,0.754,0.779,0.804,0.829,0.85,0.871,0.892,0.914,0.936,0.958,0.978,0.993,1.0,1.0,0.993,0.978,0.958,0.934,0.908,0.883,0.859,0.835,0.811,0.784,0.756,0.728,0.7,0.671,0.641,0.613,0.587,0.564,0.543,0.526,0.512,0.5,0.488,0.479,0.472,0.462,0.449,0.434,0.419,0.401,0.382,0.36,0.34,0.322,0.303,0.285,0.269,0.26,0.257,0.26,0.264,0.268,0.274,0.277,0.273,0.262,0.245,0.226,0.206,0.183,0.162,0.138,0.114,0.089,0.066,0.045,0.028,0.015,0.006,0.001,0.0]};
 
-// Ratings sélectionnés
+(function heroRun() {
+  const run    = document.getElementById('run');
+  const stage  = document.getElementById('runStage');
+  const svg    = document.getElementById('runSvg');
+  const postsEl= document.getElementById('runPosts');
+  const tag    = document.getElementById('runTag');
+  const tagTime= document.getElementById('tagTime');
+  const tagKm  = document.getElementById('tagKm');
+  const tagAlt = document.getElementById('tagAlt');
+  if (!run || !svg) return;
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const pts = CCC.pts;                       // [km, alt, min]
+  const D = pts[pts.length - 1][0];
+  const TOTAL = pts[pts.length - 1][2];
+  const ALT_MIN = 1000, ALT_MAX = 2600;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Formats ──
+  function fmtTime(min) {
+    let h = Math.floor(min / 60), mm = Math.round(min - h * 60);
+    if (mm === 60) { h += 1; mm = 0; }
+    return `${h} h ${String(mm).padStart(2, '0')}`;
+  }
+  const fmtKm  = km => 'km ' + km.toFixed(1).replace('.', ',');
+  const fmtAlt = a  => Math.round(a).toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, ' ') + ' m';
+
+  // ── Ciel : couleurs par heure (départ 9 h, arrivée le lendemain) ──
+  const SKY = [
+    { h: 7.6,  a:'#14305A', b:'#2A4E80', c:'#7E93B8', g:'rgba(255,214,160,0.30)', x:25, s:0 },
+    { h: 9.5,  a:'#12325C', b:'#1D4A7A', c:'#3A6EA3', g:'rgba(255,236,200,0.16)', x:55, s:0 },
+    { h: 18.2, a:'#12325C', b:'#1D4A7A', c:'#3A6EA3', g:'rgba(255,236,200,0.16)', x:70, s:0 },
+    { h: 20.1, a:'#1A2146', b:'#4B3261', c:'#D2744E', g:'rgba(255,140,80,0.55)',  x:86, s:0.15 },
+    { h: 21.6, a:'#060C18', b:'#0B1528', c:'#16233D', g:'rgba(90,120,210,0.12)',  x:60, s:1 },
+    { h: 29.1, a:'#060C18', b:'#0B1528', c:'#16233D', g:'rgba(90,120,210,0.12)',  x:40, s:1 },
+    { h: 30.5, a:'#0F1834', b:'#2F2C5C', c:'#C07068', g:'rgba(255,160,120,0.50)', x:14, s:0.35 },
+    { h: 31.9, a:'#14305A', b:'#2A4E80', c:'#7E93B8', g:'rgba(255,214,160,0.30)', x:25, s:0 },
+    { h: 33.6, a:'#12325C', b:'#1D4A7A', c:'#3A6EA3', g:'rgba(255,236,200,0.16)', x:55, s:0 },
+    { h: 40,   a:'#12325C', b:'#1D4A7A', c:'#3A6EA3', g:'rgba(255,236,200,0.16)', x:55, s:0 },
+  ];
+  const hex = h => [1,3,5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const rgba = s => s.match(/[\d.]+/g).map(Number);
+  const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  function applySky(min) {
+    const h = 9 + min / 60;
+    let i = SKY.findIndex(k => k.h > h); if (i <= 0) i = 1;
+    const k0 = SKY[i - 1], k1 = SKY[i];
+    const t = Math.min(1, Math.max(0, (h - k0.h) / (k1.h - k0.h)));
+    const c = key => { const m = mix(hex(k0[key]), hex(k1[key]), t).map(Math.round); return `rgb(${m.join(',')})`; };
+    const g = mix(rgba(k0.g), rgba(k1.g), t);
+    const st = run.style;
+    st.setProperty('--sky-a', c('a'));
+    st.setProperty('--sky-b', c('b'));
+    st.setProperty('--sky-c', c('c'));
+    st.setProperty('--glow', `rgba(${Math.round(g[0])},${Math.round(g[1])},${Math.round(g[2])},${g[3].toFixed(3)})`);
+    st.setProperty('--glow-x', (k0.x + (k1.x - k0.x) * t).toFixed(1) + '%');
+    st.setProperty('--stars', (k0.s + (k1.s - k0.s) * t).toFixed(3));
+  }
+
+  // ── Géométrie ──
+  let W = 0, H = 0, runnerMin = 0;
+  const X = km => (km / D) * W;
+  const Y = alt => H * 0.80 - ((alt - ALT_MIN) / (ALT_MAX - ALT_MIN)) * H * 0.68;
+
+  let els = {};
+  const posts = [];
+
+  function el(name, attrs, parent) {
+    const e = document.createElementNS(NS, name);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    (parent || svg).appendChild(e);
+    return e;
+  }
+
+  function backPath(arr, lo, hi) {
+    let d = `M0 ${H}`;
+    arr.forEach((v, i) => { d += ` L${(i / (arr.length - 1) * W).toFixed(1)} ${(H - (lo + v * (hi - lo)) * H).toFixed(1)}`; });
+    return d + ` L${W} ${H} Z`;
+  }
+
+  function build() {
+    const r = stage.getBoundingClientRect();
+    W = Math.max(320, r.width); H = Math.max(200, r.height);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = '';
+
+    const defs = el('defs', {});
+    const lg = el('linearGradient', { id: 'ridgeGrad', x1: '0', y1: '0', x2: '1', y2: '0' }, defs);
+    [['0%', '#FFC53D'], ['55%', '#2FCB7F'], ['100%', '#5B9BFF']].forEach(([o, c]) => el('stop', { offset: o, 'stop-color': c }, lg));
+    const fg = el('linearGradient', { id: 'fillGrad', x1: '0', y1: '0', x2: '0', y2: '1' }, defs);
+    [['0%', '#13213A'], ['70%', '#0C1628'], ['100%', '#0B1424']].forEach(([o, c]) => el('stop', { offset: o, 'stop-color': c }, fg));
+    const rg = el('radialGradient', { id: 'lampGrad' }, defs);
+    [['0%', 'rgba(255,244,214,0.95)'], ['35%', 'rgba(255,214,120,0.35)'], ['100%', 'rgba(255,214,120,0)']].forEach(([o, c]) => el('stop', { offset: o, 'stop-color': c }, rg));
+    const cp = el('clipPath', { id: 'doneClip' }, defs);
+    els.clip = el('rect', { x: 0, y: -40, width: 0, height: H + 80 }, cp);
+
+    // Arrière-plans : deux vraies courses en montagnes lointaines
+    el('path', { d: backPath(BACK.far, 0.34, 0.74), class: 'run-back-far' });
+    el('path', { d: backPath(BACK.mid, 0.20, 0.58), class: 'run-back-mid' });
+
+    // Premier plan : la CCC
+    let line = '';
+    pts.forEach(([km, alt], i) => { line += `${i ? 'L' : 'M'}${X(km).toFixed(1)} ${Y(alt).toFixed(1)} `; });
+    el('path', { d: `${line} L${W} ${H} L0 ${H} Z`, fill: 'url(#fillGrad)' });
+    el('path', { d: line, fill: 'none', stroke: 'rgba(234,240,247,0.30)', 'stroke-width': 1.5, 'stroke-linejoin': 'round' });
+    const done = el('g', { 'clip-path': 'url(#doneClip)' });
+    el('path', { d: line, fill: 'none', stroke: 'url(#ridgeGrad)', 'stroke-width': 7, 'stroke-opacity': 0.22, 'stroke-linejoin': 'round' }, done);
+    el('path', { d: line, fill: 'none', stroke: 'url(#ridgeGrad)', 'stroke-width': 2.6, 'stroke-linejoin': 'round' }, done);
+
+    // Frontale
+    els.runner = el('g', {});
+    el('circle', { r: 26, fill: 'url(#lampGrad)', class: 'run-halo' }, els.runner);
+    el('circle', { r: 5, fill: '#FFFFFF' }, els.runner);
+
+    // Panneaux
+    postsEl.innerHTML = '';
+    posts.length = 0;
+    const list = CCC.ravitos.concat([{ nom: 'Chamonix', km: D, alt: pts[pts.length - 1][1], min: TOTAL, finish: true }]);
+    list.forEach(rv => {
+      const p = document.createElement('div');
+      p.className = 'post' + (rv.finish ? ' is-finish' : '');
+      p.innerHTML = `<div class="post-pole"></div>
+        <div class="post-plate"><span>${rv.nom}</span><span class="post-time">${fmtTime(rv.min)}</span></div>`;
+      p.style.left = X(rv.km) + 'px';
+      p.style.bottom = (H - Y(rv.alt)) + 'px';
+      postsEl.appendChild(p);
+      posts.push({ el: p, min: rv.min, finish: !!rv.finish, x: X(rv.km), ground: Y(rv.alt) });
+    });
+    layoutPosts();
+    draw(runnerMin);
+  }
+
+  // Place chaque panneau à la plus basse hauteur libre : aucun chevauchement,
+  // ni avec les panneaux déjà posés, ni avec le bord droit de la scène.
+  function layoutPosts() {
+    const LEVELS = [28, 60, 92, 124, 156];
+    const placed = [];
+    posts.forEach(p => {
+      const plate = p.el.querySelector('.post-plate');
+      const pole = p.el.querySelector('.post-pole');
+      const w = plate.offsetWidth, h = plate.offsetHeight;
+      const shift = Math.min(0, (W - 8) - (p.x + w));        // décalage si ça déborde à droite
+      const left = p.x + shift, right = left + w;
+      // Pour chaque hauteur possible (sans sortir par le haut), on mesure le
+      // chevauchement avec les panneaux déjà posés et on garde le plus faible.
+      let chosen = LEVELS[0], best = Infinity;
+      for (const lv of LEVELS) {
+        const bottom = p.ground - lv, top = bottom - h;
+        if (top < 4 && lv !== LEVELS[0]) break;
+        const overlap = placed.reduce((acc, r) => {
+          const ox = Math.min(right + 4, r.right) - Math.max(left, r.left - 4);
+          const oy = Math.min(bottom + 3, r.bottom) - Math.max(top, r.top - 3);
+          return acc + (ox > 0 && oy > 0 ? ox * oy : 0);
+        }, 0);
+        if (overlap < best) { best = overlap; chosen = lv; }
+        if (overlap === 0) break;
+      }
+      plate.style.left = (shift - 1) + 'px';
+      plate.style.bottom = chosen + 'px';
+      pole.style.height = chosen + 'px';
+      placed.push({ left, right, top: p.ground - chosen - h, bottom: p.ground - chosen });
+    });
+  }
+
+  // Position de la frontale à un temps donné (le temps, pas la distance :
+  // elle ralentit dans les montées et accélère dans les descentes, comme le modèle)
+  function atTime(min) {
+    let lo = 0, hi = pts.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][2] <= min) lo = m; else hi = m; }
+    const a = pts[lo], b = pts[hi];
+    const t = b[2] === a[2] ? 0 : (min - a[2]) / (b[2] - a[2]);
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  }
+  function timeAtKm(km) {
+    let lo = 0, hi = pts.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][0] <= km) lo = m; else hi = m; }
+    const a = pts[lo], b = pts[hi];
+    const t = b[0] === a[0] ? 0 : (km - a[0]) / (b[0] - a[0]);
+    return a[2] + (b[2] - a[2]) * t;
+  }
+
+  function draw(min) {
+    runnerMin = Math.max(0, Math.min(TOTAL, min));
+    const [km, alt] = atTime(runnerMin);
+    const x = X(km), y = Y(alt);
+    els.clip.setAttribute('width', x);
+    els.runner.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+
+    tagTime.textContent = fmtTime(runnerMin);
+    tagKm.textContent = fmtKm(km);
+    tagAlt.textContent = fmtAlt(alt);
+    const tw = tag.offsetWidth || 120;
+    const edge = Math.min(40, W * 0.04);
+    const tx = Math.max(tw / 2 + edge, Math.min(W - tw / 2 - edge, x));
+    tag.style.transform = `translate(${(tx - tw / 2).toFixed(1)}px, ${(y + 16).toFixed(1)}px)`;
+
+    let current = -1;
+    posts.forEach((p, i) => {
+      const reached = runnerMin >= p.min - 0.5;
+      p.el.classList.toggle('is-reached', reached);
+      if (reached) current = i;
+    });
+    posts.forEach((p, i) => p.el.classList.toggle('is-current', i === current));
+    applySky(runnerMin);
+  }
+
+  // ── Animation : une seule fois, puis la main est au visiteur ──
+  const DURATION = 16000;
+  let raf = null, t0 = null;
+  function play() {
+    cancelAnimationFrame(raf);
+    t0 = null;
+    const step = ts => {
+      if (t0 === null) t0 = ts;
+      const p = Math.min(1, (ts - t0) / DURATION);
+      draw(p * TOTAL);
+      if (p < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  function stop() { cancelAnimationFrame(raf); raf = null; }
+
+  // Survol / glisser : on explore la course au kilomètre près
+  function scrubFromEvent(e) {
+    const r = stage.getBoundingClientRect();
+    const km = Math.max(0, Math.min(D, ((e.clientX - r.left) / r.width) * D));
+    draw(timeAtKm(km));
+  }
+  stage.addEventListener('pointermove', e => { stop(); scrubFromEvent(e); });
+  stage.addEventListener('pointerdown', e => { stop(); scrubFromEvent(e); });
+  stage.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault(); stop();
+    const [km] = atTime(runnerMin);
+    draw(timeAtKm(Math.max(0, Math.min(D, km + (e.key === 'ArrowRight' ? 1 : -1)))));
+  });
+  document.getElementById('runReplay').addEventListener('click', () => { draw(0); play(); });
+
+  // Redessine dès que la scène change de taille (fenêtre, chargement des polices…)
+  let resizeTimer, lastSize = '';
+  const rebuild = () => {
+    const r = stage.getBoundingClientRect();
+    const key = Math.round(r.width) + 'x' + Math.round(r.height);
+    if (key !== lastSize) { lastSize = key; build(); }
+  };
+  if ('ResizeObserver' in window) new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(rebuild, 60); }).observe(stage);
+  else window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(rebuild, 120); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rebuild);
+
+  build();
+  lastSize = Math.round(stage.getBoundingClientRect().width) + 'x' + Math.round(stage.getBoundingClientRect().height);
+  if (reduce) {
+    // Pas d'animation : on se place à Champex-Lac, à la tombée du jour
+    draw(CCC.ravitos[3].min);
+  } else {
+    draw(0);
+    setTimeout(play, 700);
+  }
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   SEPT PENTES — vitesses réelles = VEP ÷ facteur d'équivalence-pente
+   (mêmes facteurs que le moteur : +5 % 1,40 ; +11 % 2,00 ; +18 % 2,58 ;
+    −5 % 0,85 ; −11 % 0,82 ; −18 % 0,95). Profils d'exemple.
+   ══════════════════════════════════════════════════════════════ */
+(function slopes() {
+  const svg = document.getElementById('slopeSvg');
+  const cols = document.getElementById('slopeCols');
+  if (!svg || !cols) return;
+  const TERRAINS = [
+    { nom: 'Plat',           pente: 'de −3 à +3 %',  gf: 1.00, rise: 0 },
+    { nom: 'Montée douce',   pente: '+3 à +8 %',      gf: 1.40, rise: 40 },
+    { nom: 'Montée soutenue',pente: '+8 à +15 %',     gf: 2.00, rise: 80 },
+    { nom: 'Montée raide',   pente: 'plus de 15 %',   gf: 2.58, rise: 130 },
+    { nom: 'Descente raide', pente: 'plus de −15 %',  gf: 0.95, rise: -130 },
+    { nom: 'Descente soutenue', pente: '−8 à −15 %',  gf: 0.82, rise: -80 },
+    { nom: 'Descente douce', pente: '−3 à −8 %',      gf: 0.85, rise: -40 },
+  ];
+  const PROFILS = {
+    grimpeur:   [9.5, 9.6, 9.4, 9.2, 7.3, 8.1, 8.9],
+    descendeur: [9.5, 8.7, 7.8, 7.2, 10.1, 10.4, 10.0],
+  };
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 1400, colW = W / 7, base = 430;
+
+  // Silhouette : chaque segment est une pente
+  let x = 0, y = base, d = `M0 ${base}`;
+  const segs = [];
+  TERRAINS.forEach(t => {
+    const x2 = x + colW, y2 = y - t.rise;
+    segs.push([x, y, x2, y2]);
+    d += ` L${x2} ${y2}`;
+    x = x2; y = y2;
+  });
+  const minY = Math.min(...segs.map(s => Math.min(s[1], s[3])));
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="slopeFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16263F"/><stop offset="100%" stop-color="#0B1424"/></linearGradient>
+      <linearGradient id="slopeLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#5B9BFF"/></linearGradient>
+    </defs>
+    <path d="${d} L${W} 470 L0 470 Z" fill="url(#slopeFill)"/>
+    ${segs.map((s, i) => `<line x1="${s[0]}" y1="${s[1]}" x2="${s[2]}" y2="${s[3]}" stroke="rgba(234,240,247,0.14)" stroke-width="1"/>`).join('')}
+    <path d="${d}" fill="none" stroke="url(#slopeLine)" stroke-width="3" stroke-linejoin="round"/>
+    ${segs.slice(1).map(s => `<circle cx="${s[0]}" cy="${s[1]}" r="4" fill="#0B1424" stroke="rgba(234,240,247,0.5)" stroke-width="1.5"/>`).join('')}
+  `;
+
+  // Libellés placés au-dessus de chaque pente
+  cols.innerHTML = TERRAINS.map((t, i) => {
+    const s = segs[i];
+    const topY = Math.min(s[1], s[3]);
+    const pct = ((topY - 150) / 470) * 100;   // au-dessus de la pente, en % de la hauteur
+    return `<div class="slope-col"><div class="slope-lbl" style="top:${Math.max(0, pct).toFixed(1)}%">
+      <div><span class="slope-name">${t.nom}<small>${t.pente}</small></span></div>
+      <div><div class="slope-speed" data-i="${i}">–<i>km/h</i></div><div class="slope-vep" data-v="${i}"></div></div>
+    </div></div>`;
+  }).join('');
+
+  const fmt = v => v.toFixed(1).replace('.', ',');
+  let current = null;
+  function show(name, animate) {
+    const vep = PROFILS[name];
+    const plat = vep[0];
+    TERRAINS.forEach((t, i) => {
+      const target = vep[i] / t.gf;
+      const sp = cols.querySelector(`[data-i="${i}"]`);
+      const vv = cols.querySelector(`[data-v="${i}"]`);
+      const ecart = Math.round((vep[i] - plat) / plat * 100);
+      vv.innerHTML = i === 0 ? 'référence' : `vaut ${fmt(vep[i])} à plat (<b class="${ecart >= 0 ? 'up' : 'down'}">${ecart > 0 ? '+' : ''}${ecart} %</b>)`;
+      const from = current ? PROFILS[current][i] / t.gf : target;
+      if (!animate || from === target) { sp.firstChild.nodeValue = fmt(target); return; }
+      const t0 = performance.now();
+      const tick = now => {
+        const p = Math.min(1, (now - t0) / 450);
+        const e = 1 - Math.pow(1 - p, 3);
+        sp.firstChild.nodeValue = fmt(from + (target - from) * e);
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    current = name;
+  }
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      show(btn.dataset.profil, !reduce);
+    });
+  });
+  show('grimpeur', false);
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   QUESTIONNAIRE — EmailJS
+   ══════════════════════════════════════════════════════════════ */
+// Garde-fou : si le CDN d'EmailJS est bloqué, le reste de la page doit continuer à marcher
+if (window.emailjs) emailjs.init('rc324sv1XWdtOjTM6');
+
 const ratings = { ratingPrediction: '', ratingProfil: '' };
 
 function selectRating(groupId, btn, value) {
   ratings[groupId] = value;
-  document.querySelectorAll(`#${groupId} .rating-btn`).forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll(`#${groupId} .rating-btn`).forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
   btn.classList.add('selected');
+  btn.setAttribute('aria-pressed', 'true');
 }
 
-function toggleCheck(label) {
-  label.classList.toggle('checked');
-}
+// Cases à cocher accessibles (clic, Espace, Entrée)
+document.querySelectorAll('#checkFeatures .checkbox-item').forEach(item => {
+  const toggle = () => { item.classList.toggle('checked'); item.setAttribute('aria-checked', String(item.classList.contains('checked'))); };
+  item.addEventListener('click', toggle);
+  item.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+});
 
 function envoyerQuestionnaire() {
   const prenom      = document.getElementById('s_prenom').value.trim();
@@ -733,15 +939,17 @@ function envoyerQuestionnaire() {
   const commentaire = document.getElementById('s_commentaire').value.trim();
   const email       = document.getElementById('s_email').value.trim();
 
-  if (!prenom) { alert('Indique ton prénom !'); return; }
+  if (!prenom) {
+    const f = document.getElementById('s_prenom');
+    f.focus();
+    f.setAttribute('aria-invalid', 'true');
+    f.placeholder = 'Indique ton prénom pour envoyer';
+    return;
+  }
 
-  // Récupération des fonctionnalités cochées
   const features = [];
-  document.querySelectorAll('#checkFeatures .checkbox-item.checked input').forEach(cb => {
-    features.push(cb.value);
-  });
+  document.querySelectorAll('#checkFeatures .checkbox-item.checked').forEach(el => features.push(el.textContent.trim()));
 
-  // Paramètres du mail
   const params = {
     to_email:          'sup.sumit@outlook.com',
     prenom:            prenom || 'Non renseigné',
@@ -754,19 +962,21 @@ function envoyerQuestionnaire() {
     date:              new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
   };
 
-  // Envoi via EmailJS
-  // Remplace 'YOUR_SERVICE_ID' et 'YOUR_TEMPLATE_ID' après création sur emailjs.com
-  emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', params)
+  if (!window.emailjs) { alert("L'envoi est indisponible pour le moment (service de messagerie bloqué). Réessaie plus tard."); return; }
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
     .then(() => {
       document.getElementById('surveyForm').style.display    = 'none';
       document.getElementById('surveySuccess').style.display = 'block';
     })
     .catch(err => {
       console.error('EmailJS error:', err);
-      alert('Erreur d\'envoi. Réessaie dans quelques instants.');
+      alert("L'envoi n'est pas passé. Vérifie ta connexion et réessaie dans un instant.");
     });
 }
 </script>
 
+  <script src="/js/api-client.js"></script>
+  <script src="/js/nav-user.js"></script>
+  <script src="/js/onboarding.js"></script>
 </body>
 </html>
