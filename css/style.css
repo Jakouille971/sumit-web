@@ -833,7 +833,8 @@ input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--s
   .nav-burger.open span:nth-child(2) { opacity: 0; }
   .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-  .nav-links {
+  /* Menu déroulant : uniquement si le burger a bien été créé par nav-user.js */
+  .nav.has-burger .nav-links {
     position: fixed;
     top: var(--nav-h); left: 0; right: 0;
     flex-direction: column;
@@ -848,11 +849,23 @@ input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--s
     transition: max-height 0.3s ease, padding 0.3s ease;
     display: flex !important;
   }
-  .nav-links.mobile-open { max-height: 440px; padding: 8px 0 16px; }
-  .nav-link { padding: 14px 24px; border-radius: 0; font-size: 17px; width: 100%; }
-  .nav-link::after { left: 0; right: auto; top: 12px; bottom: 12px; width: 3px; height: auto; transform: scaleY(0); }
-  .nav-link.active::after { transform: scaleY(1); }
+  .nav.has-burger .nav-links.mobile-open { max-height: 440px; padding: 8px 0 16px; }
+  .nav.has-burger .nav-link { padding: 14px 24px; border-radius: 0; font-size: 17px; width: 100%; }
+  .nav.has-burger .nav-link::after { left: 0; right: auto; top: 12px; bottom: 12px; width: 3px; height: auto; transform: scaleY(0); }
+  .nav.has-burger .nav-link.active::after { transform: scaleY(1); }
   body[data-page="home"] .nav:has(.nav-links.mobile-open) { background: rgba(9, 16, 30, 0.98); }
+
+  /* Secours sans JavaScript : les liens restent accessibles en bandeau défilant */
+  .nav:not(.has-burger) .nav-links {
+    position: fixed;
+    top: var(--nav-h); left: 0; right: 0;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    padding: 6px 10px;
+    background: rgba(9, 16, 30, 0.96);
+    border-bottom: 1px solid var(--line);
+  }
 
   #nav-user-container { margin-left: 10px; gap: 8px !important; }
   .nav-tuto-btn span { display: none; }
