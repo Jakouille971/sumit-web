@@ -2,863 +2,685 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="SUM'IT — Simulateur de course">
-  <meta property="og:description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta property="og:description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
   <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/simulateur.html">
   <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <meta property="og:site_name" content="SUM'IT">
   <meta property="og:locale" content="fr_FR">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="SUM'IT — Simulateur de course">
-  <meta name="twitter:description" content="Simule ton temps sur n'importe quelle course de trail ou rando. Importe le GPX, ajoute tes ravitaillements et obtiens un temps de passage estimé à chaque point.">
+  <meta name="twitter:description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
-  <title>SUM'IT — Simulateur</title>
-  <link rel="stylesheet" href="../css/style.css?v=20260930">
+  <title>SUM'IT — Simulateur de course</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
-    body { padding-top: 64px; }
+    /* ── Simulateur ─────────────────────────────────────────── */
+    .sim-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .sim-layout > * { min-width: 0; }
 
-    .sim-layout { display:grid; grid-template-columns:380px 1fr; min-height:calc(100vh - 64px - 240px); }
-    .sim-sidebar { border-right:1px solid var(--line); padding:40px 36px; background:var(--bg-2); }
-    .sim-main { padding:40px 48px; background:var(--bg-3); }
+    /* Colonne de saisie */
+    .sim-sidebar {
+      position: sticky;
+      top: calc(var(--nav-h) + 12px);
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+    }
+    .step-block { padding-bottom: 20px; }
+    .step-block + .step-block, .step-divider + .step-block { padding-top: 20px; border-top: 1px solid var(--rule); }
+    #profilSelector[style*="display:none"] + .step-block, #profilSelector[style*="display: none"] + .step-block { padding-top: 0; border-top: 0; }
+    .step-divider { display: none; }
+    .step-header { margin-bottom: 12px; }
+    .step-num { display: none; }
+    .step-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; }
+    .step-desc { margin-top: 2px; font-size: 13px; color: var(--muted); line-height: 1.5; }
 
-    .step-block { margin-bottom:32px; }
-    .step-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
-    .step-num { width:28px; height:28px; border:2px solid var(--sun); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:var(--font-hero); font-size:16px; font-weight:800; color:var(--sun); }
-    .step-title { font-family:var(--font-display); font-size:16px; font-weight:500; color:var(--text); letter-spacing:0.02em; margin-bottom:3px; }
-    .step-desc { font-size:12px; font-weight:300; color:var(--text-2); line-height:1.6; }
-    .step-divider { height:0.5px; background:var(--line); margin:28px 0; }
+    .profil-toggle-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 3px !important; padding: 3px; background: var(--active); border-radius: 8px; margin-top: 0 !important; }
+    .profil-toggle-btn { min-height: 34px; border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--muted); transition: color var(--t-hover) ease, background-color var(--t-hover) ease; }
+    .profil-toggle-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    #profilSelectorInfo { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    #profilSelectorInfo a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
-    .upload-zone-sm { border:1.5px dashed rgba(255,197,61,0.35); border-radius:12px; padding:20px; text-align:center; background:rgba(255,197,61,0.05); cursor:pointer; transition:background 0.2s, border-color 0.2s; }
-    .upload-zone-sm:hover { background:rgba(255,200,87,0.08); border-color:rgba(255,200,87,0.5); }
-    .upload-zone-sm svg { width:18px; height:18px; stroke:var(--sun); fill:none; stroke-width:1.5; margin:0 auto 8px; display:block; }
-    .upload-zone-sm p { font-size:12px; color:var(--text-2); pointer-events:none; }
+    .upload-zone-sm {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      column-gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1.5px dashed var(--control);
+      border-radius: var(--radius-card);
+      background: var(--raised);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease;
+    }
+    .upload-zone-sm svg { grid-row: span 2; width: 36px; height: 36px; padding: 8px; border-radius: 8px; background: var(--paper); border: 1px solid var(--border); fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .upload-zone-sm p { font-size: 14px; font-weight: 600; pointer-events: none; }
+    .upload-zone-sm p + p { font-size: 13px; font-weight: 400; color: var(--muted); }
+    .upload-zone-sm.is-over { border-color: var(--data); background: var(--data-soft); }
+    @media (hover: hover) and (pointer: fine) { .upload-zone-sm:hover { border-color: var(--ink); background: var(--paper); } }
 
-    .file-detected { background:rgba(255,200,87,0.04); border:1px solid var(--line-2); padding:12px 14px; margin-top:10px; display:none; }
-    .file-detected-name { font-size:13px; color:var(--text); margin-bottom:6px; }
-    .file-meta-row { display:flex; gap:12px; flex-wrap:wrap; }
-    .file-meta-val { font-family:var(--font-display); font-size:14px; color:var(--sun); }
-    .file-meta-label { font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.08em; }
+    .demo-cta { margin-top: 12px; }
+    .demo-cta-or { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+    .demo-cta-or::before, .demo-cta-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .btn-demo-ccc {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 40px 1fr 16px;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: var(--radius-card);
+      background: var(--ink);
+      color: var(--paper);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-demo-ccc:active { transform: scale(0.98); }
+    @media (hover: hover) and (pointer: fine) { .btn-demo-ccc:hover { background: #2A2F37; } }
+    .demo-ccc-emoji { width: 40px; height: 40px; border-radius: 8px; background: var(--sky); display: flex; align-items: center; justify-content: center; }
+    .demo-ccc-emoji svg { width: 30px; height: 22px; }
+    .btn-demo-ccc > svg { width: 16px; height: 16px; }
+    .demo-ccc-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .demo-ccc-text strong { font-size: 15px; font-weight: 600; }
+    .demo-ccc-text small { font-size: 13px; color: #C9CED6; font-variant-numeric: tabular-nums; }
+    .demo-cta-note { margin-top: 8px; font-size: 13px; color: var(--muted); }
 
-    .input-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; display:block; }
-    .input-group { margin-bottom:16px; }
+    .file-detected { display: none; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .file-detected.show { display: block; }
+    .file-detected-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-meta-row { display: flex; gap: 24px; }
+    .file-meta-val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .file-meta-label { font-size: 12px; color: var(--muted); }
+    .input-group { margin-top: 14px; }
+    .input-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+
+    /* Ravitaillements */
+    .ravitos-head, .ravito-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 64px 32px; gap: 6px; align-items: center; }
+    .ravito-row input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+    .ravito-row input[type="number"]::-webkit-outer-spin-button, .ravito-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ravitos-head { margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .ravitos-head span:first-child, .ravitos-head span:nth-child(3) { text-align: center; }
+    .ravitos-list { display: grid; gap: 6px; margin-bottom: 10px; }
+    .ravito-row input { min-height: 36px; padding: 6px 8px; font-size: 15px; }
+    .ravito-km-input, .ravito-pause-input { text-align: center; font-variant-numeric: tabular-nums; }
+    .btn-del-ravito { width: 32px; height: 36px; border-radius: 6px; font-size: 18px; line-height: 1; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .btn-del-ravito:hover { background: var(--negative-bg); color: var(--negative); } }
+    .btn-add-ravito { min-height: 36px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 600; background: #E6E9ED; color: var(--ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-add-ravito:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-add-ravito:hover { background: #DADEE3; } }
+    .ravitos-hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+    /* Profil de référence */
+    .ref-rows { border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .ref-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; font-size: 14px; border-top: 1px solid var(--rule); }
+    .ref-row:first-child { border-top: 0; }
+    .ref-row span:first-child { color: var(--muted); display: inline-flex; align-items: center; }
+    .ref-row span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ref-note { margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .ref-note a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
     .btn-simulate {
       width: 100%;
-      padding: 18px;
-      background: var(--gradient-summit);
-      color: var(--bg);
-      font-family: var(--font-display);
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
-      box-shadow: 0 4px 18px rgba(255, 200, 87, 0.25);
-      margin-top: 8px;
-    }
-    .btn-simulate:hover {
-      transform: translateY(-1px);
-      opacity: 0.95;
-      box-shadow: 0 6px 24px rgba(255, 200, 87, 0.35);
-    }
-    .btn-simulate:disabled {
-      opacity: 0.35;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .empty-state { text-align:center; padding:80px 20px; }
-    .empty-icon { width:64px; height:64px; border:1px solid var(--line-2); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
-    .empty-icon svg { width:28px; height:28px; stroke:var(--text-2); fill:none; stroke-width:1.5; }
-    .empty-title { font-family:var(--font-display); font-size:20px; font-weight:500; color:var(--text-2); margin-bottom:8px; letter-spacing:0.04em; }
-    .empty-sub { font-size:13px; color:var(--text-2); opacity:0.5; line-height:1.6; }
-
-    .result-kpis { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid var(--line); margin-bottom:20px; }
-    .result-kpi { padding:20px; border-right:1px solid var(--line); text-align:center; }
-    .result-kpi:last-child { border-right:none; }
-    .result-kpi-label { font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px; }
-    .result-kpi-val { font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--text); letter-spacing:0.01em; }
-    .result-kpi-val.cyan { background: var(--gradient-summit); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .result-kpi-val.red { color:var(--danger); }
-    .result-kpi-val.grn { color:var(--leaf); }
-
-    .fourch-row { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); margin-bottom:20px; }
-    .fourch-item { padding:16px 20px; border-right:1px solid var(--line); }
-    .fourch-item:last-child { border-right:none; }
-    .fourch-label { font-family:var(--font-display); font-size:10px; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:6px; }
-    .fg .fourch-label { color:var(--leaf); }
-    .fr .fourch-label { color:var(--danger); }
-    .fourch-val { font-family:var(--font-display); font-size:20px; font-weight:500; }
-    .fg .fourch-val { color:#9FE1CB; }
-    .fr .fourch-val { color:#F5C4B3; }
-    .fourch-sub { font-size:11px; color:var(--text-2); margin-top:4px; }
-
-    .chart-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
-    .chart-header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-    .chart-title { font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
-    .chart-legend { display:flex; gap:14px; flex-wrap:wrap; }
-    .legend-item { display:flex; align-items:center; gap:5px; }
-    .legend-dot { width:8px; height:8px; border-radius:50%; }
-    .legend-label { font-size:11px; color:var(--text-2); }
-    .chart-body { padding:16px 20px 8px; }
-
-    .ravito-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
-    .ravito-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
-
-    .terrain-card { background:var(--bg-2); border:1px solid var(--line); margin-bottom:20px; }
-    .terrain-header { padding:14px 20px; border-bottom:1px solid var(--line); font-family:var(--font-display); font-size:10px; color:var(--sun); text-transform:uppercase; letter-spacing:0.14em; }
-    .terrain-body { padding:16px 20px; }
-    .terrain-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .terrain-icon { width:26px; height:26px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .terrain-icon svg { width:13px; height:13px; fill:none; stroke-width:1.8; }
-    .terrain-label { font-family:var(--font-display); font-size:11px; color:var(--text-2); width:130px; flex-shrink:0; }
-    .terrain-track { flex:1; height:4px; background:rgba(255,255,255,0.06); }
-    .terrain-fill { height:100%; transition:width 1s ease; }
-    .terrain-time { font-family:var(--font-display); font-size:12px; color:var(--text); width:60px; text-align:right; }
-    .terrain-pct { font-size:11px; color:var(--text-2); width:36px; text-align:right; }
-
-    @media (max-width:1024px) {
-      .sim-layout { grid-template-columns:1fr; }
-      .sim-sidebar { border-right:none; border-bottom:1px solid var(--line); padding:32px 24px; }
-      .sim-main { padding:32px 24px; }
-      .result-kpis { grid-template-columns:1fr 1fr; }
-      
-    }
-
-    /* ── Bouton avis flottant ── */
-    .floating-feedback {
-      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
-      background: var(--sun); color: var(--ink);
-      font-family: var(--font-display); font-size: 15px; font-weight: 700;
-      letter-spacing: 0.005em; text-transform: none;
-      padding: 12px 18px; border: none; border-radius: 999px; cursor: pointer;
-      box-shadow: 0 12px 30px -10px rgba(255,197,61,0.65);
-      display: flex; align-items: center; gap: 8px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .floating-feedback:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,200,87,0.5); }
-    .floating-feedback svg { width: 16px; height: 16px; stroke: var(--bg); fill: none; stroke-width: 2; }
-
-    /* ── Modal avis ── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(13,27,42,0.85);
-      display: none; align-items: center; justify-content: center;
-      z-index: 2000; padding: 20px;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-      background: var(--bg-2); border: 1px solid var(--line-2);
-      max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;
-      padding: 36px;
-    }
-    .modal-close {
-      float: right; cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
-      background: none; border: none; color: var(--text); font-size: 24px;
-    }
-    .modal-close:hover { opacity: 1; }
-    .modal-content h2 { font-family: var(--font-display); font-size: 24px; color: var(--text); margin-bottom: 8px; }
-    .modal-content p.modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
-
-    .rating-group { display: flex; gap: 6px; }
-    .rating-btn {
-      flex: 1; padding: 8px 4px; border: 1px solid var(--line);
-      background: transparent; color: var(--text-2);
-      font-family: var(--font-display); font-size: 11px; cursor: pointer;
-      transition: all 0.2s; text-align: center;
-    }
-    .rating-btn:hover, .rating-btn.selected {
-      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
-    }
-
-    /* ── Bouton PDF ── */
-    .btn-pdf {
-      background: var(--gradient-summit);
-      color: var(--bg);
-      font-family: var(--font-display); font-size: 13px; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      padding: 14px 28px; border: none; border-radius: 4px;
-      cursor: pointer; transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
-      margin-bottom: 20px;
-      display: inline-flex; align-items: center; gap: 10px;
-      box-shadow: 0 4px 14px rgba(255, 200, 87, 0.20);
-    }
-
-    /* ── Toggle Profil Trail/Rando ── */
-    .profil-toggle-btn {
-      flex: 1;
-      background: var(--bg-3);
-      border: 1px solid var(--line-2);
-      color: var(--text-2);
-      font-family: var(--font-display);
-      font-size: 12px;
+      min-height: 48px;
+      margin-top: 4px;
+      border-radius: var(--radius-control);
+      font-size: 15px;
       font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 9px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
+      background: var(--ink);
+      color: var(--paper);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
     }
-    .profil-toggle-btn:hover { color: var(--text); border-color: var(--text-3); }
-    .profil-toggle-btn.active {
-      background: var(--sun-soft);
-      border-color: var(--sun);
-      color: var(--sun);
-    }
+    .btn-simulate:active { transform: scale(0.98); }
+    .btn-simulate:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    @media (hover: hover) and (pointer: fine) { .btn-simulate:hover:not(:disabled) { background: #2A2F37; } }
 
-    /* ── Bouton Épingler simulation ── */
-    .btn-pin {
-      background: transparent;
-      color: var(--sun);
-      font-family: var(--font-display); font-size: 13px; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      padding: 14px 22px; border: 1px solid var(--sun); border-radius: 4px;
-      cursor: pointer;
-      margin-bottom: 20px;
-      margin-left: 10px;
-      display: inline-flex; align-items: center; gap: 10px;
-      transition: all 0.2s;
-    }
-    .btn-pin:hover { background: var(--sun-soft); transform: translateY(-1px); }
-    .btn-pin.pinned {
-      background: var(--gradient-summit);
-      color: var(--bg);
-      border: none;
-    }
-    .btn-pin:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-pin svg { width: 15px; height: 15px; fill: currentColor; stroke: none; }
-    .btn-pdf:hover { transform: translateY(-1px); opacity: 0.95; box-shadow: 0 6px 20px rgba(255, 200, 87, 0.30); }
-    .btn-pdf svg { width: 15px; height: 15px; stroke: var(--bg); fill: none; stroke-width: 2; }
-
-    /* ── Carte Leaflet ── */
-    .map-card {
-      background: var(--bg-2); border: 1px solid var(--line); margin-bottom: 20px; border-radius: 6px; overflow: hidden;
-    }
-    .map-header {
-      padding: 14px 20px; border-bottom: 1px solid var(--line);
-      font-family: var(--font-display); font-size: 10px; color: var(--sun);
-      text-transform: uppercase; letter-spacing: 0.14em;
-    }
-    /* ── Checkbox items modal ── */
-    .checkbox-item {
-      padding: 7px 12px; border: 1px solid var(--line); cursor: pointer;
-      font-size: 12px; color: var(--text-2); transition: all 0.2s; user-select: none;
-    }
-    .checkbox-item:hover, .checkbox-item.checked {
-      border-color: var(--sun); color: var(--sun); background: var(--sun-soft);
-    }
-
-    /* ── Toggles courbes ── */
-    .chart-toggle {
-      display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
-    }
-    .chart-toggle input { display: none; }
-    .toggle-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      opacity: 0.3; transition: opacity 0.2s;
-    }
-    .chart-toggle input:checked ~ .toggle-dot { opacity: 1; box-shadow: 0 0 8px currentColor; }
-    .toggle-label {
-      font-size: 11px; color: var(--text-2); transition: color 0.2s;
-    }
-    .chart-toggle input:checked ~ .toggle-label { color: var(--text); }
-
-    /* ── Tooltip curseur graphique ── */
-    .chart-tooltip {
-      display: none;
-      position: absolute;
-      pointer-events: none;
-      z-index: 100;
-      background: rgba(11, 20, 36, 0.95);
-      backdrop-filter: blur(8px);
-      border: 1px solid var(--sun);
-      border-radius: 6px;
-      padding: 10px 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 3px rgba(255, 200, 87, 0.10);
-      min-width: 180px;
-      max-width: 220px;
-      font-family: 'Inter', sans-serif;
-    }
-    .chart-tooltip .tt-header {
-      font-family: var(--font-display);
-      font-size: 13px;
-      color: var(--sun);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(255, 200, 87, 0.2);
-      font-weight: 700;
-    }
-    .chart-tooltip .tt-row {
-      display: flex;
+    /* Zone de résultats */
+    .sim-main { display: grid; gap: 16px; }
+    .sim-main > *, #simResults > *, .sim-pair > * { min-width: 0; }
+    .empty-state {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+      gap: 24px 40px;
       align-items: center;
-      gap: 8px;
-      padding: 3px 0;
-      font-size: 11.5px;
+      padding: 32px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
     }
-    .chart-tooltip .tt-row .tt-ic {
-      width: 14px;
-      text-align: center;
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-    .chart-tooltip .tt-row .tt-lbl {
-      color: var(--text-3);
-      font-size: 10.5px;
-      flex: 1;
-    }
-    .chart-tooltip .tt-row strong {
-      color: var(--text);
-      font-weight: 600;
-      font-family: var(--font-display);
-      font-size: 12.5px;
-      text-align: right;
-    }
-    .chart-tooltip .tt-row-split {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      padding-top: 5px;
-      margin-top: 5px;
-      border-top: 1px solid rgba(244, 241, 232, 0.06);
-    }
-    .chart-tooltip .tt-row-split span {
+    .empty-copy { display: grid; justify-items: start; gap: 8px; }
+    .empty-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .empty-sub { font-size: 15px; color: var(--ink); max-width: 46ch; }
+    .empty-state .btn-primary { margin-top: 12px; }
+    .empty-preview { background: var(--ground); border-radius: var(--radius-card); padding: 16px; min-width: 0; }
+    .empty-preview .gp-range { font-size: 15px; }
+    .empty-preview .gp-table tr:last-child td { border-top: 1px solid var(--border); }
+    @media (max-width: 1240px) { .empty-state { grid-template-columns: 1fr; } }
+
+    #simResults { display: grid; gap: 16px; }
+    .sim-results-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; }
+    .sim-results-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .sim-results-head p { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sim-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-pdf, .btn-pin {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 11px;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius-control);
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
+    }
+    .btn-pdf { background: #E6E9ED; color: var(--ink); }
+    .btn-pin { background: var(--ink); color: var(--paper); }
+    .btn-pdf svg, .btn-pin svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-pdf svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+    .btn-pin svg { fill: currentColor; }
+    .btn-pdf:active, .btn-pin:active { transform: scale(0.97); }
+    .btn-pdf:disabled, .btn-pin:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-pin.pinned { background: var(--positive); }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-pdf:hover:not(:disabled) { background: #DADEE3; }
+      .btn-pin:hover:not(:disabled):not(.pinned) { background: #2A2F37; }
     }
 
-    #leafletMap { height: 320px; width: 100%; }
-
-    /* ── Tooltip (i) ── */
-    .info-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 16px; height: 16px;
-      cursor: help; margin-left: 6px;
-      vertical-align: middle; transition: all 0.2s;
-      position: relative;
-      color: var(--text-2);
+    /* Bande de chiffres : le temps estimé mène */
+    .result-strip {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr));
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
     }
-    .info-icon svg { width: 14px; height: 14px; display: block; }
-    .info-icon:hover { color: var(--sun); }
-    .info-icon::after {
-      content: attr(data-tooltip);
-      position: absolute; bottom: calc(100% + 8px); left: 50%;
-      transform: translateX(-50%);
-      width: 280px; padding: 10px 12px;
-      background: var(--bg-3); color: var(--text);
-      border: 1px solid var(--sun);
-      font-size: 11px; font-weight: 300; line-height: 1.5;
-      letter-spacing: 0.02em;
-      white-space: normal; text-align: left;
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.2s, visibility 0.2s;
-      z-index: 100;
+    .result-kpi, .fourch-item { padding: 16px 16px; border-left: 1px solid var(--border); min-width: 0; }
+    .result-kpi.lead { border-left: 0; }
+    .result-kpi-label, .fourch-label { display: flex; align-items: center; font-size: 13px; color: var(--muted); white-space: nowrap; }
+    .result-kpi-val, .fourch-val { margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .result-kpi-val.cyan { font-size: 32px; font-weight: 700; color: var(--data); }
+    .fourch-sub { font-size: 12px; color: var(--muted); }
+
+    .chart-card, .map-card, .ravito-card, .terrain-card, .feedback-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .chart-header, .ravito-header, .terrain-header, .map-header { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 16px 18px 0; }
+    .chart-title, .ravito-header, .terrain-header, .map-header { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .chart-title { display: flex; align-items: center; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .legend-label { font-variant-numeric: tabular-nums; }
+    .chart-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
+    .chart-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; user-select: none; }
+    .chart-toggle input { width: 16px; height: 16px; }
+    .toggle-dot { width: 16px; height: 0; border-top: 2px dashed var(--ink); }
+    .toggle-dot.fc { border-top-style: dotted; border-top-color: var(--negative); border-top-width: 3px; }
+    .toggle-label { color: var(--ink); }
+    .chart-body { position: relative; padding: 8px 10px 10px; }
+    #profilChart { width: 100%; display: block; overflow: visible; }
+    #profilChart text { font-family: var(--font); }
+    .chart-tooltip {
+      position: absolute;
+      display: none;
+      z-index: 20;
+      min-width: 190px;
+      padding: 10px 12px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 8px;
+      box-shadow: var(--shadow-float);
       pointer-events: none;
-    }
-    .info-icon:hover::after { opacity: 1; visibility: visible; }
-    .info-icon::before {
-      content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%;
-      transform: translateX(-50%);
-      border: 6px solid transparent; border-top-color: var(--sun);
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.2s;
-    }
-    .info-icon:hover::before { opacity: 1; visibility: visible; }
-    /* ════════ UNIFORMISATION TAILLES DE TEXTE ════════ */
-    /* Échelle harmonisée pour réduire la disparité visuelle */
-
-    /* Titres de cards : tous à 14px */
-    .ravito-header,
-    .terrain-header,
-    .breakdown-header,
-    .map-header { font-size: 14px !important; letter-spacing: 0.06em; }
-
-    /* Sous-titres + labels uppercase : tous à 10-11px */
-    .step-num,
-    .file-meta-label,
-    .input-label,
-    .kpi-label,
-    .panel-label { font-size: 10px !important; letter-spacing: 0.12em; }
-
-    /* Titres d'étapes (sidebar) : 14px */
-    .step-title { font-size: 14px !important; }
-
-    /* Descriptions / texte courant : 12px */
-    .step-desc,
-    .upload-zone-sm p,
-    .panel-desc { font-size: 12px !important; line-height: 1.55; }
-
-    /* Tableau ravitos : 12-13px */
-    .data-table th { font-size: 11px !important; letter-spacing: 0.06em; }
-    .data-table td { font-size: 13px !important; }
-
-    /* KPIs grands chiffres : 24-26px */
-    .kpi-val { font-size: 24px !important; }
-    .kpi-sub { font-size: 11px !important; }
-
-    /* Bouton flottant feedback : 12px */
-    .floating-feedback { font-size: 12px !important; }
-
-    /* Modal headers : 16-18px */
-    .modal-content h2 { font-size: 18px !important; }
-
-    /* ── Liste dynamique de ravitos ── */
-    .ravitos-head {
-      display: grid;
-      grid-template-columns: 64px 1fr 58px 32px;
-      gap: 7px;
-      margin-bottom: 6px;
-      padding: 0 2px;
-    }
-    .ravitos-head span {
-      font-family: var(--font-display);
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.06em; text-transform: uppercase;
-      color: var(--text-3);
-      text-align: center;
-    }
-    .ravitos-head span:nth-child(2) { text-align: left; }
-    .ravitos-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
-    .ravito-row {
-      display: grid;
-      grid-template-columns: 64px 1fr 58px 32px;
-      gap: 7px;
-      align-items: center;
-    }
-    .ravito-row input {
-      background: var(--bg-3, #15161a);
-      border: 1px solid var(--line);
-      color: var(--text);
-      padding: 9px 11px;
       font-size: 13px;
-      border-radius: 5px;
-      outline: none;
-      width: 100%;
-      font-family: inherit;
     }
-    .ravito-row input:focus { border-color: var(--sun); }
-    .ravito-row input::placeholder { color: var(--text-3); }
-    .ravito-km-input { text-align: center; font-family: var(--font-display); }
-    .ravito-pause-input { text-align: center; font-family: var(--font-display); color: var(--sky); }
-    .btn-del-ravito {
-      background: transparent;
-      border: 1px solid var(--line);
-      color: var(--text-3);
-      width: 32px; height: 36px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 18px;
-      line-height: 1;
-      transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
+    .chart-tooltip .tt-header { font-size: 14px; font-weight: 700; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .chart-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+    .chart-tooltip .tt-ic { display: none; }
+    .chart-tooltip .tt-lbl { color: #B9C0CB; }
+    .chart-tooltip .tt-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chart-tooltip .tt-row-split { justify-content: flex-start; gap: 16px; }
+
+    .sim-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    .map-card { overflow: hidden; display: flex; flex-direction: column; }
+    .map-header { padding-bottom: 12px; }
+    #leafletMap { flex: 1; min-height: 320px; width: 100%; background: var(--raised); border-top: 1px solid var(--border); }
+    .terrain-body { padding: 8px 18px 14px; display: grid; gap: 2px; }
+    .terrain-bar-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto 52px;
+      grid-template-areas: "icon label time pct" ". track track track";
+      column-gap: 10px;
+      row-gap: 6px;
+      align-items: center;
+      padding: 6px 0;
     }
-    .btn-del-ravito:hover { border-color: var(--danger); color: var(--danger); background: rgba(229,91,91,0.08); }
-    .btn-add-ravito {
-      background: transparent;
-      border: 1px dashed var(--line-2);
-      color: var(--text-2);
-      font-family: var(--font-display);
-      font-size: 12px; font-weight: 600;
-      letter-spacing: 0.06em;
-      padding: 10px 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-      transition: all 0.2s;
+    .terrain-icon { grid-area: icon; }
+    .terrain-label { grid-area: label; }
+    .terrain-track { grid-area: track; }
+    .terrain-time { grid-area: time; }
+    .terrain-pct { grid-area: pct; }
+    .terrain-icon { width: 20px; height: 20px; color: var(--muted); }
+    .terrain-icon svg { width: 20px; height: 20px; }
+    .terrain-label { font-size: 13px; }
+    .terrain-track { height: 8px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+    .terrain-fill { height: 100%; border-radius: 2px; transition: width 700ms var(--ease-out); }
+    .terrain-time { font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+    .terrain-pct { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+    .ravito-header { padding-bottom: 10px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ravito-card .data-table th:first-child, .ravito-card .data-table td:first-child { padding-left: 18px; }
+    .ravito-card .data-table th:last-child, .ravito-card .data-table td:last-child { padding-right: 18px; }
+    .ravito-card .data-table td:first-child { white-space: normal; min-width: 150px; }
+    .ravito-card .data-table td.t { font-weight: 600; }
+    .pause-badge { display: inline-flex; align-items: center; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); white-space: nowrap; vertical-align: 1px; }
+
+    .feedback-card { display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; padding: 16px 18px; }
+    .feedback-card p { font-size: 14px; color: var(--muted); }
+    .feedback-card strong { display: block; font-size: 15px; color: var(--ink); }
+
+    /* Bandeau du mode édition */
+    #editingBanner {
+      position: sticky;
+      top: var(--nav-h);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px var(--shell-x);
+      font-size: 14px;
+      background: var(--ink);
+      color: var(--paper);
     }
-    .btn-add-ravito:hover { border-color: var(--sun); color: var(--sun); }
-    /* ── Bouton démo CCC ── */
-    .demo-cta { margin-top: 16px; }
-    .demo-cta-or {
-      display: flex; align-items: center; gap: 12px;
-      margin: 4px 0 14px;
+    #editingBanner strong { font-weight: 600; }
+    #editingBanner button { min-height: 32px; padding: 0 12px; border-radius: 6px; font-size: 13px; font-weight: 600; background: rgba(255, 255, 255, 0.14); color: var(--paper); white-space: nowrap; }
+    @media (hover: hover) and (pointer: fine) { #editingBanner button:hover { background: rgba(255, 255, 255, 0.24); } }
+
+    /* Avis */
+    .rating-group { display: flex; gap: 6px; }
+    .rating-btn { width: 44px; height: 40px; border-radius: 6px; background: var(--ground); font-size: 15px; font-weight: 600; transition: background-color var(--t-hover) ease, color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .rating-btn:active { transform: scale(0.95); }
+    .rating-btn.selected { background: var(--ink); color: var(--paper); }
+    .checkbox-item { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 6px; background: var(--ground); font-size: 14px; cursor: pointer; user-select: none; transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    .checkbox-item.checked { background: var(--ink); color: var(--paper); }
+    .avis-field { margin-bottom: 16px; }
+    .avis-success { display: none; padding: 16px 0 4px; }
+    .avis-success h3 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .avis-success p { font-size: 14px; color: var(--muted); }
+
+    /* ── Tablette et téléphone ────────────────────────────────── */
+    @media (max-width: 1180px) {
+      .result-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .result-kpi-label, .fourch-label { white-space: normal; }
+      .result-kpi.lead { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
+      .result-strip > :nth-child(2) { border-left: 0; }
+      .sim-pair { grid-template-columns: 1fr; }
     }
-    .demo-cta-or::before, .demo-cta-or::after {
-      content: ''; flex: 1; height: 1px; background: var(--line);
+    @media (max-width: 1000px) {
+      .sim-layout { grid-template-columns: 1fr; }
+      .sim-sidebar { position: static; }
+      .empty-state { padding: 20px; }
+      .empty-preview { padding: 10px; margin: 0 -6px; }
     }
-    .demo-cta-or span {
-      font-size: 11px; color: var(--text-3);
-      text-transform: uppercase; letter-spacing: 0.1em;
+    @media (max-width: 600px) {
+      .result-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .result-kpi-label, .fourch-label { white-space: normal; }
+      .result-kpi-val, .fourch-val { font-size: 19px; white-space: normal; }
+      .result-strip > * { border-left: 0 !important; border-top: 1px solid var(--border); }
+      .result-strip > :nth-child(odd):not(.lead) { border-left: 1px solid var(--border) !important; }
+      .result-kpi.lead { border-top: 0; border-bottom: 0; }
+      .result-kpi-val.cyan { font-size: 28px; }
+      .terrain-bar-row { grid-template-columns: 20px minmax(0, 1fr) auto 48px; }
+      #leafletMap { min-height: 260px; }
+      .sim-actions { width: 100%; }
+      .sim-actions > * { flex: 1; justify-content: center; }
+      .ravito-card .data-table td:first-child, .ravito-card .data-table th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; min-width: 130px; }
     }
-    .btn-demo-ccc {
-      width: 100%;
-      display: flex; align-items: center; gap: 14px;
-      background: linear-gradient(135deg, rgba(255,200,87,0.10), rgba(79,163,217,0.08));
-      border: 1px solid rgba(255,200,87,0.35);
-      border-radius: 10px;
-      padding: 16px 18px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: left;
-    }
-    .btn-demo-ccc:hover {
-      border-color: var(--sun);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-    .demo-ccc-emoji { font-size: 30px; flex-shrink: 0; }
-    .demo-ccc-text { display: flex; flex-direction: column; gap: 3px; }
-    .demo-ccc-text strong {
-      font-family: var(--font-display);
-      font-size: 15px; font-weight: 700; color: var(--text);
-      letter-spacing: 0.02em;
-    }
-    .demo-ccc-text small { font-size: 11.5px; color: var(--text-2); }
-    .demo-cta-note {
-      font-size: 11px; color: var(--text-3);
-      text-align: center; margin-top: 10px; line-height: 1.4;
-    }
+    .no-clock th:nth-child(4), .no-clock td:nth-child(4) { display: none; }
   </style>
 </head>
 <body data-page="simulateur">
 
-<nav class="nav">
-  <a href="../index.html" class="nav-logo">
-    <div class="nav-logo-icon"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sumitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC53D"/><stop offset="55%" stop-color="#2FCB7F"/><stop offset="100%" stop-color="#2E7DF6"/></linearGradient><clipPath id="sumitRound"><rect width="44" height="44" rx="10.5"/></clipPath></defs><g clip-path="url(#sumitRound)"><rect width="44" height="44" rx="10.5" fill="url(#sumitGrad)"/><path d="M 16 17.5 L 21 35 L 11 35 Z" fill="#0f1419"/><path d="M 27.5 11.5 L 38.5 35 L 16.5 35 Z" fill="#ffffff"/></g></svg></div>
-    <div class="nav-logo-text">
-      <div class="nav-logo-name"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#logoTriGrad)"/></svg><span class="logo-it">IT</span></div>
-      <div class="nav-logo-sub">Plan your peaks</div>
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link active" aria-current="page">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
     </div>
-  </a>
-  <div class="nav-links">
-    <a href="../index.html" class="nav-link">Accueil</a>
-    <a href="profil.html" class="nav-link">Mon profil</a>
-    <a href="simulateur.html" class="nav-link active">Simulateur</a>
-    <a href="bilan.html" class="nav-link">Bilan</a>
-    <a href="compte.html" class="nav-link">Mon compte</a>
-    <a href="avenir.html" class="nav-link">À venir</a>
-  </div>
-  <button class="nav-cta" onclick="window.location.href='profil.html'">Mon profil</button>
-</nav>
+  </nav>
 
-<!-- Bandeau hero -->
-<div class="page-hero">
-  <div class="page-hero-bg"></div>
-  
-  <div class="page-hero-content">
-    <div class="section-tag" style="margin-bottom:10px;">Étape 2 sur 2</div>
-    <h1>Simulateur de course</h1>
-    <p>Importe la trace de ta prochaine course et obtiens tes temps de passage.</p>
-  </div>
-</div>
+  <header class="app-head">
+    <div>
+      <h1>Simulateur</h1>
+      <p>Charge le GPX de ta course, place tes ravitos : tu obtiens ton temps et tes heures de passage.</p>
+    </div>
+  </header>
 
-<div class="sim-layout">
-  <!-- Sidebar -->
-  <div class="sim-sidebar">
+  <main class="app-main">
+  <div class="sim-layout">
+    <!-- Colonne de saisie -->
+    <aside class="sim-sidebar" aria-label="Paramètres de la simulation">
 
-    <!-- Sélecteur profil Trail/Rando -->
-    <div class="step-block" id="profilSelector" style="display:none;">
-      <div class="step-header">
-        <div class="step-num" style="background:var(--sun-soft);color:var(--sun);">★</div>
-        <div>
+      <div class="step-block" id="profilSelector" style="display:none;">
+        <div class="step-header">
           <div class="step-title">Profil utilisé</div>
-          <div class="step-desc">Quel profil veux-tu utiliser pour cette simulation ?</div>
+          <div class="step-desc">Le profil de coureur appliqué à cette course.</div>
         </div>
+        <div class="profil-toggle-row" role="group" aria-label="Profil utilisé">
+          <button type="button" class="profil-toggle-btn active" data-type="trail" onclick="switchProfilSim('trail')">Trail</button>
+          <button type="button" class="profil-toggle-btn" data-type="rando" onclick="switchProfilSim('rando')">Rando</button>
+        </div>
+        <div id="profilSelectorInfo"></div>
       </div>
-      <div class="profil-toggle-row" style="display:flex;gap:6px;margin-top:8px;">
-        <button class="profil-toggle-btn active" data-type="trail" onclick="switchProfilSim('trail')">🏃 Trail</button>
-        <button class="profil-toggle-btn" data-type="rando" onclick="switchProfilSim('rando')">🥾 Rando</button>
-      </div>
-      <div id="profilSelectorInfo" style="font-size:11px;color:var(--text-3);margin-top:10px;line-height:1.5;"></div>
-    </div>
 
-    <div class="step-block">
-      <div class="step-header">
-        <div class="step-num">1</div>
-        <div>
+      <div class="step-block">
+        <div class="step-header">
           <div class="step-title">Trace de la course</div>
-          <div class="step-desc">Importe le GPX de ta prochaine course.</div>
+          <div class="step-desc">Le fichier GPX de ta prochaine course.</div>
         </div>
-      </div>
-      <div class="upload-zone-sm" id="dropzoneSim">
-        <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-        <p>Glisse ou clique pour importer</p>
-        <p style="font-size:11px;margin-top:3px;opacity:0.5;">fichier .gpx</p>
-      </div>
-      <input type="file" id="fileGPX" accept=".gpx" style="display:none">
-
-      <div class="demo-cta">
-        <div class="demo-cta-or"><span>ou</span></div>
-        <button type="button" class="btn-demo-ccc" onclick="lancerDemoCCC()">
-          <span class="demo-ccc-emoji">🏔️</span>
-          <span class="demo-ccc-text">
-            <strong>Essayer avec la CCC</strong>
-            <small>101 km · 6100 m D+ · Courmayeur → Chamonix</small>
-          </span>
-        </button>
-        <p class="demo-cta-note">Lance une simulation complète sans compte, avec un profil de coureur d'exemple.</p>
-      </div>
-
-      <div class="file-detected" id="fileInfo">
-        <div class="file-detected-name" id="fileName">—</div>
-        <div style="margin-top:6px;"><span class="tag tag-cyan" id="fileCat">—</span></div>
-        <div class="file-meta-row" style="margin-top:10px;">
-          <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
-          <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé +</div></div>
+        <div class="upload-zone-sm" id="dropzoneSim" role="button" tabindex="0" aria-label="Importer le fichier GPX de la course">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <p>Importer le GPX</p>
+          <p>Glisse le fichier ici ou clique</p>
         </div>
-      </div>
+        <input type="file" id="fileGPX" accept=".gpx" style="display:none">
 
-      <div class="input-group" style="margin-top:14px;">
-        <label class="input-label">Nom de la course</label>
-        <input type="text" id="nomCourse" placeholder="Ex : Trail EDF 2026">
-      </div>
-    </div>
-
-    <div class="step-divider"></div>
-
-    <div class="step-block">
-      <div class="step-header">
-        <div class="step-num">2</div>
-        <div>
-          <div class="step-title">Ravitaillements & points d'intérêt<span class="info-i" data-tip="Définis tes points de passage clés : ravitaillements, cols, refuges, bases de vie… Indique le kilométrage et un nom. Le simulateur affichera ton temps de passage estimé à chacun. Laisse vide pour 4 points automatiques."></span></div>
-          <div class="step-desc">Km, nom et temps d'arrêt de chaque point.</div>
+        <div class="demo-cta">
+          <div class="demo-cta-or"><span>ou</span></div>
+          <button type="button" class="btn-demo-ccc" onclick="lancerDemoCCC()">
+            <span class="demo-ccc-emoji" aria-hidden="true"><svg viewBox="0 0 30 22"><path d="M1 21 8 9l4 5 6-11 11 18z" fill="#FFFFFF"/><path d="M8 9l4 5 6-11" fill="none" stroke="#FFC53D" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+            <span class="demo-ccc-text">
+              <strong>Essayer avec la CCC</strong>
+              <small>98,4 km · 5 742 m D+ · Courmayeur → Chamonix</small>
+            </span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4 12.5 8l-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+          <p class="demo-cta-note">Une simulation complète sans compte, avec un profil de coureur d'exemple.</p>
         </div>
-      </div>
-      <div class="ravitos-head">
-        <span>Km</span>
-        <span>Nom du point</span>
-        <span>Pause</span>
-        <span></span>
-      </div>
-      <div class="ravitos-head">
-        <span>Km</span>
-        <span>Nom du point</span>
-        <span title="Temps d'arrêt en minutes">Pause</span>
-        <span></span>
-      </div>
-      <div id="ravitosList" class="ravitos-list"></div>
-      <button type="button" class="btn-add-ravito" onclick="ajouterRavito()">+ Ajouter un point</button>
-      <!-- Champ caché conservé pour compat (rempli dynamiquement) -->
-      <input type="hidden" id="ravitos">
-    </div>
 
-    <div class="step-divider"></div>
-
-    <div class="step-block">
-      <div class="step-header">
-        <div class="step-num">3</div>
-        <div>
-          <div class="step-title">Profil de référence</div>
-          <div class="step-desc">Issu de ton analyse GPX.</div>
-        </div>
-      </div>
-      <div style="background:var(--bg-3);border:1px solid var(--line);padding:14px 16px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--text-2);">VEP globale<span class="info-i" data-tip="Vitesse Équivalente Plat : ta vitesse moyenne ramenée à du plat, en neutralisant le dénivelé. C'est l'indicateur clé de ta forme globale, indépendant du profil du parcours."></span></span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilVEP">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;color:var(--text-2);">Drain énergie<span class="info-i" data-tip="Vitesse à laquelle tu consommes ta batterie énergétique, estimée depuis ta fréquence cardiaque. Plus le drain est élevé, plus tu fatigues vite sur la durée."></span></span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilDrain">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;">
-          <span style="font-size:12px;color:var(--text-2);">Coeff. course</span>
-          <span style="font-family:var(--font-display);font-size:14px;color:var(--sun);" id="profilCoeff">—</span>
-        </div>
-      </div>
-      <p style="font-size:11px;color:var(--text-2);margin-top:10px;line-height:1.5;opacity:0.7;">
-        Pas encore de profil ? <a href="profil.html" style="color:var(--sun);">Analyse tes traces GPX →</a>
-      </p>
-    </div>
-
-    <div class="step-divider"></div>
-
-    <button class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>
-      Lancer la simulation
-    </button>
-  </div>
-
-  <!-- Main résultats -->
-  <div class="sim-main">
-    <div class="empty-state" id="emptyStateSim">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-      <div class="empty-title">Ta simulation s'affichera ici</div>
-      <div class="empty-sub">Importe une trace GPX de course<br>et lance la simulation</div>
-    </div>
-
-    <div id="simResults" style="display:none;">
-
-      <button class="btn-pdf" onclick="genererPDF()">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Télécharger en PDF
-      </button>
-
-      <button class="btn-pin" id="btnPin" onclick="epinglerSimulationActuelle()" style="display:none;">
-        <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <span id="btnPinLabel">Épingler cette simulation</span>
-      </button>
-
-      <div class="result-kpis">
-        <div class="result-kpi"><div class="result-kpi-label">Temps estimé<span class="info-icon" data-tooltip="Temps de course prédit en simulant chaque segment GPX du parcours, avec ton profil personnel et le modèle de fatigue (mécanique + batterie énergétique)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val cyan" id="resTemps">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div></div>
-        <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon" data-tooltip="Court (<25km), Moyen (25-50km), Long (50-80km) ou Ultra (>80km). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20km que sur 100km."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div></div>
-      </div>
-      <div class="fourch-row">
-        <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" data-tooltip="Temps optimiste calculé à partir de la fourchette basse de variabilité de tes performances par terrain. Représente ton temps potentiel un jour où tout se passe bien."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
-        <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" data-tooltip="Temps pessimiste basé sur la fourchette haute de variabilité. Représente un jour où les conditions sont défavorables (météo, fatigue résiduelle, gestion difficile)."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
-      </div>
-
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">Profil de course — allure &amp; ravitaillements<span class="info-icon" data-tooltip="Profil altimétrique de la course coloré par allure prédite. Les bulles cyan marquent les ravitaillements avec temps de passage. Tu peux superposer la batterie énergétique et la fréquence cardiaque estimée."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:#FFC857"></div><span class="legend-label">&lt;10'/km</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div><span class="legend-label">10-13'</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div><span class="legend-label">13-18'</span></div>
-            <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div><span class="legend-label">&gt;18'/km</span></div>
+        <div class="file-detected" id="fileInfo">
+          <div class="file-detected-name" id="fileName">—</div>
+          <div style="margin-top:6px;"><span class="tag tag-cyan" id="fileCat">—</span></div>
+          <div class="file-meta-row" style="margin-top:10px;">
+            <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
+            <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé positif</div></div>
           </div>
         </div>
-        <!-- Toggles données superposées -->
-        <div style="padding:8px 20px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:14px; align-items:center;">
-          <span style="font-family:var(--font-display); font-size:10px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.1em;">Superposer :</span>
-          <label class="chart-toggle">
-            <input type="checkbox" id="toggleAllure" onchange="dessinerProfilChart(window.lastSimData)">
-            <span class="toggle-dot" style="background:#FFD93D"></span>
-            <span class="toggle-label">Allure (min/km)</span>
-          </label>
-          <label class="chart-toggle">
-            <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
-            <span class="toggle-dot" style="background:#FF6B9D"></span>
-            <span class="toggle-label">Fréquence cardiaque (estimée)</span>
-          </label>
+
+        <div class="input-group">
+          <label class="input-label" for="nomCourse">Nom de la course</label>
+          <input type="text" id="nomCourse" placeholder="Ex : Trail des Aiguilles 2026" maxlength="80">
         </div>
-        <div class="chart-body" style="position:relative;">
-          <svg id="profilChart" viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
-          <div id="chartTooltip" class="chart-tooltip"></div>
+        <div class="input-group">
+          <label class="input-label" for="heureDepart">Heure de départ <span style="font-weight:400;color:var(--muted)">(facultatif)</span></label>
+          <input type="time" id="heureDepart" aria-describedby="heureDepartAide">
+          <div class="ravitos-hint" id="heureDepartAide">Pour lire tes heures de passage, en plus des temps de course.</div>
         </div>
       </div>
 
-      <div class="map-card">
-        <div class="map-header">🗺️ Tracé GPX</div>
-        <div id="leafletMap"></div>
+      <div class="step-block">
+        <div class="step-header">
+          <div class="step-title">Ravitaillements et points clés<span class="info-i tip-left" tabindex="0" data-tip="Tes points de passage clés : ravitaillements, cols, refuges, bases de vie. Indique le kilomètre, un nom et ta pause prévue. Laisse vide pour quatre points automatiques."></span></div>
+          <div class="step-desc">Kilomètre, nom et pause prévue de chaque point.</div>
+        </div>
+        <div class="ravitos-head" aria-hidden="true">
+          <span>km</span>
+          <span>Nom du point</span>
+          <span title="Temps d'arrêt en minutes">Pause</span>
+          <span></span>
+        </div>
+        <div id="ravitosList" class="ravitos-list"></div>
+        <button type="button" class="btn-add-ravito" onclick="ajouterRavito()">Ajouter un point</button>
+        <input type="hidden" id="ravitos">
       </div>
 
-      <div class="ravito-card">
-        <div class="ravito-header">⛽ Temps de passage aux ravitaillements</div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Point</th>
-              <th>Distance</th>
-              <th>Temps estimé</th>
-              <th>▲ Top</th>
-              <th>▼ Difficile</th>
-              <th>D+</th>
-              <th>D-</th>
-            </tr>
-          </thead>
-          <tbody id="ravitoBody"></tbody>
-        </table>
+      <div class="step-block">
+        <div class="step-header">
+          <div class="step-title">Profil de référence</div>
+          <div class="step-desc" id="profilRefDesc">Issu de l'analyse de tes sorties.</div>
+        </div>
+        <div class="ref-rows">
+          <div class="ref-row"><span>VEP globale<span class="info-i tip-left" tabindex="0" data-tip="Vitesse équivalente plat : ta vitesse ramenée à du plat, dénivelé neutralisé. L'indicateur clé de ta forme, indépendant du parcours."></span></span><span id="profilVEP">—</span></div>
+          <div class="ref-row"><span>Drain d'énergie<span class="info-i tip-left" tabindex="0" data-tip="La vitesse à laquelle tu vides ta batterie d'énergie, estimée depuis ta fréquence cardiaque. Plus il est élevé, plus la fatigue arrive vite sur la durée."></span></span><span id="profilDrain">—</span></div>
+          <div class="ref-row"><span>Coefficient course</span><span id="profilCoeff">—</span></div>
+        </div>
+        <p class="ref-note">Pas encore de profil ? <a href="profil.html">Analyse tes sorties</a></p>
       </div>
 
-      <div class="terrain-card">
-        <div class="terrain-header">Répartition du temps par terrain</div>
-        <div class="terrain-body" id="terrainBars"></div>
+      <button type="button" class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>Lancer la simulation</button>
+    </aside>
+
+    <!-- Résultats -->
+    <section class="sim-main" aria-label="Résultats de la simulation">
+      <div class="empty-state" id="emptyStateSim">
+        <div class="empty-copy">
+          <div class="empty-title">Ta simulation s'affichera ici</div>
+          <div class="empty-sub">Importe la trace GPX de ta course, place tes ravitos et lance la simulation. Pas de fichier sous la main ? Essaie la CCC : 98,4 km, une nuit en montagne, et chaque heure de passage.</div>
+          <button type="button" class="btn-primary" id="btnDemoVide" onclick="lancerDemoCCC()">Lancer la démo sur la CCC</button>
+        </div>
+        <figure class="empty-preview" aria-label="Aperçu d'un résultat">
+          <div class="gp-card">
+            <div class="gp-banner">
+              <div><small>Départ</small><b>9&nbsp;h&nbsp;00</b></div>
+              <div><small>Temps estimé</small><b>24&nbsp;h&nbsp;53</b></div>
+              <div><small>Arrivée</small><b>9&nbsp;h&nbsp;53</b></div>
+            </div>
+            <table class="gp-table">
+              <thead><tr><th scope="col">Point</th><th scope="col">km</th><th scope="col">Heure</th><th scope="col">Course</th></tr></thead>
+              <tbody>
+                <tr><td>Courmayeur</td><td>0,0</td><td>9 h 00</td><td>0 h 00</td></tr>
+                <tr><td>Refuge Bertone</td><td>14,1</td><td>12 h 41</td><td>3 h 41</td></tr>
+                <tr><td>Champex-Lac</td><td>55,4</td><td>20 h 49</td><td>11 h 49</td></tr>
+                <tr><td>Trient</td><td>69,6</td><td>0 h 47</td><td>15 h 47</td></tr>
+                <tr><td><b>Chamonix</b></td><td>98,4</td><td><b>9 h 53</b></td><td><b>24 h 53</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <figcaption class="gate-cap">Aperçu : la CCC pour le coureur de la démo, profil Grimpeur.</figcaption>
+        </figure>
+      </div>
+
+      <div id="simResults" style="display:none;">
+        <div class="sim-results-head">
+          <div>
+            <h2 id="simTitle">Ta simulation</h2>
+            <p id="simSub">—</p>
+          </div>
+          <div class="sim-actions">
+            <button type="button" class="btn-pdf" onclick="genererPDF()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Télécharger en PDF
+            </button>
+            <button type="button" class="btn-pin" id="btnPin" onclick="epinglerSimulationActuelle()" style="display:none;">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3H8v2l1 1v5l-3 3v2h5v5l1 1 1-1v-5h5v-2l-3-3V6l1-1z"/></svg>
+              <span id="btnPinLabel">Épingler cette simulation</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="result-strip">
+          <div class="result-kpi lead">
+            <div class="result-kpi-label">Temps estimé<span class="info-icon" tabindex="0" data-tooltip="Temps de course prédit segment par segment sur la trace, avec ton profil et le modèle de fatigue (mécanique et batterie d'énergie). Les pauses saisies sont comprises."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+            <div class="result-kpi-val cyan" id="resTemps">—</div>
+            <div class="fourch-sub" id="resArrivee">Temps de course, pauses comprises</div>
+          </div>
+          <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" tabindex="0" data-tooltip="Temps optimiste, tiré de la fourchette basse de la variabilité de tes performances par terrain : un jour où tout se passe bien."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+          <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" tabindex="0" data-tooltip="Temps prudent, tiré de la fourchette haute : météo, fatigue résiduelle ou gestion difficile."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+          <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div><div class="fourch-sub">hors pauses</div></div>
+          <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon tip-left" tabindex="0" data-tooltip="Court (moins de 25 km), moyen (25 à 50), long (50 à 80) ou ultra (plus de 80). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20 km que sur 100."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div><div class="fourch-sub">selon la distance</div></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Profil de course et allure prévue<span class="info-icon" tabindex="0" data-tooltip="Le profil de la course, coloré par l'allure prédite : plus le bleu est foncé, plus tu avances lentement. Les repères en haut marquent tes ravitos (km). Survole ou glisse le doigt pour le détail."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+            <div class="chart-legend" aria-label="Allure prédite">
+              <div class="legend-item"><div class="legend-dot" style="background:#9DBEF2"></div><span class="legend-label">moins de 10'/km</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#5C8FE6"></div><span class="legend-label">10 à 13'</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#1E5FD8"></div><span class="legend-label">13 à 18'</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#0E3A8C"></div><span class="legend-label">plus de 18'/km</span></div>
+            </div>
+          </div>
+          <div class="chart-toggles">
+            <span>Superposer</span>
+            <label class="chart-toggle">
+              <input type="checkbox" id="toggleAllure" onchange="dessinerProfilChart(window.lastSimData)">
+              <span class="toggle-dot" aria-hidden="true"></span>
+              <span class="toggle-label">Allure (min/km)</span>
+            </label>
+            <label class="chart-toggle">
+              <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
+              <span class="toggle-dot fc" aria-hidden="true"></span>
+              <span class="toggle-label">Fréquence cardiaque estimée</span>
+            </label>
+          </div>
+          <div class="chart-body">
+            <svg id="profilChart" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Profil altimétrique de la course coloré par allure prédite"></svg>
+            <div id="chartTooltip" class="chart-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="ravito-card">
+          <div class="ravito-header">Temps de passage</div>
+          <div class="table-scroll">
+            <table class="data-table no-clock">
+              <thead>
+                <tr>
+                  <th scope="col">Point</th>
+                  <th scope="col">Distance</th>
+                  <th scope="col">Temps</th>
+                  <th scope="col">Heure</th>
+                  <th scope="col">Top</th>
+                  <th scope="col">Difficile</th>
+                  <th scope="col">D+</th>
+                  <th scope="col">D−</th>
+                </tr>
+              </thead>
+              <tbody id="ravitoBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sim-pair">
+          <div class="map-card">
+            <div class="map-header">Tracé de la course</div>
+            <div id="leafletMap"></div>
+          </div>
+          <div class="terrain-card">
+            <div class="terrain-header">Temps passé par type de pente</div>
+            <div class="terrain-body" id="terrainBars"></div>
+          </div>
+        </div>
+
+        <div class="feedback-card">
+          <p><strong>Cette prédiction te semble juste ?</strong>Ton avis sert directement à affiner l'algorithme.</p>
+          <button type="button" class="btn-ghost" onclick="ouvrirModal()">Donner mon avis</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  </main>
+
+  <!-- Fenêtre : avis bêta -->
+  <div class="modal-overlay" id="modalAvis" onclick="if(event.target===this) fermerModal()">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="avisTitle">
+      <button type="button" class="modal-close" onclick="fermerModal()" aria-label="Fermer">×</button>
+      <h2 id="avisTitle">Ton avis nous aide</h2>
+      <p class="modal-sub">Aide-nous à améliorer SUM'IT en partageant ton expérience.</p>
+
+      <div id="formAvis">
+        <div class="avis-field">
+          <span class="input-label" id="lblRatingPred">Justesse des temps prédits (1 à 5)</span>
+          <div class="rating-group" id="ratingPred" role="group" aria-labelledby="lblRatingPred">
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,1)">1</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,2)">2</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,3)">3</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,4)">4</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,5)">5</button>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <span class="input-label" id="lblRatingProfil">Ressemblance du profil de coureur (1 à 5)</span>
+          <div class="rating-group" id="ratingProfil" role="group" aria-labelledby="lblRatingProfil">
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,1)">1</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,2)">2</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,3)">3</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,4)">4</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,5)">5</button>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <span class="input-label">Ce que tu aimerais voir arriver</span>
+          <div id="modalFeatures" style="display:flex;flex-wrap:wrap;gap:6px;">
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Import automatique Strava</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Import automatique Garmin</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Conseils nutritionnels</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Coach IA personnalisé</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Intégration météo</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Suivi d'autres athlètes</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Application mobile</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Profil coach (multi-athlètes)</div>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <label class="input-label" for="modalCommentaire">Commentaire libre</label>
+          <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées…"></textarea>
+        </div>
+
+        <div class="avis-field">
+          <label class="input-label" for="modalEmail">Email (facultatif)</label>
+          <input type="email" id="modalEmail" placeholder="ton@email.com" autocomplete="email">
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%;min-height:48px;" onclick="envoyerAvis()">Envoyer mon avis</button>
+      </div>
+
+      <div id="successAvis" class="avis-success" role="status">
+        <h3>Merci pour ton retour.</h3>
+        <p>Ton avis a bien été envoyé à l'équipe.</p>
       </div>
     </div>
   </div>
-</div>
 
-<footer class="footer">
-  <div><div class="footer-logo"><span class="logo-sum">SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="footerTriGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFC857"/><stop offset="55%" stop-color="#6BB36B"/><stop offset="100%" stop-color="#4FA3D9"/></linearGradient></defs><path d="M7 0 L14 17 L0 17 Z" fill="url(#footerTriGrad)"/></svg><span class="logo-it">IT</span></div><div class="footer-sub">Plan your peaks · Trail &amp; Rando</div></div>
-  <div class="footer-copy">© 2026 SUM'IT</div>
-</footer>
-
-<!-- ══ Bouton flottant avis ══ -->
-<button class="floating-feedback" onclick="ouvrirModal()">
-  <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-  Donner mon avis
-</button>
-
-<!-- ══ Modal avis bêta ══ -->
-<div class="modal-overlay" id="modalAvis">
-  <div class="modal-content">
-    <button class="modal-close" onclick="fermerModal()">×</button>
-    <h2>Ton avis nous est précieux</h2>
-    <p class="modal-sub">Aide-nous à améliorer SUM'IT en partageant ton expérience.</p>
-
-    <div id="formAvis">
-      <div style="margin-bottom:16px;">
-        <label class="input-label">Pertinence des prédictions de temps</label>
-        <div class="rating-group" id="ratingPred">
-          <button class="rating-btn" onclick="selectRating('ratingPred',this,1)">1</button>
-          <button class="rating-btn" onclick="selectRating('ratingPred',this,2)">2</button>
-          <button class="rating-btn" onclick="selectRating('ratingPred',this,3)">3</button>
-          <button class="rating-btn" onclick="selectRating('ratingPred',this,4)">4</button>
-          <button class="rating-btn" onclick="selectRating('ratingPred',this,5)">5</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label class="input-label">Pertinence du profil coureur</label>
-        <div class="rating-group" id="ratingProfil">
-          <button class="rating-btn" onclick="selectRating('ratingProfil',this,1)">1</button>
-          <button class="rating-btn" onclick="selectRating('ratingProfil',this,2)">2</button>
-          <button class="rating-btn" onclick="selectRating('ratingProfil',this,3)">3</button>
-          <button class="rating-btn" onclick="selectRating('ratingProfil',this,4)">4</button>
-          <button class="rating-btn" onclick="selectRating('ratingProfil',this,5)">5</button>
-        </div>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label class="input-label">Fonctionnalités que tu souhaiterais voir</label>
-        <div id="modalFeatures" style="display:flex;flex-wrap:wrap;gap:8px;">
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Strava</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Import automatique Garmin</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Conseils nutritionnels</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Coach IA personnalisé</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Intégration météo</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Suivi d'autres athlètes</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Application mobile</div>
-          <div class="checkbox-item" onclick="this.classList.toggle('checked')">Profil Coach (multi-athlètes)</div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label class="input-label">Commentaire libre</label>
-        <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées..." style="width:100%;min-height:80px;padding:10px;font-family:'Inter', sans-serif;"></textarea>
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label class="input-label">Email (optionnel)</label>
-        <input type="email" id="modalEmail" placeholder="ton@email.com">
-      </div>
-
-      <button class="btn-primary" style="width:100%;padding:14px;" onclick="envoyerAvis()">
-        Envoyer mon avis
-      </button>
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
     </div>
-
-    <div id="successAvis" style="display:none;text-align:center;padding:30px 0;">
-      <div style="font-size:48px;margin-bottom:14px;">✓</div>
-      <h3 style="font-family:var(--font-display);color:var(--sun);margin-bottom:8px;">Merci pour ton retour !</h3>
-      <p style="font-size:13px;color:var(--text-2);">Ton avis a bien été envoyé.</p>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT</span>
     </div>
-  </div>
-</div>
+  </footer>
 
-<script src="../js/main.js?v=20260930"></script>
-<script src="../js/api-client.js?v=20260930"></script>
-  <script src="../js/nav-user.js?v=20260930"></script>
-  <script src="../js/onboarding.js?v=20260930"></script>
-<script>
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+  <script>
 // Garde-fou : si le CDN d'EmailJS est bloqué (bloqueur de pub, réseau filtré),
 // le reste de la page doit continuer à fonctionner.
 if (window.emailjs) emailjs.init('rc324sv1XWdtOjTM6');
@@ -871,9 +693,11 @@ let gpxFile = null;
 // Permet de lancer une simulation complète sans compte ni import.
 async function lancerDemoCCC() {
   const btn = document.querySelector('.btn-demo-ccc');
+  const btnVide = document.getElementById('btnDemoVide');
   const txtOrig = btn ? btn.querySelector('.demo-ccc-text strong').textContent : '';
   if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
              btn.querySelector('.demo-ccc-text strong').textContent = 'Chargement de la CCC…'; }
+  if (btnVide) btnVide.disabled = true;
 
   try {
     // 1) Récupérer le GPX d'exemple et le transformer en File
@@ -900,24 +724,24 @@ async function lancerDemoCCC() {
       timestamp:   Date.now(),
     }));
 
-    // 3) Afficher l'aperçu fichier + le profil dans la sidebar
+    // 3) Afficher l'aperçu fichier + le profil dans la colonne de saisie
     if (document.getElementById('fileInfo')) {
       document.getElementById('fileInfo').classList.add('show');
       document.getElementById('fileName').textContent = 'CCC 2025 — UTMB';
-      document.getElementById('fileDist').textContent  = '~98 km';
-      document.getElementById('fileDplus').textContent = '~5900 m';
-      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = 'Ultra 🔴';
+      document.getElementById('fileDist').textContent  = '98,4 km';
+      document.getElementById('fileDplus').textContent = '5 742 m';
+      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = 'Ultra';
     }
     afficherProfilSidebar();
 
-    // 4) Pré-remplir les ravitos officiels de la CCC (km + noms)
+    // 4) Ravitos officiels de la CCC, placés au kilomètre où la trace les traverse
     const ravitosCCC = [
-      [14.5, 'Refuge Bertone'],
-      [27.0, 'Arnouvaz'],
-      [40.5, 'La Fouly'],
-      [53.0, 'Champex-Lac'],
-      [69.5, 'Trient'],
-      [80.5, 'Vallorcine'],
+      [14.1, 'Refuge Bertone'],
+      [25.8, 'Arnouvaz'],
+      [39.8, 'La Fouly'],
+      [55.4, 'Champex-Lac'],
+      [69.6, 'Trient'],
+      [80.1, 'Vallorcine'],
     ];
     const list = document.getElementById('ravitosList');
     if (list) {
@@ -926,25 +750,27 @@ async function lancerDemoCCC() {
       syncRavitos();
     }
 
-    // 5) Nom de course (si champ présent)
+    // 5) Nom de course et heure de départ (la CCC part à 9 h 00 de Courmayeur)
     if (document.getElementById('nomCourse')) {
       document.getElementById('nomCourse').value = 'CCC — UTMB (démo)';
     }
+    const hd = document.getElementById('heureDepart');
+    if (hd) hd.value = '09:00';
 
     // 6) Lancer la simulation
     if (btn) btn.querySelector('.demo-ccc-text strong').textContent = 'Simulation en cours…';
     await lancerSimulation();
 
   } catch (e) {
-    alert('Erreur lors du chargement de la démo : ' + e.message);
+    alert('Impossible de charger la démo : ' + e.message);
   } finally {
     if (btn) {
-      btn.style.opacity = '1'; btn.style.pointerEvents = 'auto';
+      btn.style.opacity = ''; btn.style.pointerEvents = '';
       btn.querySelector('.demo-ccc-text strong').textContent = txtOrig || 'Essayer avec la CCC';
     }
+    if (btnVide) btnVide.disabled = false;
   }
 }
-
 
 // ══ Gestion dynamique des ravitos / points d'intérêt ══════════
 let _ravitoSeq = 0;
@@ -956,10 +782,10 @@ function creerLigneRavito(km = '', nom = '', pause = '') {
   row.className = 'ravito-row';
   row.dataset.rid = id;
   row.innerHTML = `
-    <input type="number" class="ravito-km-input" min="0" step="0.1" placeholder="km" value="${km}" oninput="syncRavitos()">
-    <input type="text" class="ravito-nom-input" maxlength="60" placeholder="Nom (ex : Refuge, Col, Base de vie…)" value="${nom.replace(/"/g, '&quot;')}" oninput="syncRavitos()">
-    <input type="number" class="ravito-pause-input" min="0" step="1" placeholder="pause" value="${pause}" title="Temps d'arrêt en minutes" oninput="syncRavitos()">
-    <button type="button" class="btn-del-ravito" onclick="supprimerRavito(${id})" title="Retirer">−</button>
+    <input type="number" class="ravito-km-input" min="0" step="0.1" inputmode="decimal" placeholder="km" aria-label="Kilomètre du point" value="${km}" oninput="syncRavitos()">
+    <input type="text" class="ravito-nom-input" maxlength="60" placeholder="Refuge, col, base de vie…" aria-label="Nom du point" value="${String(nom).replace(/"/g, '&quot;')}" oninput="syncRavitos()">
+    <input type="number" class="ravito-pause-input" min="0" step="1" inputmode="numeric" placeholder="min" aria-label="Pause en minutes" title="Temps d'arrêt en minutes" value="${pause}" oninput="syncRavitos()">
+    <button type="button" class="btn-del-ravito" onclick="supprimerRavito(${id})" title="Retirer ce point" aria-label="Retirer ce point">×</button>
   `;
   return row;
 }
@@ -1046,10 +872,10 @@ function initRavitosDefaut() {
 }
 
 
-// Constantes affichage
+// Constantes d'affichage : une seule teinte pour les barres, des pictogrammes neutres
 const TERRAIN_COLORS = {
-  montee_raide:'#E24B4A', montee_soutenue:'#EF9F27', montee_douce:'#5DCAA5',
-  plat:'#FFC857', descente_douce:'#5DCAA5', descente_soutenue:'#EF9F27', descente_raide:'#E24B4A'
+  montee_raide:'#1E5FD8', montee_soutenue:'#1E5FD8', montee_douce:'#1E5FD8',
+  plat:'#1E5FD8', descente_douce:'#1E5FD8', descente_soutenue:'#1E5FD8', descente_raide:'#1E5FD8'
 };
 const TERRAIN_LABELS_S = {
   montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
@@ -1057,14 +883,40 @@ const TERRAIN_LABELS_S = {
   descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide'
 };
 const TERRAIN_ICONS_S = {
-  montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="2,11 7,2 11,7"/></svg>`,
-  montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
-  montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
-  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="#FFC857" stroke-width="1.6"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
-  descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="#5DCAA5" stroke-width="1.6"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
-  descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="#EF9F27" stroke-width="1.6"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
-  descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="#E24B4A" stroke-width="1.6"><polyline points="6,2 11,9 7,11"/></svg>`,
+  montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,11 7,2 11,7"/></svg>`,
+  montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
+  montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
+  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
+  descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
+  descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
+  descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,2 11,9 7,11"/></svg>`,
 };
+
+// Formats à la française
+const pad2S = n => String(n).padStart(2, '0');
+function fmtDuree(sec) {
+  const T = Math.round((Number(sec) || 0) / 60);
+  return `${Math.floor(T / 60)} h ${pad2S(T % 60)}`;
+}
+function fmtHeure(totalMin) {
+  const T = Math.round(totalMin);
+  return `${Math.floor(T / 60) % 24} h ${pad2S(((T % 60) + 60) % 60)}`;
+}
+function fmtAllure(minParKm) {
+  const v = Number(minParKm) || 0;
+  if (!v) return '—';
+  let m = Math.floor(v), s = Math.round((v - m) * 60);
+  if (s === 60) { m += 1; s = 0; }
+  return `${m}'${pad2S(s)}"/km`;
+}
+const fmtKmS = km => (Number(km) || 0).toFixed(1).replace('.', ',');
+const fmtEntierS = n => Math.round(Number(n) || 0).toLocaleString('fr-FR').replace(/ | /g, ' ');
+function lireHeureDepart() {
+  const el = document.getElementById('heureDepart');
+  if (!el || !el.value) return null;
+  const m = el.value.match(/^(\d{1,2}):(\d{2})/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+}
 
 const ORDRE_T2 = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
 
@@ -1087,18 +939,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Drag & drop
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
   zone.addEventListener('dragover', e => {
     e.preventDefault();
-    zone.style.borderColor = 'rgba(255,200,87,0.6)';
+    zone.classList.add('is-over');
   });
-  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('dragleave', () => { zone.classList.remove('is-over'); });
   zone.addEventListener('drop', e => {
     e.preventDefault();
-    zone.style.borderColor = '';
+    zone.classList.remove('is-over');
     if (e.dataTransfer.files.length > 0) chargerFichier(e.dataTransfer.files[0]);
   });
 
-  // Charger le profil sauvegardé dans la sidebar
+  // Heure de départ : met à jour les heures de passage sans relancer le calcul
+  const hd = document.getElementById('heureDepart');
+  if (hd) hd.addEventListener('input', () => {
+    if (window.lastSimData) window.lastSimData.heure_depart = hd.value || undefined;
+    majHeures();
+  });
+
+  // Charger le profil sauvegardé dans la colonne de saisie
   initSimulateur();
 });
 
@@ -1127,11 +987,11 @@ async function initSimulateur() {
       // Indiquer s'il manque un profil
       const info = document.getElementById('profilSelectorInfo');
       if (!trail && !rando) {
-        info.innerHTML = '⚠️ Aucun profil. <a href="profil.html" style="color:var(--sun);">Crée-en un</a> pour utiliser le simulateur.';
+        info.innerHTML = 'Aucun profil pour l\'instant. <a href="profil.html">Crée-le</a> à partir de tes sorties, ou lance la démo.';
       } else if (currentSimProfilType === 'trail' && !trail) {
-        info.innerHTML = '⚠️ Profil Trail vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Rando.';
+        info.innerHTML = 'Profil trail vide. <a href="profil.html">Crée-le</a> ou passe en rando.';
       } else if (currentSimProfilType === 'rando' && !rando) {
-        info.innerHTML = '⚠️ Profil Rando vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a> ou passe en Trail.';
+        info.innerHTML = 'Profil rando vide. <a href="profil.html">Crée-le</a> ou passe en trail.';
       } else {
         info.innerHTML = '';
       }
@@ -1155,6 +1015,20 @@ async function initSimulateur() {
   // Depuis l'accueil (« Essayer sur la CCC ») : lancement direct de la démo
   if (!simId && params.get('demo') === 'ccc') {
     lancerDemoCCC();
+    return;
+  }
+
+  // Depuis l'accueil (« Nouvelle course ») : on reprend le nom et le profil choisis
+  if (!simId) {
+    let cible = null;
+    try { cible = JSON.parse(localStorage.getItem('sumit_course_cible') || 'null'); } catch (e) {}
+    const nomParam = params.get('course') || (cible && cible.nom) || '';
+    const typeParam = params.get('type') || (cible && cible.type) || '';
+    const champ = document.getElementById('nomCourse');
+    if (nomParam && champ && !champ.value) champ.value = nomParam.slice(0, 80);
+    if (typeParam === 'rando' && isLoggedIn() && currentSimProfilType !== 'rando') {
+      await switchProfilSim('rando');
+    }
   }
 }
 
@@ -1202,8 +1076,8 @@ async function chargerSimulationEpinglee(simId) {
 
     // Restaurer les stats du fichier depuis sim_data
     if (sim.dist_km && document.getElementById('fileDist')) {
-      document.getElementById('fileDist').textContent  = `${sim.dist_km.toFixed(1)} km`;
-      document.getElementById('fileDplus').textContent = `${Math.round(sim.dplus_m)} m D+`;
+      document.getElementById('fileDist').textContent  = `${fmtKmS(sim.dist_km)} km`;
+      document.getElementById('fileDplus').textContent = `${fmtEntierS(sim.dplus_m)} m`;
     }
 
     // Restaurer les résultats si présents (sans recalculer)
@@ -1211,6 +1085,8 @@ async function chargerSimulationEpinglee(simId) {
       const data = sim.sim_data;
       // On reconstruit l'affichage sans appel API
       window.lastSimData = data;
+      const hd = document.getElementById('heureDepart');
+      if (hd && data.heure_depart) hd.value = data.heure_depart;
       afficherResultats(data);
     }
 
@@ -1220,7 +1096,7 @@ async function chargerSimulationEpinglee(simId) {
     afficherBandeauEdition();
 
   } catch (e) {
-    alert('Impossible de charger la simulation : ' + e.message);
+    alert('Impossible d\'ouvrir la simulation épinglée : ' + e.message);
   }
 }
 
@@ -1229,29 +1105,17 @@ function afficherBandeauEdition() {
   if (!bandeau) {
     bandeau = document.createElement('div');
     bandeau.id = 'editingBanner';
-    bandeau.style.cssText = `
-      position: sticky; top: 68px; z-index: 50;
-      background: linear-gradient(90deg, var(--sun) 0%, var(--leaf) 100%);
-      color: var(--bg);
-      padding: 10px 24px;
-      font-family: var(--font-display);
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    `;
+    bandeau.setAttribute('role', 'status');
     document.body.insertBefore(bandeau, document.body.querySelector('.nav').nextSibling);
   }
   bandeau.innerHTML = `
-    <div>⭐ Mode édition : <strong>${escapeHTMLSim(window.editingSimName || 'Simulation')}</strong></div>
-    <button onclick="quitterModeEdition()" style="background:rgba(0,0,0,0.2);color:var(--bg);border:none;padding:6px 14px;font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;border-radius:4px;cursor:pointer;font-weight:700;">
-      Quitter le mode édition
-    </button>
+    <div>Simulation épinglée : <strong>${escapeHTMLSim(window.editingSimName || 'Simulation')}</strong>. Tes modifications mettront à jour cette version.</div>
+    <button type="button" onclick="quitterModeEdition()">Quitter le mode édition</button>
   `;
 
   // Mettre à jour le label du bouton épingler
   const btnPinLabel = document.getElementById('btnPinLabel');
-  if (btnPinLabel) btnPinLabel.textContent = 'Mettre à jour la sim épinglée';
+  if (btnPinLabel) btnPinLabel.textContent = 'Mettre à jour la simulation épinglée';
 }
 
 function quitterModeEdition() {
@@ -1286,7 +1150,7 @@ async function switchProfilSim(type) {
     const p = user.profiles.find(pp => pp.type === type);
     const info = document.getElementById('profilSelectorInfo');
     if (!p) {
-      info.innerHTML = `⚠️ Profil ${type === 'trail' ? 'Trail' : 'Rando'} vide. <a href="profil.html" style="color:var(--sun);">Crée-le</a>.`;
+      info.innerHTML = `Profil ${type === 'trail' ? 'trail' : 'rando'} vide. <a href="profil.html">Crée-le</a> à partir de tes sorties.`;
     } else {
       info.innerHTML = '';
     }
@@ -1301,47 +1165,71 @@ function chargerFichier(file) {
     return;
   }
   gpxFile = file;
+  // Après la démo, un vrai fichier repasse sur le profil du coureur connecté
+  try {
+    const cur = chargerProfil();
+    if (cur && cur.is_demo && typeof isLoggedIn === 'function' && isLoggedIn()) {
+      chargerProfilActuel(currentSimProfilType).then(afficherProfilSidebar).catch(() => {});
+    }
+  } catch (e) {}
   // Affichage info fichier
   document.getElementById('fileName').textContent = file.name;
   document.getElementById('fileDist').textContent = '...';
   document.getElementById('fileDplus').textContent = '...';
-  document.getElementById('fileCat').textContent = 'Prêt';
-  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('fileCat').textContent = 'Prête';
+  document.getElementById('fileInfo').classList.add('show');
   document.getElementById('btnSimuler').disabled = false;
-  console.log('✅ Fichier chargé :', file.name, file.size, 'bytes');
+  console.log('Fichier chargé :', file.name, file.size, 'octets');
 }
 
 // ── Profil sidebar ─────────────────────────────────────────────────
 function afficherProfilSidebar() {
   const p = chargerProfil();
-  const descEl = document.querySelector('#dropzoneSim') ? document.querySelectorAll('.step-desc')[2] : null;
+  const desc = document.getElementById('profilRefDesc');
   if (p && p.profil) {
-    // Utilise la même VEP globale que sur la page profil
-    const vep = p.vep_globale ? p.vep_globale.toFixed(1) : '—';
+    // Même VEP globale que sur la page profil
+    const vep = p.vep_globale ? p.vep_globale.toFixed(1).replace('.', ',') : '—';
     document.getElementById('profilVEP').textContent   = `${vep} km/h`;
-    document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1)} %/h`;
-    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2)}`;
-    // Indiquer si c'est le profil d'exemple
-    const stepDescs = document.querySelectorAll('.step-desc');
-    if (stepDescs[2]) {
-      stepDescs[2].innerHTML = p.is_demo
-        ? '<span style="color:var(--sun);">⚡ Profil d\'exemple (démo)</span>'
-        : 'Issu de ton analyse GPX.';
+    document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1).replace('.', ',')} %/h`;
+    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2).replace('.', ',')}`;
+    if (desc) {
+      desc.textContent = p.is_demo
+        ? `Profil d'exemple (démo) : ${(p.archetype && p.archetype.nom) || 'coureur'}, ${p.nb_traces || 0} sorties.`
+        : 'Issu de l\'analyse de tes sorties.';
     }
   } else {
     document.getElementById('profilVEP').textContent   = '—';
     document.getElementById('profilDrain').textContent = '—';
     document.getElementById('profilCoeff').textContent = '—';
+    if (desc) desc.textContent = 'Issu de l\'analyse de tes sorties.';
   }
 }
 
 // ── Lancer la simulation ──────────────────────────────────────────
+// Résumé du profil utilisé pour une simulation (enregistré avec elle)
+function resumeProfilSim(p) {
+  if (!p) return null;
+  return {
+    archetype:   p.archetype ? { nom: p.archetype.nom } : null,
+    vep_globale: p.vep_globale || null,
+    coefficient: p.coefficient,
+    drain_moy_h: p.drain_moy_h,
+    fcmax:       p.fcmax || 193,
+    nb_traces:   p.nb_traces || null,
+  };
+}
+// Profil à afficher pour la simulation à l'écran : celui qui l'a calculée, sinon le profil courant
+function profilDeLaSim() {
+  const r = window.lastSimData && window.lastSimData.profil_resume;
+  return (r && r.coefficient != null) ? r : chargerProfil();
+}
+
 async function lancerSimulation() {
-  if (!gpxFile) { alert('Importe une trace GPX !'); return; }
+  if (!gpxFile) { alert('Importe d\'abord la trace GPX de ta course.'); return; }
 
   const p = chargerProfil();
   if (!p || !p.profil) {
-    alert('Aucun profil sauvegardé. Va d\'abord créer ton profil sur la page "Mon profil".');
+    alert('Aucun profil de coureur pour l\'instant. Crée-le sur la page « Mon profil », ou lance la démo sur la CCC.');
     return;
   }
 
@@ -1350,11 +1238,11 @@ async function lancerSimulation() {
   const ravitosNoms = getRavitosNoms();
   const ravitosPauses = getRavitosPauses();
   const btn     = document.getElementById('btnSimuler');
-  btn.textContent = '⏳ Analyse du terrain en cours (OSM)...';
+  btn.textContent = 'Analyse du parcours…';
   btn.disabled = true;
 
   try {
-    // Charger les points GPS pour la carte
+    // Points GPS pour la carte
     trackPoints = await chargerTrackPoints(gpxFile);
 
     const data = await simulerCourseAPI(
@@ -1363,17 +1251,25 @@ async function lancerSimulation() {
       ravitosNoms, ravitosPauses
     );
 
-    console.log('Réponse API:', data);
+    const hd = lireHeureDepart();
+    if (hd !== null) data.heure_depart = document.getElementById('heureDepart').value;
+    data.profil_resume = resumeProfilSim(p);
     afficherResultats(data);
 
-    // Affichage carte après résultats
+    // Sur téléphone, les résultats sont sous la saisie : on les amène à l'écran
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => document.getElementById('simResults').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' }), 120);
+    }
+
+    // Carte après les résultats
     setTimeout(() => afficherCarte(trackPoints), 200);
 
     envoyerMailSimulation(data);
 
   } catch(err) {
     console.error('Erreur simulation:', err);
-    alert(`Erreur : ${err.message}\n\nVérifie que l'API tourne (python api.py)`);
+    alert(`La simulation n'a pas abouti : ${err.message}\n\nRéessaie dans un instant.`);
   } finally {
     btn.textContent = 'Lancer la simulation';
     btn.disabled = false;
@@ -1383,7 +1279,7 @@ async function lancerSimulation() {
 // ── Affichage résultats ───────────────────────────────────────────
 function afficherResultats(data) {
   document.getElementById('emptyStateSim').style.display = 'none';
-  document.getElementById('simResults').style.display    = 'block';
+  document.getElementById('simResults').style.display    = 'grid';
 
   // Bouton Épingler visible seulement si connecté
   const btnPin = document.getElementById('btnPin');
@@ -1391,78 +1287,89 @@ function afficherResultats(data) {
     btnPin.style.display = 'inline-flex';
     btnPin.classList.remove('pinned');
     btnPin.disabled = false;
-    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+    document.getElementById('btnPinLabel').textContent = window.editingSimId ? 'Mettre à jour la simulation épinglée' : 'Épingler cette simulation';
   } else {
     btnPin.style.display = 'none';
   }
 
-  // KPIs
-  document.getElementById('resTemps').textContent  = data.temps_fmt || '—';
-  document.getElementById('resAllure').textContent = data.allure_moy ? `${data.allure_moy}'/km` : '—';
-
   const cat = data.categorie || {};
-  document.getElementById('resCat').textContent = `${cat.emoji || ''} ${cat.nom || '—'}`;
+  const nom = (document.getElementById('nomCourse')?.value || '').trim();
+  document.getElementById('simTitle').textContent = nom || 'Ta simulation';
+  document.getElementById('simSub').textContent =
+    `${fmtKmS(data.distance_km)} km · ${fmtEntierS(data.dplus_m)} m D+ · ${cat.nom || '—'}`;
 
-  // Mise à jour info fichier
-  document.getElementById('fileDist').textContent  = `${data.distance_km.toFixed(1)} km`;
-  document.getElementById('fileDplus').textContent = `${Math.round(data.dplus_m)} m`;
-  document.getElementById('fileCat').textContent   = `${cat.emoji} ${cat.nom}`;
+  // Chiffres
+  document.getElementById('resTemps').textContent  = data.temps_total_s ? fmtDuree(data.temps_total_s) : (data.temps_fmt || '—');
+  document.getElementById('resAllure').textContent = data.allure_moy ? fmtAllure(data.allure_moy) : '—';
+  document.getElementById('resCat').textContent    = cat.nom || '—';
+
+  // Mise à jour de l'aperçu du fichier
+  document.getElementById('fileDist').textContent  = `${fmtKmS(data.distance_km)} km`;
+  document.getElementById('fileDplus').textContent = `${fmtEntierS(data.dplus_m)} m`;
+  document.getElementById('fileCat').textContent   = cat.nom || '—';
 
   // Fourchettes
-  document.getElementById('fourchBas').textContent  = data.bas_fmt;
-  document.getElementById('fourchHaut').textContent = data.haut_fmt;
+  document.getElementById('fourchBas').textContent  = data.temps_bas_s ? fmtDuree(data.temps_bas_s) : (data.bas_fmt || '—');
+  document.getElementById('fourchHaut').textContent = data.temps_haut_s ? fmtDuree(data.temps_haut_s) : (data.haut_fmt || '—');
+
+  // Heure de départ éventuelle (simulation épinglée)
+  const hd = document.getElementById('heureDepart');
+  if (hd && data.heure_depart && !hd.value) hd.value = data.heure_depart;
 
   // Graphique
   dessinerProfilChart(data);
 
-  // Tableau ravitos
+  // Tableau des points de passage
   const tbody = document.getElementById('ravitoBody');
   const distTot  = data.distance_km || 0;
   const dplusTot = data.dplus_m || 0;
-  const dmoinsTot= data.dmoins_m || dplusTot; // par défaut si pas dispo
+  const dmoinsTot= data.dmoins_m || dplusTot;
 
-  tbody.innerHTML = `
+  let html = `
     <tr>
-      <td style="font-family:var(--font-display);">Départ</td>
-      <td>0 km</td>
-      <td style="color:var(--sun);font-family:var(--font-display);">0h00m00s</td>
-      <td class="range-col">0h00m00s</td>
-      <td class="range-col">0h00m00s</td>
+      <td><strong>Départ</strong></td>
+      <td>0,0 km</td>
+      <td class="t">0 h 00</td>
+      <td class="clock" data-s="0">—</td>
+      <td class="range-col">0 h 00</td>
+      <td class="range-col">0 h 00</td>
       <td class="dplus-col">0 m</td>
       <td class="dmoins-col">0 m</td>
     </tr>`;
   (data.ravitos || []).forEach(r => {
-    const dp = Math.round(r.dplus_cum || 0);
-    const dm = Math.round(r.dmoins_cum || 0);
     const pauseBadge = (r.pause_min && r.pause_min > 0)
-      ? ` <span style="display:inline-block;font-size:10px;color:var(--sky);background:rgba(79,163,217,0.12);border:1px solid rgba(79,163,217,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;font-family:var(--font-display);">⏸ ${Math.round(r.pause_min)}min</span>`
+      ? `<span class="pause-badge">pause ${Math.round(r.pause_min)} min</span>`
       : '';
     const label = (r.nom && r.nom.trim())
-      ? `<strong style="color:var(--text);">${escapeHTMLSim(r.nom)}</strong>${pauseBadge}`
+      ? `<strong>${escapeHTMLSim(r.nom)}</strong>${pauseBadge}`
       : `Ravito${pauseBadge}`;
-    tbody.innerHTML += `
+    html += `
       <tr>
         <td>${label}</td>
-        <td>${r.km.toFixed(1)} km</td>
-        <td style="color:var(--sun);font-family:var(--font-display);">${r.temps_fmt}</td>
-        <td class="range-col">${r.bas_fmt}</td>
-        <td class="range-col">${r.haut_fmt}</td>
-        <td class="dplus-col">+${dp} m</td>
-        <td class="dmoins-col">-${dm} m</td>
+        <td>${fmtKmS(r.km)} km</td>
+        <td class="t">${r.temps_s != null ? fmtDuree(r.temps_s) : r.temps_fmt}</td>
+        <td class="clock" data-s="${r.temps_s != null ? r.temps_s : ''}">—</td>
+        <td class="range-col">${r.temps_bas_s != null ? fmtDuree(r.temps_bas_s) : r.bas_fmt}</td>
+        <td class="range-col">${r.temps_haut_s != null ? fmtDuree(r.temps_haut_s) : r.haut_fmt}</td>
+        <td class="dplus-col">+${fmtEntierS(r.dplus_cum || 0)} m</td>
+        <td class="dmoins-col">−${fmtEntierS(r.dmoins_cum || 0)} m</td>
       </tr>`;
   });
-  tbody.innerHTML += `
+  html += `
     <tr>
       <td>Arrivée</td>
-      <td>${distTot.toFixed(1)} km</td>
-      <td>${data.temps_fmt}</td>
-      <td class="range-col">${data.bas_fmt}</td>
-      <td class="range-col">${data.haut_fmt}</td>
-      <td class="dplus-col">+${Math.round(dplusTot)} m</td>
-      <td class="dmoins-col">-${Math.round(dmoinsTot)} m</td>
+      <td>${fmtKmS(distTot)} km</td>
+      <td class="t">${data.temps_total_s ? fmtDuree(data.temps_total_s) : data.temps_fmt}</td>
+      <td class="clock" data-s="${data.temps_total_s || ''}">—</td>
+      <td class="range-col">${data.temps_bas_s ? fmtDuree(data.temps_bas_s) : data.bas_fmt}</td>
+      <td class="range-col">${data.temps_haut_s ? fmtDuree(data.temps_haut_s) : data.haut_fmt}</td>
+      <td class="dplus-col">+${fmtEntierS(dplusTot)} m</td>
+      <td class="dmoins-col">−${fmtEntierS(dmoinsTot)} m</td>
     </tr>`;
+  tbody.innerHTML = html;
+  majHeures();
 
-  // Barres terrain
+  // Barres de répartition par terrain
   const tbars  = document.getElementById('terrainBars');
   tbars.innerHTML = '';
   const rep    = data.repartition || {};
@@ -1476,11 +1383,11 @@ function afficherResultats(data) {
         <div class="terrain-label">${TERRAIN_LABELS_S[terrain]}</div>
         <div class="terrain-track">
           <div class="terrain-fill"
-               style="width:0%;background:${TERRAIN_COLORS[terrain]};opacity:0.75"
+               style="width:0%;background:${TERRAIN_COLORS[terrain]}"
                data-target="${(r.pct/maxPct)*100}"></div>
         </div>
-        <div class="terrain-time">${r.temps_fmt}</div>
-        <div class="terrain-pct">${r.pct}%</div>
+        <div class="terrain-time">${r.temps_s != null ? fmtDuree(r.temps_s) : r.temps_fmt}</div>
+        <div class="terrain-pct">${String(r.pct).replace('.', ',')} %</div>
       </div>`;
   });
   setTimeout(() => {
@@ -1488,6 +1395,28 @@ function afficherResultats(data) {
       b.style.width = b.dataset.target + '%';
     });
   }, 100);
+}
+
+// Heures de passage (si une heure de départ est saisie)
+function majHeures() {
+  const depart = lireHeureDepart();
+  const table = document.querySelector('.ravito-card .data-table');
+  if (table) table.classList.toggle('no-clock', depart === null);
+  const sub = document.getElementById('resArrivee');
+  document.querySelectorAll('#ravitoBody td.clock').forEach(td => {
+    const s = td.dataset.s;
+    td.textContent = (depart === null || s === '') ? '—' : fmtHeure(depart + Number(s) / 60);
+  });
+  if (sub) {
+    const data = window.lastSimData;
+    if (depart !== null && data && data.temps_total_s) {
+      const fin = depart + data.temps_total_s / 60;
+      const jours = Math.floor(Math.round(fin) / 1440);
+      sub.textContent = `Arrivée vers ${fmtHeure(fin)}${jours === 1 ? ', le lendemain' : (jours > 1 ? `, ${jours} jours plus tard` : '')}`;
+    } else {
+      sub.textContent = 'Temps de course, pauses comprises';
+    }
+  }
 }
 
 // ── Graphique profil SVG avec courbes optionnelles + tooltip ───
@@ -1512,151 +1441,165 @@ function dessinerProfilChart(data) {
   const showAllure = document.getElementById('toggleAllure')?.checked || false;
   const showFC     = document.getElementById('toggleFC')?.checked || false;
 
-  const W=680, H=200, padL=44, padR=44, padT=20, padB=40;
+  // Dessin à la taille réelle de l'écran : le texte garde 11 px partout
+  const largeur = Math.round(svg.getBoundingClientRect().width) || 680;
+  const W = Math.max(300, largeur);
+  const H = W < 560 ? 220 : 260;
+  const padL=48, padR=(showAllure || showFC) ? 44 : 14, padT=30, padB=28;
   const cW=W-padL-padR, cH=H-padT-padB;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
 
   const alts   = pts.map(p => p.altitude);
   const minA   = Math.min(...alts);
   const maxA   = Math.max(...alts);
   const rangeA = maxA - minA || 1;
   const dist   = data.distance_km;
-  const profil = chargerProfil();
+  const profil = profilDeLaSim();
   const fcmax  = profil?.fcmax || 193;
 
+  // Allure prédite : une seule teinte, plus foncée quand c'est plus lent
   const couleur = v => {
     const a = 60 / Math.max(v, 0.1);
-    if (a < 10) return '#FFC857';
-    if (a < 13) return '#6BB36B';
-    if (a < 18) return '#F39237';
-    return '#E55B5B';
+    if (a < 10) return '#9DBEF2';
+    if (a < 13) return '#5C8FE6';
+    if (a < 18) return '#1E5FD8';
+    return '#0E3A8C';
   };
   const x = km => padL + (km / dist) * cW;
   const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
   const yPct = pct => padT + cH - (pct / 100) * cH;
 
-  // Calcul de D+ / D- cumulés et pente par point (pour le tooltip)
+  // D+ / D- cumulés et pente par point (pour l'infobulle)
+  let dplus = 0, dmoins = 0;
   const pointsEnriched = pts.map((p, i) => {
-    let dplus = 0, dmoins = 0, pente = 0;
+    let pente = 0;
     if (i > 0) {
-      // D+/- cumulés depuis le début
-      for (let k = 1; k <= i; k++) {
-        const dz = pts[k].altitude - pts[k-1].altitude;
-        if (dz > 0) dplus += dz;
-        else dmoins += -dz;
-      }
-      // Pente locale entre ce point et le précédent
+      const dz = p.altitude - pts[i-1].altitude;
+      if (dz > 0) dplus += dz; else dmoins += -dz;
       const dx_m = (p.dist_km - pts[i-1].dist_km) * 1000;
-      const dz   = p.altitude - pts[i-1].altitude;
       pente = dx_m > 0 ? (dz / dx_m) * 100 : 0;
     }
     return { ...p, dplus_cum: dplus, dmoins_cum: dmoins, pente };
   });
 
   let c = '';
-
-  // Grille verticale + labels distance
-  [0, 0.25, 0.5, 0.75, 1].forEach(p => {
+  const nbX = W < 560 ? 3 : 5;
+  for (let k = 0; k < nbX; k++) {
+    const p = k / (nbX - 1);
     const xp = padL + p * cW;
-    c += `<line x1="${xp}" y1="${padT}" x2="${xp}" y2="${padT+cH}" stroke="rgba(244,241,232,0.06)" stroke-width="0.5" stroke-dasharray="3,4"/>`;
-    c += `<text x="${xp}" y="${H-6}" font-size="8" fill="#6E6A5E" text-anchor="middle">${(p*dist).toFixed(0)}km</text>`;
-  });
-  // Axe Y gauche : altitude
+    const ancre = k === 0 ? 'start' : (k === nbX - 1 ? 'end' : 'middle');
+    c += `<text x="${xp}" y="${H-8}" font-size="11" fill="#5C6370" text-anchor="${ancre}">${(p*dist).toFixed(0)} km</text>`;
+  }
+  // Axe gauche : altitude
   [minA, (minA+maxA)/2, maxA].forEach(a => {
     const yp = y(a);
-    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="rgba(244,241,232,0.05)" stroke-width="0.5" stroke-dasharray="2,4"/>`;
-    c += `<text x="${padL-4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="end">${Math.round(a)}m</text>`;
+    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="#E4E7EB" stroke-width="1" stroke-dasharray="3,4"/>`;
+    c += `<text x="${padL-6}" y="${yp+4}" font-size="11" fill="#5C6370" text-anchor="end">${fmtEntierS(a)} m</text>`;
   });
-  // Axe Y droit
+  // Axe droit
   if (showAllure || showFC) {
     [0, 50, 100].forEach(p => {
       const yp = yPct(p);
-      let label = `${p}%`;
+      let label = `${p} %`;
       if (showAllure && !showFC) {
-        // Allure entre 5'/km (100%) et 30'/km (0%)
         const allure = 5 + (100 - p) * 0.25;
         label = `${allure.toFixed(0)}'`;
       }
-      c += `<text x="${W-padR+4}" y="${yp+3}" font-size="7.5" fill="#6E6A5E" text-anchor="start">${label}</text>`;
+      c += `<text x="${W-padR+6}" y="${yp+4}" font-size="11" fill="#5C6370" text-anchor="start">${label}</text>`;
     });
   }
 
-  // Courbe altimétrique colorée
+  // Profil coloré par allure prédite : un tracé par plage de même allure (pas de coutures)
+  // Couleur lue sur une moyenne glissante (5 points) : l'allure se lit par tronçons, sans scintillement
+  const vLisse = pts.map((p, i) => {
+    let s = 0, n = 0;
+    for (let k = Math.max(0, i - 2); k <= Math.min(pts.length - 1, i + 2); k++) { s += pts[k].vitesse_kmh; n++; }
+    return s / n;
+  });
+  const plages = [];
   for (let i = 1; i < pts.length; i++) {
-    const p1 = pts[i-1], p2 = pts[i];
-    const col = couleur(p2.vitesse_kmh);
-    c += `<polygon points="${x(p1.dist_km)},${y(p1.altitude)} ${x(p2.dist_km)},${y(p2.altitude)} ${x(p2.dist_km)},${padT+cH} ${x(p1.dist_km)},${padT+cH}" fill="${col}" opacity="0.18"/>`;
-    c += `<line x1="${x(p1.dist_km)}" y1="${y(p1.altitude)}" x2="${x(p2.dist_km)}" y2="${y(p2.altitude)}" stroke="${col}" stroke-width="2" stroke-linecap="round"/>`;
+    const col = couleur(vLisse[i]);
+    const derniere = plages[plages.length - 1];
+    if (derniere && derniere.col === col) derniere.pts.push(pts[i]);
+    else plages.push({ col, pts: [pts[i-1], pts[i]] });
   }
+  const base = padT + cH;
+  plages.forEach(pl => {
+    const ligne = pl.pts.map((p, k) => `${k ? 'L' : 'M'}${x(p.dist_km).toFixed(1)},${y(p.altitude).toFixed(1)}`).join(' ');
+    const x0 = x(pl.pts[0].dist_km).toFixed(1), x1 = x(pl.pts[pl.pts.length - 1].dist_km).toFixed(1);
+    c += `<path d="${ligne} L${x1},${base} L${x0},${base} Z" fill="${pl.col}" fill-opacity="0.22" stroke="none"/>`;
+  });
+  plages.forEach(pl => {
+    const ligne = pl.pts.map((p, k) => `${k ? 'L' : 'M'}${x(p.dist_km).toFixed(1)},${y(p.altitude).toFixed(1)}`).join(' ');
+    c += `<path d="${ligne}" fill="none" stroke="${pl.col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  c += `<line x1="${padL}" y1="${padT+cH}" x2="${W-padR}" y2="${padT+cH}" stroke="#CDD2D9" stroke-width="1"/>`;
 
-  // ── Courbe allure (min/km) ──
+  // Courbe d'allure (min/km)
   if (showAllure) {
     let path = '';
     pts.forEach((p, i) => {
-      // Allure en min/km
       const allure = 60 / Math.max(p.vitesse_kmh, 0.1);
-      // Mapping 5'/km (rapide) → 100%, 30'/km (très lent) → 0%
       const ratio = Math.max(0, Math.min(100, 100 - (allure - 5) / 0.25));
-      const px = x(p.dist_km), py = yPct(ratio);
-      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+      path += (i === 0 ? 'M' : 'L') + `${x(p.dist_km)},${yPct(ratio)} `;
     });
-    c += `<path d="${path}" fill="none" stroke="#FFD93D" stroke-width="2" stroke-dasharray="4,3" opacity="0.9"/>`;
-    c += `<text x="${W-padR+4}" y="${padT+8}" font-size="8" fill="#FFD93D" text-anchor="start" font-weight="bold">⏱ Allure</text>`;
+    c += `<path d="${path}" fill="none" stroke="#0E1116" stroke-width="1.6" stroke-dasharray="4,3"/>`;
   }
 
-  // ── Courbe FC estimée ──
+  // Fréquence cardiaque estimée
   if (showFC) {
     let path = '';
     const vepGlobale = profil?.vep_globale || 9;
     pts.forEach((p, i) => {
       const intensite = Math.min(1.0, p.vitesse_kmh / (vepGlobale * 1.3));
-      const fcRatio = 0.65 + 0.30 * intensite;
-      const fcEstimee = fcRatio * 100;
-      const px = x(p.dist_km), py = yPct(fcEstimee);
-      path += (i === 0 ? 'M' : 'L') + `${px},${py} `;
+      const fcEstimee = (0.65 + 0.30 * intensite) * 100;
+      path += (i === 0 ? 'M' : 'L') + `${x(p.dist_km)},${yPct(fcEstimee)} `;
     });
-    c += `<path d="${path}" fill="none" stroke="#FF6B9D" stroke-width="2" stroke-dasharray="2,2" opacity="0.9"/>`;
-    const yLabel = showAllure ? padT + 18 : padT + 8;
-    c += `<text x="${W-padR+4}" y="${yLabel}" font-size="8" fill="#FF6B9D" text-anchor="start" font-weight="bold">♥ FC</text>`;
+    c += `<path d="${path}" fill="none" stroke="#C2262E" stroke-width="2" stroke-dasharray="1.5,3" stroke-linecap="round"/>`;
   }
 
-  // Bulles ravitos
+  // Repères des ravitos
   (data.ravitos || []).forEach(r => {
     const xR = x(r.km);
     const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
-    const yR = Math.max(padT + 18, y(closest.altitude));
     c += `
-      <line x1="${xR}" y1="${yR-4}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#FFC857" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.6"/>
-      <circle cx="${xR}" cy="${yR-14}" r="9" fill="#0B1424" stroke="#FFC857" stroke-width="1.2"/>
-      <path d="M${xR-3},${yR-20} L${xR-3.5},${yR-11} Q${xR-3.5},${yR-8} ${xR},${yR-8} Q${xR+3.5},${yR-8} ${xR+3.5},${yR-11} L${xR+3},${yR-20} Z" fill="none" stroke="#FFC857" stroke-width="1"/>
-      <line x1="${xR-3}" y1="${yR-5}" x2="${xR+3}" y2="${yR-5}" stroke="#FFC857" stroke-width="0.8"/>
-      <text x="${xR}" y="${yR+4}" font-size="7" fill="#FFC857" text-anchor="middle">${r.km.toFixed(0)}km</text>`;
+      <line x1="${xR}" y1="${padT - 6}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#0E1116" stroke-width="1" stroke-dasharray="2,3" opacity="0.45"/>
+      <circle cx="${xR}" cy="${padT - 12}" r="4" fill="#FFFFFF" stroke="#0E1116" stroke-width="1.5"/>
+      <text x="${xR}" y="${padT - 20}" font-size="10" fill="#0E1116" text-anchor="middle">${Number(r.km).toFixed(0)}</text>`;
   });
 
-  // ── Curseur invisible pour interaction (ligne verticale + groupe tooltip) ──
+  // Curseur (ligne + point) et zone d'interaction
   c += `
     <line id="chartCursor" x1="0" y1="${padT}" x2="0" y2="${padT+cH}"
-          stroke="#FFC857" stroke-width="1" stroke-dasharray="3,3" opacity="0" pointer-events="none"/>
-    <circle id="chartCursorDot" cx="0" cy="0" r="4" fill="#FFC857" stroke="#0B1424" stroke-width="1.5" opacity="0" pointer-events="none"/>
+          stroke="#0E1116" stroke-width="1" stroke-dasharray="3,3" opacity="0" pointer-events="none"/>
+    <circle id="chartCursorDot" cx="0" cy="0" r="4.5" fill="#FFFFFF" stroke="#0E1116" stroke-width="2" opacity="0" pointer-events="none"/>
     <rect id="chartHotzone" x="${padL}" y="${padT}" width="${cW}" height="${cH}" fill="transparent" pointer-events="all" style="cursor:crosshair"/>
   `;
 
   svg.innerHTML = c;
 
-  // Stocker les données enrichies pour le tooltip
   window.chartPointsEnriched = pointsEnriched;
   window.chartConfig = { padL, padR, padT, padB, cW, cH, W, H, dist };
 
-  // Attacher les interactions tooltip
   attacherTooltipGraphique();
 }
 
+// Redessin à la nouvelle largeur
+let _redessinTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_redessinTimer);
+  _redessinTimer = setTimeout(() => { if (window.lastSimData && document.getElementById('simResults').style.display !== 'none') dessinerProfilChart(window.lastSimData); }, 200);
+});
+
 // ── Tooltip curseur au survol du graphique ──────────────────
+// ── Infobulle du graphique ─────────────────────────────────────
 const TERRAIN_TYPE_INFO = {
-  route:             { nom: 'Route',            emoji: '🛣️', color: '#888' },
-  piste:             { nom: 'Piste',            emoji: '🚵', color: '#6BB36B' },
-  sentier_large:     { nom: 'Sentier large',    emoji: '🥾', color: '#FFC857' },
-  sentier_montagne:  { nom: 'Sentier montagne', emoji: '⛰️', color: '#F39237' },
-  hors_trace:        { nom: 'Hors-trace',       emoji: '🌲', color: '#E55B5B' },
+  route:             { nom: 'Route' },
+  piste:             { nom: 'Piste' },
+  sentier_large:     { nom: 'Sentier large' },
+  sentier_montagne:  { nom: 'Sentier de montagne' },
+  hors_trace:        { nom: 'Hors-trace' },
 };
 
 function attacherTooltipGraphique() {
@@ -1671,114 +1614,77 @@ function attacherTooltipGraphique() {
   const pts = window.chartPointsEnriched;
   if (!cfg || !pts) return;
 
-  const profil = chargerProfil();
+  const profil = profilDeLaSim();
   const vepGlobale = profil?.vep_globale || 9;
+  const minAlt = Math.min(...pts.map(p => p.altitude));
+  const maxAlt = Math.max(...pts.map(p => p.altitude));
 
-  hotzone.addEventListener('mousemove', e => {
+  function montrer(clientX, clientY) {
     const rect = svg.getBoundingClientRect();
     const scaleX = cfg.W / rect.width;
-    const mouseX_svg = (e.clientX - rect.left) * scaleX;
-
-    const distRatio = (mouseX_svg - cfg.padL) / cfg.cW;
-    const distKm = distRatio * cfg.dist;
+    const mouseX_svg = (clientX - rect.left) * scaleX;
+    const distKm = ((mouseX_svg - cfg.padL) / cfg.cW) * cfg.dist;
 
     const closest = pts.reduce((best, p) =>
-      Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best,
-      pts[0]
-    );
+      Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best, pts[0]);
 
     const cursorX = cfg.padL + (closest.dist_km / cfg.dist) * cfg.cW;
-    const minAlt = Math.min(...pts.map(p => p.altitude));
-    const maxAlt = Math.max(...pts.map(p => p.altitude));
     const cursorY = cfg.padT + cfg.cH - ((closest.altitude - minAlt) / (maxAlt - minAlt || 1)) * cfg.cH;
-
     cursor.setAttribute('x1', cursorX);
     cursor.setAttribute('x2', cursorX);
-    cursor.setAttribute('opacity', '0.7');
+    cursor.setAttribute('opacity', '0.6');
     cursorDot.setAttribute('cx', cursorX);
     cursorDot.setAttribute('cy', cursorY);
     cursorDot.setAttribute('opacity', '1');
 
-    // Type de terrain (technicité OSM) — fallback sur pente classique
-    const typeT = closest.type_terrain || 'sentier_large';
-    const tInfo = TERRAIN_TYPE_INFO[typeT] || TERRAIN_TYPE_INFO['sentier_large'];
+    const tInfo = TERRAIN_TYPE_INFO[closest.type_terrain] || TERRAIN_TYPE_INFO['sentier_large'];
+    const penteFmt = (closest.pente >= 0 ? '+' : '−') + Math.abs(closest.pente).toFixed(1).replace('.', ',');
 
-    // Pente
-    const penteFmt = closest.pente >= 0 ? `+${closest.pente.toFixed(1)}` : closest.pente.toFixed(1);
-    const penteColor = closest.pente >= 0 ? '#6BB36B' : '#4FA3D9';
-
-    // Lignes optionnelles : allure / FC selon coches
     const showAllure = document.getElementById('toggleAllure')?.checked || false;
     const showFC     = document.getElementById('toggleFC')?.checked || false;
-
     let extraRows = '';
     if (showAllure) {
-      const allure = 60 / Math.max(closest.vitesse_kmh, 0.1);
-      const mins = Math.floor(allure);
-      const secs = Math.round((allure - mins) * 60);
-      extraRows += `
-        <div class="tt-row">
-          <span class="tt-ic">⏱</span>
-          <span class="tt-lbl">Allure</span>
-          <strong style="color:#FFD93D">${mins}'${String(secs).padStart(2,'0')}"/km</strong>
-        </div>`;
+      extraRows += `<div class="tt-row"><span class="tt-lbl">Allure prévue</span><strong>${fmtAllure(60 / Math.max(closest.vitesse_kmh, 0.1))}</strong></div>`;
     }
     if (showFC) {
       const intensite = Math.min(1.0, closest.vitesse_kmh / (vepGlobale * 1.3));
-      const fcRatio = 0.65 + 0.30 * intensite;
-      const fcBpm = Math.round(fcRatio * (profil?.fcmax || 193));
-      extraRows += `
-        <div class="tt-row">
-          <span class="tt-ic">♥</span>
-          <span class="tt-lbl">FC</span>
-          <strong style="color:#FF6B9D">${fcBpm} bpm</strong>
-        </div>`;
+      const fcBpm = Math.round((0.65 + 0.30 * intensite) * (profil?.fcmax || 193));
+      extraRows += `<div class="tt-row"><span class="tt-lbl">FC estimée</span><strong>${fcBpm} bpm</strong></div>`;
     }
 
     tooltip.innerHTML = `
-      <div class="tt-header">${closest.dist_km.toFixed(2)} km</div>
-      <div class="tt-row">
-        <span class="tt-ic">${tInfo.emoji}</span>
-        <span class="tt-lbl">Terrain</span>
-        <strong style="color:${tInfo.color}">${tInfo.nom}</strong>
-      </div>
-      <div class="tt-row">
-        <span class="tt-ic">📐</span>
-        <span class="tt-lbl">Pente</span>
-        <strong style="color:${penteColor}">${penteFmt}%</strong>
-      </div>
-      <div class="tt-row">
-        <span class="tt-ic">⛰</span>
-        <span class="tt-lbl">Altitude</span>
-        <strong>${Math.round(closest.altitude)} m</strong>
-      </div>
-      <div class="tt-row tt-row-split">
-        <span><span class="tt-ic">↗</span><strong style="color:#6BB36B">+${Math.round(closest.dplus_cum)}m</strong></span>
-        <span><span class="tt-ic">↘</span><strong style="color:#E55B5B">-${Math.round(closest.dmoins_cum)}m</strong></span>
-      </div>
+      <div class="tt-header">km ${closest.dist_km.toFixed(2).replace('.', ',')}</div>
+      <div class="tt-row"><span class="tt-lbl">Terrain</span><strong>${tInfo.nom}</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Pente</span><strong>${penteFmt} %</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Altitude</span><strong>${fmtEntierS(closest.altitude)} m</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Cumul</span><strong>+${fmtEntierS(closest.dplus_cum)} / −${fmtEntierS(closest.dmoins_cum)} m</strong></div>
       ${extraRows}
     `;
 
     const chartRect = svg.getBoundingClientRect();
-    const mouseInChart = e.clientX - chartRect.left;
-    const showRight = mouseInChart < chartRect.width / 2;
-
+    const showRight = (clientX - chartRect.left) < chartRect.width / 2;
     tooltip.style.display = 'block';
     if (showRight) {
-      tooltip.style.left = (e.clientX - chartRect.left + 20) + 'px';
+      tooltip.style.left = (clientX - chartRect.left + 26) + 'px';
       tooltip.style.right = 'auto';
     } else {
       tooltip.style.left = 'auto';
-      tooltip.style.right = (chartRect.width - (e.clientX - chartRect.left) + 20) + 'px';
+      tooltip.style.right = (chartRect.width - (clientX - chartRect.left) + 6) + 'px';
     }
-    tooltip.style.top = (e.clientY - chartRect.top - 10) + 'px';
-  });
-
-  hotzone.addEventListener('mouseleave', () => {
+    tooltip.style.top = Math.max(0, clientY - chartRect.top - 10) + 'px';
+  }
+  function cacher() {
     cursor.setAttribute('opacity', '0');
     cursorDot.setAttribute('opacity', '0');
     tooltip.style.display = 'none';
-  });
+  }
+
+  hotzone.addEventListener('mousemove', e => montrer(e.clientX, e.clientY));
+  hotzone.addEventListener('mouseleave', cacher);
+  // Au doigt : on glisse sur le profil
+  hotzone.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) montrer(t.clientX, t.clientY); }, { passive: true });
+  hotzone.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) montrer(t.clientX, t.clientY); }, { passive: true });
+  hotzone.addEventListener('touchend', () => setTimeout(cacher, 1600));
 }
 
 // ── Envoi mail simulation ─────────────────────────────────────────
@@ -1797,7 +1703,7 @@ function envoyerMailSimulation(data) {
   };
   if (!window.emailjs) return;   // envoi silencieux : rien à signaler à l'utilisateur
   emailjs.send('sumit_outlook', 'template_6htljlf', params)
-    .then(() => console.log('✅ Simulation envoyée'))
+    .then(() => console.log('Simulation envoyée'))
     .catch(e => console.warn('EmailJS:', e));
 }
 
@@ -1828,507 +1734,353 @@ async function chargerTrackPoints(file) {
 }
 
 function afficherCarte(coords) {
-  if (coords.length === 0) return;
+  if (!coords || coords.length === 0 || typeof L === 'undefined') return;
   if (leafletMap) { leafletMap.remove(); leafletMap = null; }
 
-  leafletMap = L.map('leafletMap').setView(coords[0], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 18,
+  leafletMap = L.map('leafletMap', { scrollWheelZoom: false }).setView(coords[0], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO',
+    maxZoom: 19,
+    subdomains: 'abcd',
     crossOrigin: true
   }).addTo(leafletMap);
 
-  const polyline = L.polyline(coords, { color: '#FFC857', weight: 3 }).addTo(leafletMap);
+  const polyline = L.polyline(coords, { color: '#1E5FD8', weight: 3.5, opacity: 1 }).addTo(leafletMap);
 
-  L.marker(coords[0], { title: 'Départ' }).addTo(leafletMap).bindPopup('🟢 Départ');
-  L.marker(coords[coords.length-1], { title: 'Arrivée' }).addTo(leafletMap).bindPopup('🔴 Arrivée');
+  L.circleMarker(coords[0], { radius: 7, color: '#0E1116', fillColor: '#FFFFFF', fillOpacity: 1, weight: 3 })
+    .bindTooltip('Départ').addTo(leafletMap);
+  L.circleMarker(coords[coords.length-1], { radius: 7, color: '#FFFFFF', fillColor: '#0E1116', fillOpacity: 1, weight: 2 })
+    .bindTooltip('Arrivée').addTo(leafletMap);
 
   leafletMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
 
-  // Force resize après affichage
-  setTimeout(() => leafletMap.invalidateSize(), 100);
+  // Recalcul de la taille après affichage
+  setTimeout(() => leafletMap && leafletMap.invalidateSize(), 100);
 }
 
 // ══════════════════════════════════════════════════════════════
-//  PDF v3 — Page unique A4 avec style SUM'IT
+//  PDF — roadbook sur une page A4, aux couleurs des écrans SUM'IT
 // ══════════════════════════════════════════════════════════════
-
-// Couleurs (palette SUM'IT)
 const PDF_COLORS = {
-  bg:       [10, 10, 10],       // Noir
-  bg2:      [19, 19, 19],
-  bg3:      [26, 26, 26],
-  text:     [244, 241, 232],    // Blanc cassé
-  text2:    [184, 180, 166],
-  text3:    [110, 106, 94],
-  sun:      [255, 200, 87],
-  leaf:     [107, 179, 107],
-  sky:      [79, 163, 217],
-  danger:   [229, 91, 91],
-  warning:  [243, 146, 55],
-  line:     [40, 40, 40],
+  ink:      [14, 17, 22],
+  muted:    [92, 99, 112],
+  line:     [228, 231, 235],
+  soft:     [242, 244, 247],
+  white:    [255, 255, 255],
+  data:     [30, 95, 216],
+  data2:    [143, 176, 236],
+  positive: [31, 122, 76],
+  negative: [194, 38, 46],
+  sun:      [255, 197, 61],
+  leaf:     [47, 203, 127],
+  sky:      [46, 125, 246],
 };
+
+// jsPDF (Helvetica) ne connaît que le jeu WinAnsi : on remplace les quelques signes typographiques
+function textePDF(s) {
+  return String(s == null ? '' : s)
+    .replace(/[−–—]/g, '-')
+    .replace(/[   ]/g, ' ')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\x00-\xFF€]/g, '');
+}
 
 async function genererPDF() {
   const { jsPDF } = window.jspdf;
   const profil = chargerProfil();
   const prenom = profil?.prenom || 'Coureur';
   const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+  const data = window.lastSimData || {};
 
   const btn = document.querySelector('.btn-pdf');
-  btn.innerHTML = '⏳ Génération...';
+  const btnHTML = btn.innerHTML;
+  btn.innerHTML = 'Génération…';
   btn.disabled = true;
 
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const W = 210, H = 297;
-    const PAD = 12;
+    const W = 210, H = 297, PAD = 14;
+    const C = PDF_COLORS;
+    const T = (s, x, y, opt) => pdf.text(textePDF(s), x, y, opt);
     let y = 0;
 
-    // ═══ FOND NOIR GLOBAL ═══
-    pdf.setFillColor(...PDF_COLORS.bg);
-    pdf.rect(0, 0, W, H, 'F');
+    // ═══ En-tête ═══
+    const lx = PAD, ly = 12, ls = 11;
+    pdf.setFillColor(...C.ink);
+    pdf.roundedRect(lx, ly, ls, ls, 2.4, 2.4, 'F');
+    pdf.setFillColor(...C.sun);
+    pdf.triangle(lx + 3.9, ly + 4.4, lx + 5.1, ly + 8.8, lx + 2.6, ly + 8.8, 'F');
+    pdf.setFillColor(...C.white);
+    pdf.triangle(lx + 6.9, ly + 2.9, lx + 9.6, ly + 8.8, lx + 4.1, ly + 8.8, 'F');
 
-    // ═══ BANNIÈRE HEADER avec topo en fond ═══
-    const HEADER_H = 32;
-
-    // Fond bannière
-    pdf.setFillColor(...PDF_COLORS.bg2);
-    pdf.rect(0, 0, W, HEADER_H, 'F');
-
-    // Topo en filigrane (lignes courbes)
-    pdf.setDrawColor(...PDF_COLORS.text);
-    pdf.setLineWidth(0.15);
-    pdf.setGState(new pdf.GState({ opacity: 0.12 }));
-    for (let i = 0; i < 6; i++) {
-      const yo = 4 + i * 5;
-      pdf.lines(
-        [[40, -1], [40, 2], [40, -2], [40, 1], [40, -1]],
-        0, yo, [1, 1], 'S'
-      );
-    }
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
-
-    // Bandeau dégradé fin en bas du header
-    const colors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
-    const segW = W / colors.length;
-    colors.forEach((col, i) => {
-      pdf.setFillColor(...col);
-      pdf.rect(i * segW, HEADER_H - 0.6, segW, 0.6, 'F');
-    });
-
-    // Logo SUM'IT (rond avec dégradé simulé par 3 carrés)
-    const logoX = PAD, logoY = 8, logoSize = 16;
-    pdf.setFillColor(...PDF_COLORS.sun);
-    pdf.circle(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 'F');
-    pdf.setTextColor(...PDF_COLORS.bg);
+    pdf.setTextColor(...C.ink);
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(14);
-    pdf.text('S', logoX + logoSize/2, logoY + logoSize/2 + 2, { align: 'center' });
-
-    // SUM'IT text
-    pdf.setTextColor(...PDF_COLORS.text);
-    pdf.setFontSize(22);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text("SUM'IT", logoX + logoSize + 4, logoY + 8);
-
-    pdf.setFontSize(7);
-    pdf.setTextColor(...PDF_COLORS.text3);
+    pdf.setFontSize(16);
+    T("SUM'IT", lx + ls + 3, ly + 6.2);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('PLAN YOUR PEAKS', logoX + logoSize + 4, logoY + 13);
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(...C.muted);
+    T('Plan your peaks', lx + ls + 3, ly + 10);
 
-    // Côté droit : date + nom coureur
-    pdf.setFontSize(8);
-    pdf.setTextColor(...PDF_COLORS.text2);
-    pdf.text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }),
-             W - PAD, logoY + 6, { align: 'right' });
+    pdf.setFontSize(8.5);
+    T(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }), W - PAD, ly + 4.5, { align: 'right' });
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...PDF_COLORS.sun);
+    pdf.setTextColor(...C.ink);
     pdf.setFontSize(10);
-    pdf.text(prenom, W - PAD, logoY + 12, { align: 'right' });
+    T(prenom, W - PAD, ly + 9.5, { align: 'right' });
 
-    y = HEADER_H + 8;
+    // Filet aux trois couleurs de la marque
+    const bandY = ly + ls + 5;
+    [C.sun, C.leaf, C.sky].forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(PAD + i * ((W - 2 * PAD) / 3), bandY, (W - 2 * PAD) / 3, 0.9, 'F');
+    });
+    y = bandY + 10;
 
-    // ═══ TITRE DE LA COURSE ═══
-    pdf.setTextColor(...PDF_COLORS.text);
-    pdf.setFontSize(20);
+    // ═══ Titre ═══
+    pdf.setTextColor(...C.ink);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(nomCourse, PAD, y);
-
-    // Sous-titre catégorie
-    const cat = window.lastSimData?.categorie || {};
-    pdf.setFontSize(9);
+    pdf.setFontSize(19);
+    T(nomCourse, PAD, y);
+    const cat = data.categorie || {};
     pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...PDF_COLORS.text2);
-    pdf.text(`${cat.emoji || ''} ${cat.nom || ''} · Simulation personnalisée`, PAD, y + 5);
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.muted);
+    const depart = lireHeureDepart();
+    const sousTitre = [cat.nom, `${fmtKmS(data.distance_km)} km`, `${fmtEntierS(data.dplus_m)} m D+`,
+      depart !== null ? `départ ${fmtHeure(depart)}` : null, 'simulation personnalisée'].filter(Boolean).join(' · ');
+    T(sousTitre, PAD, y + 5.5);
     y += 12;
 
-    // ═══ KPIs PRINCIPAUX (4 colonnes) ═══
+    // ═══ Chiffres clés ═══
     const kpis = [
-      { label: 'TEMPS ESTIMÉ',  val: document.getElementById('resTemps').textContent,    color: PDF_COLORS.sun },
-      { label: 'ALLURE MOY.',   val: document.getElementById('resAllure').textContent,   color: PDF_COLORS.text },
-      { label: 'DISTANCE',      val: document.getElementById('fileDist').textContent,    color: PDF_COLORS.text },
-      { label: 'DÉNIVELÉ +',    val: document.getElementById('fileDplus').textContent,   color: PDF_COLORS.text },
+      { label: 'Temps estimé', val: document.getElementById('resTemps').textContent, color: C.data },
+      { label: 'Allure moyenne', val: document.getElementById('resAllure').textContent, color: C.ink },
+      { label: 'Top condition', val: document.getElementById('fourchBas').textContent, color: C.ink },
+      { label: 'Jour difficile', val: document.getElementById('fourchHaut').textContent, color: C.ink },
     ];
-
-    const kpiH = 22;
-    const kpiW = (W - 2*PAD) / 4;
-    pdf.setFillColor(...PDF_COLORS.bg2);
-    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'F');
-    pdf.setDrawColor(...PDF_COLORS.line);
+    const kpiH = 19, kpiW = (W - 2 * PAD) / kpis.length;
+    pdf.setDrawColor(...C.line);
     pdf.setLineWidth(0.3);
-    pdf.roundedRect(PAD, y, W - 2*PAD, kpiH, 1.5, 1.5, 'S');
-
-    kpis.forEach((kpi, i) => {
+    pdf.roundedRect(PAD, y, W - 2 * PAD, kpiH, 1.6, 1.6, 'S');
+    kpis.forEach((k, i) => {
       const kx = PAD + i * kpiW;
-
-      // Séparateur vertical
-      if (i > 0) {
-        pdf.setDrawColor(...PDF_COLORS.line);
-        pdf.line(kx, y + 3, kx, y + kpiH - 3);
-      }
-
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...PDF_COLORS.text3);
-      pdf.text(kpi.label, kx + kpiW/2, y + 6, { align: 'center' });
-
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...kpi.color);
-      pdf.text(kpi.val, kx + kpiW/2, y + 15, { align: 'center' });
-    });
-    y += kpiH + 6;
-
-    // ═══ FOURCHETTES (2 colonnes vert/rouge) ═══
-    const fourchH = 16;
-    const fourchW = (W - 2*PAD - 4) / 2;
-
-    // Top condition (vert)
-    pdf.setFillColor(...PDF_COLORS.bg2);
-    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'F');
-    pdf.setDrawColor(...PDF_COLORS.leaf);
-    pdf.setLineWidth(0.3);
-    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
-    pdf.roundedRect(PAD, y, fourchW, fourchH, 1.5, 1.5, 'S');
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...PDF_COLORS.leaf);
-    pdf.text('TOP CONDITION', PAD + 4, y + 5);
-    pdf.setFontSize(13);
-    pdf.setTextColor(...PDF_COLORS.text);
-    pdf.text(document.getElementById('fourchBas').textContent, PAD + 4, y + 12);
-    pdf.setFontSize(6);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...PDF_COLORS.text3);
-    pdf.text('Tout se passe bien', PAD + 4, y + fourchH - 2);
-
-    // Jour difficile (rouge)
-    const dx = PAD + fourchW + 4;
-    pdf.setFillColor(...PDF_COLORS.bg2);
-    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'F');
-    pdf.setDrawColor(...PDF_COLORS.danger);
-    pdf.setGState(new pdf.GState({ opacity: 0.5 }));
-    pdf.roundedRect(dx, y, fourchW, fourchH, 1.5, 1.5, 'S');
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...PDF_COLORS.danger);
-    pdf.text('JOUR DIFFICILE', dx + 4, y + 5);
-    pdf.setFontSize(13);
-    pdf.setTextColor(...PDF_COLORS.text);
-    pdf.text(document.getElementById('fourchHaut').textContent, dx + 4, y + 12);
-    pdf.setFontSize(6);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...PDF_COLORS.text3);
-    pdf.text('Conditions dégradées', dx + 4, y + fourchH - 2);
-
-    y += fourchH + 6;
-
-    // ═══ PROFIL COUREUR ═══
-    if (profil && profil.archetype) {
-      const profH = 16;
-      pdf.setFillColor(...PDF_COLORS.bg2);
-      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'F');
-      pdf.setDrawColor(...PDF_COLORS.sun);
-      pdf.setLineWidth(0.3);
-      pdf.setGState(new pdf.GState({ opacity: 0.4 }));
-      pdf.roundedRect(PAD, y, W - 2*PAD, profH, 1.5, 1.5, 'S');
-      pdf.setGState(new pdf.GState({ opacity: 1 }));
-
-      // Icône archétype (cercle doré)
-      pdf.setFillColor(...PDF_COLORS.sun);
-      pdf.setGState(new pdf.GState({ opacity: 0.15 }));
-      pdf.circle(PAD + 8, y + profH/2, 5, 'F');
-      pdf.setGState(new pdf.GState({ opacity: 1 }));
-
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...PDF_COLORS.sun);
-      pdf.text('PROFIL COUREUR', PAD + 17, y + 5);
-
-      pdf.setFontSize(12);
-      pdf.setTextColor(...PDF_COLORS.text);
-      pdf.text(profil.archetype.nom || 'Combattant', PAD + 17, y + 11);
-
-      pdf.setFontSize(6.5);
+      if (i > 0) pdf.line(kx, y + 3, kx, y + kpiH - 3);
       pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(...PDF_COLORS.text3);
-      const vepStr = profil.vep_globale ? `VEP ${profil.vep_globale.toFixed(1)} km/h` : '';
-      pdf.text(`${vepStr} · Coeff. course ×${profil.coefficient.toFixed(2)} · Drain ${(profil.drain_moy_h*100).toFixed(1)}%/h · FCmax ${profil.fcmax}bpm · ${profil.nb_traces} traces`,
-               PAD + 17, y + 14.5);
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T(k.label, kx + 4, y + 6);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(i === 0 ? 15 : 12.5);
+      pdf.setTextColor(...k.color);
+      T(k.val, kx + 4, y + 14);
+    });
+    y += kpiH + 5;
 
-      y += profH + 6;
+    // ═══ Profil de coureur ═══
+    const profilSim = profilDeLaSim();
+    if (profilSim && profilSim.archetype) {
+      const profil = profilSim;
+      const profH = 13;
+      pdf.setFillColor(...C.soft);
+      pdf.roundedRect(PAD, y, W - 2 * PAD, profH, 1.6, 1.6, 'F');
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T('Profil de coureur', PAD + 4, y + 5);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10.5);
+      pdf.setTextColor(...C.ink);
+      T(profil.archetype.nom || 'Combattant', PAD + 4, y + 10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...C.muted);
+      const vepStr = profil.vep_globale ? `VEP ${profil.vep_globale.toFixed(1).replace('.', ',')} km/h` : '';
+      T([vepStr, `coefficient course ×${Number(profil.coefficient).toFixed(2).replace('.', ',')}`,
+         `drain ${(profil.drain_moy_h*100).toFixed(1).replace('.', ',')} %/h`, `FC max ${profil.fcmax} bpm`,
+         profil.nb_traces ? `${profil.nb_traces} sorties` : ''].filter(Boolean).join('  ·  '), W - PAD - 4, y + 8, { align: 'right' });
+      y += profH + 5;
     }
 
-    // ═══ GRAPHIQUE PROFIL DE COURSE ═══
+    // ═══ Profil de course (capture du graphique) ═══
     const chartEl = document.getElementById('profilChart');
-    if (chartEl) {
-      pdf.setFontSize(7);
+    if (chartEl && typeof html2canvas === 'function') {
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...PDF_COLORS.sun);
-      pdf.text('PROFIL ALTIMÉTRIQUE — VITESSE PRÉDITE', PAD, y);
-      y += 3;
-
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Profil de course et allure prévue', PAD, y);
+      y += 2.5;
       const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'background:#101C30;padding:8px;width:680px;';
+      wrapper.style.cssText = 'position:fixed;left:-10000px;top:0;background:#FFFFFF;padding:6px;width:760px;';
       const clone = chartEl.cloneNode(true);
-      // Ne change pas les couleurs : on garde le rendu sombre comme le site
+      clone.setAttribute('width', '748');
+      clone.style.width = '748px';
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
-      const canvas = await html2canvas(wrapper, { backgroundColor: '#101C30', scale: 2 });
+      const canvas = await html2canvas(wrapper, { backgroundColor: '#FFFFFF', scale: 2 });
       document.body.removeChild(wrapper);
-
       const imgData = canvas.toDataURL('image/png');
-      const imgH = Math.min(45, (canvas.height * (W - 2*PAD)) / canvas.width);
-      pdf.addImage(imgData, 'PNG', PAD, y, W - 2*PAD, imgH);
+      const imgH = Math.min(52, (canvas.height * (W - 2 * PAD)) / canvas.width);
+      pdf.addImage(imgData, 'PNG', PAD, y, W - 2 * PAD, imgH);
       y += imgH + 5;
     }
 
-    // ═══ SCORE DE PENTE + RÉPARTITION TERRAIN (2 colonnes) ═══
+    // ═══ Score de pente et répartition (deux colonnes) ═══
+    const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+    const labelsT = {
+      montee_raide: 'Montée raide', montee_soutenue: 'Montée soutenue', montee_douce: 'Montée douce',
+      plat: 'Plat',
+      descente_douce: 'Descente douce', descente_soutenue: 'Descente soutenue', descente_raide: 'Descente raide',
+    };
     if (profil && profil.profil) {
-      const colWidth = (W - 2*PAD - 4) / 2;
-      const colH = 50;
+      const colW = (W - 2 * PAD - 5) / 2;
+      const colH = 49;
 
-      // ── Score de pente (gauche) ──
-      pdf.setFillColor(...PDF_COLORS.bg2);
-      pdf.roundedRect(PAD, y, colWidth, colH, 1.5, 1.5, 'F');
-
-      pdf.setFontSize(7);
+      // Score de pente
+      pdf.setDrawColor(...C.line);
+      pdf.roundedRect(PAD, y, colW, colH, 1.6, 1.6, 'S');
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...PDF_COLORS.sun);
-      pdf.text('SCORE DE PENTE (VS PLAT)', PAD + 3, y + 5);
-
-      const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
-      const labelsT = {
-        montee_raide: 'M. raide', montee_soutenue: 'M. soutenue', montee_douce: 'M. douce',
-        plat: 'Plat',
-        descente_douce: 'D. douce', descente_soutenue: 'D. soutenue', descente_raide: 'D. raide',
-      };
-
-      let lineY = y + 9;
-      const barX = PAD + 26;
-      const barW = colWidth - 38;
-      const barCenter = barX + barW / 2;
-
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Score de pente (par rapport au plat)', PAD + 4, y + 6);
+      let ly2 = y + 12;
+      const barX = PAD + 32, barW = colW - 50, barC = barX + barW / 2;
       ordreT.forEach(t => {
         const p = profil.profil[t];
         if (!p) return;
         const ecart = p.ecart_plat_pct || 0;
-        const isPlat = (t === 'plat');
-
-        // Label
-        pdf.setFontSize(6.5);
+        const isPlat = t === 'plat';
         pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...PDF_COLORS.text2);
-        pdf.text(labelsT[t], PAD + 3, lineY + 1.5);
-
-        // Track (gris)
-        pdf.setFillColor(...PDF_COLORS.bg3);
-        pdf.rect(barX, lineY - 0.5, barW, 1.5, 'F');
-
-        // Ligne centrale (0%)
-        pdf.setDrawColor(...PDF_COLORS.text3);
-        pdf.setLineWidth(0.4);
-        pdf.line(barCenter, lineY - 1.5, barCenter, lineY + 2);
-
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.ink);
+        T(labelsT[t], PAD + 4, ly2 + 1.4);
+        pdf.setFillColor(...C.soft);
+        pdf.rect(barX, ly2 - 0.6, barW, 1.8, 'F');
+        pdf.setDrawColor(...C.muted);
+        pdf.setLineWidth(0.25);
+        pdf.line(barC, ly2 - 1.6, barC, ly2 + 2.2);
         if (!isPlat) {
-          const widthPct = Math.min(50, Math.abs(ecart));
-          const fillW = (widthPct / 100) * barW;
-          if (ecart >= 0) {
-            pdf.setFillColor(...PDF_COLORS.leaf);
-            pdf.rect(barCenter, lineY - 0.5, fillW, 1.5, 'F');
-          } else {
-            pdf.setFillColor(...PDF_COLORS.danger);
-            pdf.rect(barCenter - fillW, lineY - 0.5, fillW, 1.5, 'F');
-          }
+          const fillW = (Math.min(50, Math.abs(ecart)) / 100) * barW;
+          pdf.setFillColor(...(ecart >= 0 ? C.data : C.data2));
+          if (ecart >= 0) pdf.rect(barC, ly2 - 0.6, fillW, 1.8, 'F');
+          else pdf.rect(barC - fillW, ly2 - 0.6, fillW, 1.8, 'F');
         }
-
-        // Valeur
-        pdf.setFontSize(6.5);
         pdf.setFont('helvetica', 'bold');
-        if (isPlat) pdf.setTextColor(...PDF_COLORS.text3);
-        else if (ecart >= 0) pdf.setTextColor(...PDF_COLORS.leaf);
-        else pdf.setTextColor(...PDF_COLORS.danger);
-        const sign = ecart > 0 ? '+' : '';
-        const display = isPlat ? '0%' : `${sign}${ecart.toFixed(1)}%`;
-        pdf.text(display, PAD + colWidth - 3, lineY + 1.5, { align: 'right' });
-
-        lineY += 5.5;
+        pdf.setTextColor(...C.ink);
+        const display = isPlat ? '0 %' : `${ecart > 0 ? '+' : (ecart < 0 ? '-' : '')}${Math.abs(ecart).toFixed(1).replace('.', ',')} %`;
+        T(display, PAD + colW - 4, ly2 + 1.4, { align: 'right' });
+        ly2 += 5.3;
       });
 
-      // ── Répartition terrain (droite) ──
-      const cx2 = PAD + colWidth + 4;
-      pdf.setFillColor(...PDF_COLORS.bg2);
-      pdf.roundedRect(cx2, y, colWidth, colH, 1.5, 1.5, 'F');
-
-      pdf.setFontSize(7);
+      // Répartition du temps
+      const cx2 = PAD + colW + 5;
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(cx2, y, colW, colH, 1.6, 1.6, 'S');
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(...PDF_COLORS.sun);
-      pdf.text('RÉPARTITION DU TEMPS', cx2 + 3, y + 5);
-
-      const rep = window.lastSimData?.repartition || {};
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Répartition du temps par terrain', cx2 + 4, y + 6);
+      const rep = data.repartition || {};
       const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
-      const terrainColors = {
-        montee_raide: PDF_COLORS.danger,
-        montee_soutenue: PDF_COLORS.warning,
-        montee_douce: PDF_COLORS.leaf,
-        plat: PDF_COLORS.sun,
-        descente_douce: PDF_COLORS.leaf,
-        descente_soutenue: PDF_COLORS.warning,
-        descente_raide: PDF_COLORS.danger,
-      };
-
-      let lineY2 = y + 9;
-      const repBarX = cx2 + 28;
-      const repBarW = colWidth - 50;
-
+      let ly3 = y + 12;
+      const rX = cx2 + 32, rW = colW - 54;
       ordreT.forEach(t => {
         const r = rep[t];
         if (!r) return;
-
-        pdf.setFontSize(6.5);
         pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(...PDF_COLORS.text2);
-        pdf.text(labelsT[t], cx2 + 3, lineY2 + 1.5);
-
-        // Track
-        pdf.setFillColor(...PDF_COLORS.bg3);
-        pdf.rect(repBarX, lineY2 - 0.5, repBarW, 1.5, 'F');
-
-        // Fill
-        const fillW = (r.pct / maxPct) * repBarW;
-        const col = terrainColors[t] || PDF_COLORS.sun;
-        pdf.setFillColor(...col);
-        pdf.rect(repBarX, lineY2 - 0.5, fillW, 1.5, 'F');
-
-        // %
-        pdf.setFontSize(6.5);
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.ink);
+        T(labelsT[t], cx2 + 4, ly3 + 1.4);
+        pdf.setFillColor(...C.soft);
+        pdf.rect(rX, ly3 - 0.6, rW, 1.8, 'F');
+        pdf.setFillColor(...C.data);
+        pdf.rect(rX, ly3 - 0.6, (r.pct / maxPct) * rW, 1.8, 'F');
         pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(...PDF_COLORS.text);
-        pdf.text(`${r.pct}%`, cx2 + colWidth - 3, lineY2 + 1.5, { align: 'right' });
-
-        lineY2 += 5.5;
+        T(`${String(r.pct).replace('.', ',')} %`, cx2 + colW - 4, ly3 + 1.4, { align: 'right' });
+        ly3 += 5.3;
       });
-
-      y += colH + 5;
+      y += colH + 6;
     }
 
-    // ═══ TABLEAU RAVITAILLEMENTS ═══
-    pdf.setFontSize(7);
+    // ═══ Tableau des points de passage ═══
+    const avecHeure = lireHeureDepart() !== null;
+    const cols = [
+      { titre: 'Point', x: PAD + 2, align: 'left', i: 0 },
+      { titre: 'Distance', x: avecHeure ? 76 : 84, align: 'right', i: 1 },
+      { titre: 'Temps', x: avecHeure ? 98 : 108, align: 'right', i: 2 },
+    ];
+    if (avecHeure) cols.push({ titre: 'Heure', x: 118, align: 'right', i: 3 });
+    cols.push(
+      { titre: 'Top', x: avecHeure ? 138 : 130, align: 'right', i: 4 },
+      { titre: 'Difficile', x: avecHeure ? 158 : 152, align: 'right', i: 5 },
+      { titre: 'D+', x: avecHeure ? 178 : 174, align: 'right', i: 6 },
+      { titre: 'D-', x: W - PAD - 2, align: 'right', i: 7 },
+    );
+    const enteteTableau = () => {
+      pdf.setFillColor(...C.soft);
+      pdf.rect(PAD, y, W - 2 * PAD, 6, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      cols.forEach(c => T(c.titre, c.x, y + 4.1, { align: c.align }));
+      y += 6;
+    };
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...PDF_COLORS.sun);
-    pdf.text('TEMPS DE PASSAGE AUX RAVITAILLEMENTS', PAD, y);
-    y += 3;
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.ink);
+    T('Temps de passage', PAD, y);
+    y += 2.5;
+    enteteTableau();
 
-    // Header tableau
-    pdf.setFillColor(...PDF_COLORS.bg3);
-    pdf.rect(PAD, y, W - 2*PAD, 5, 'F');
-    pdf.setFontSize(6.5);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(...PDF_COLORS.text2);
-    const colsX = [PAD + 2, 45, 75, 105, 135, 175];
-    ['POINT', 'DISTANCE', 'TEMPS', 'TOP', 'DIFFICILE', 'BATTERIE'].forEach((h, i) => {
-      pdf.text(h, colsX[i], y + 3.5);
-    });
-    y += 5;
-
-    // Lignes
     const rows = document.querySelectorAll('#ravitoBody tr');
-    pdf.setFont('helvetica', 'normal');
-    rows.forEach((row, i) => {
+    const rowH = 5.4;
+    rows.forEach(row => {
       const cells = row.querySelectorAll('td');
-      if (cells.length === 6) {
-        if (i % 2 === 0) {
-          pdf.setFillColor(...PDF_COLORS.bg2);
-          pdf.rect(PAD, y, W - 2*PAD, 4.5, 'F');
-        }
-        pdf.setFontSize(6.5);
-
-        // Couleur ligne (arrivée en doré)
-        const isArrivee = cells[0].textContent.includes('Arrivée');
-        if (isArrivee) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.setTextColor(...PDF_COLORS.sun);
-        } else {
-          pdf.setFont('helvetica', 'normal');
-          pdf.setTextColor(...PDF_COLORS.text);
-        }
-
-        pdf.text(cells[0].textContent.substring(0,18), colsX[0], y + 3);
-        pdf.text(cells[1].textContent, colsX[1], y + 3);
-
-        // Temps en doré
-        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.sun);
-        pdf.text(cells[2].textContent, colsX[2], y + 3);
-
-        if (!isArrivee) pdf.setTextColor(...PDF_COLORS.text2);
-        pdf.text(cells[3].textContent, colsX[3], y + 3);
-        pdf.text(cells[4].textContent, colsX[4], y + 3);
-
-        // Batterie : couleur selon valeur
-        const battTxt = cells[5].textContent;
-        const battNum = parseInt(battTxt);
-        if (battNum < 20) pdf.setTextColor(...PDF_COLORS.danger);
-        else if (battNum < 50) pdf.setTextColor(...PDF_COLORS.warning);
-        else pdf.setTextColor(...PDF_COLORS.leaf);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(battTxt, colsX[5], y + 3);
-
-        y += 4.5;
+      if (cells.length < 8) return;
+      if (y + rowH > H - 16) {
+        pdf.addPage();
+        y = 16;
+        enteteTableau();
       }
+      const isArrivee = cells[0].textContent.trim().startsWith('Arrivée');
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.2);
+      pdf.line(PAD, y + rowH, W - PAD, y + rowH);
+      cols.forEach(c => {
+        let txt = cells[c.i].textContent.replace(/\s+/g, ' ').trim();
+        if (c.i === 0) txt = txt.length > 30 ? txt.slice(0, 28) + '...' : txt;
+        const gras = isArrivee || c.i === 2 || (c.i === 0);
+        pdf.setFont('helvetica', gras ? 'bold' : 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(...(c.i === 2 && !isArrivee ? C.data : (c.i === 4 || c.i === 5 ? C.muted : C.ink)));
+        T(txt, c.x, y + 3.8, { align: c.align });
+      });
+      y += rowH;
     });
 
-    // ═══ FOOTER ═══
-    const footerY = H - 8;
-    pdf.setFillColor(...PDF_COLORS.bg2);
-    pdf.rect(0, footerY - 3, W, 11, 'F');
+    // ═══ Pied de page (sur chaque page) ═══
+    const nbPages = pdf.getNumberOfPages();
+    for (let pg = 1; pg <= nbPages; pg++) {
+      pdf.setPage(pg);
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.3);
+      pdf.line(PAD, H - 12, W - PAD, H - 12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T("SUM'IT — prédiction calculée sur ton profil de coureur. Une estimation, pas une promesse : écoute ton corps le jour J.", PAD, H - 7.5);
+      T('sumit-web-nine.vercel.app', W - PAD, H - 7.5, { align: 'right' });
+    }
 
-    // Ligne dégradée
-    const fcolors = [PDF_COLORS.sun, PDF_COLORS.leaf, PDF_COLORS.sky];
-    const fsegW = W / fcolors.length;
-    fcolors.forEach((col, i) => {
-      pdf.setFillColor(...col);
-      pdf.rect(i * fsegW, footerY - 3, fsegW, 0.4, 'F');
-    });
-
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(...PDF_COLORS.text3);
-    pdf.text("SUM'IT — Plan your peaks", PAD, footerY + 3);
-    pdf.setTextColor(...PDF_COLORS.text2);
-    pdf.text('sumit-web-nine.vercel.app', W - PAD, footerY + 3, { align: 'right' });
-
-    // Save
-    const filename = `SUMIT_${prenom}_${nomCourse.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
+    const filename = `SUMIT_${prenom}_${nomCourse}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') + '.pdf';
     pdf.save(filename);
 
   } catch(err) {
     console.error('Erreur PDF:', err);
-    alert('Erreur lors de la génération du PDF : ' + err.message);
+    alert('Le PDF n\'a pas pu être créé : ' + err.message);
   } finally {
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Télécharger en PDF';
+    btn.innerHTML = btnHTML;
     btn.disabled = false;
   }
 }
@@ -2338,13 +2090,14 @@ async function genererPDF() {
 // ══════════════════════════════════════════════════════════════
 const ratings = { ratingPred: '', ratingProfil: '' };
 
-function ouvrirModal()  { document.getElementById('modalAvis').classList.add('active'); }
+function ouvrirModal()  { document.getElementById('modalAvis').classList.add('active'); setTimeout(() => { const b = document.querySelector('#ratingPred .rating-btn'); if (b) b.focus(); }, 60); }
 function fermerModal()  { document.getElementById('modalAvis').classList.remove('active'); }
 
 function selectRating(group, btn, val) {
   ratings[group] = val;
-  document.querySelectorAll(`#${group} .rating-btn`).forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll(`#${group} .rating-btn`).forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
   btn.classList.add('selected');
+  btn.setAttribute('aria-pressed', 'true');
 }
 
 function envoyerAvis() {
@@ -2382,11 +2135,11 @@ function envoyerAvis() {
 // ── Épingler la simulation actuelle ──────────────────────────────
 async function epinglerSimulationActuelle() {
   if (!isLoggedIn()) {
-    alert('Connecte-toi pour épingler des simulations.');
+    alert('Connecte-toi pour épingler tes simulations.');
     return;
   }
   if (!window.lastSimData) {
-    alert('Lance une simulation avant.');
+    alert('Lance d\'abord une simulation.');
     return;
   }
 
@@ -2395,18 +2148,18 @@ async function epinglerSimulationActuelle() {
   // Mode édition : on met à jour la sim existante
   if (window.editingSimId) {
     btn.disabled = true;
-    document.getElementById('btnPinLabel').textContent = 'Mise à jour...';
+    document.getElementById('btnPinLabel').textContent = 'Mise à jour…';
     try {
       await updateSimulation(window.editingSimId, window.lastSimData);
       btn.classList.add('pinned');
-      document.getElementById('btnPinLabel').textContent = '✓ Mise à jour';
+      document.getElementById('btnPinLabel').textContent = 'Mise à jour enregistrée';
       setTimeout(() => {
-        document.getElementById('btnPinLabel').textContent = '✓ Simulation à jour';
+        document.getElementById('btnPinLabel').textContent = 'Simulation à jour';
       }, 1500);
     } catch (e) {
       alert('Erreur : ' + e.message);
       btn.disabled = false;
-      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la simulation épinglée';
     }
     return;
   }
@@ -2417,7 +2170,7 @@ async function epinglerSimulationActuelle() {
   if (!nom || !nom.trim()) return;
 
   btn.disabled = true;
-  document.getElementById('btnPinLabel').textContent = 'Enregistrement...';
+  document.getElementById('btnPinLabel').textContent = 'Enregistrement…';
 
   try {
     const data = window.lastSimData;
@@ -2440,7 +2193,9 @@ async function epinglerSimulationActuelle() {
       ravitos:        data.ravitos,
       repartition:    data.repartition,
       repartition_terrain_type: data.repartition_terrain_type,
+      profil_resume:  data.profil_resume || null,
     };
+    if (data.heure_depart) simPayload.heure_depart = data.heure_depart;
 
     // GPX en base64 (pour pouvoir recalculer plus tard)
     let gpxBase64 = '';
@@ -2467,9 +2222,9 @@ async function epinglerSimulationActuelle() {
     afficherBandeauEdition();
 
     btn.classList.add('pinned');
-    document.getElementById('btnPinLabel').textContent = '✓ Épinglée';
+    document.getElementById('btnPinLabel').textContent = 'Épinglée';
     setTimeout(() => {
-      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la sim épinglée';
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la simulation épinglée';
       btn.classList.remove('pinned');
       btn.disabled = false;
     }, 1500);
@@ -2479,7 +2234,11 @@ async function epinglerSimulationActuelle() {
     document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
   }
 }
-</script>
 
+// Échap ferme la fenêtre d'avis
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('modalAvis').classList.contains('active')) fermerModal();
+});
+</script>
 </body>
 </html>

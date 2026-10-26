@@ -1,5 +1,7 @@
 // ══════════════════════════════════════════════════════════════
-//  SUM'IT — onboarding.js v2 (non-bloquant, bas-droite)
+//  SUM'IT — onboarding.js v3
+//  Tutoriel non bloquant : carte flottante en bas à droite (feuille en bas
+//  sur téléphone), repère sur l'élément concerné, reprise d'une page à l'autre.
 // ══════════════════════════════════════════════════════════════
 
 const ONBOARDING_KEY = 'sumit_onboarding_step';
@@ -9,16 +11,16 @@ const ONBOARDING_MIN_KEY = 'sumit_onboarding_minimized';
 const ONBOARDING_STEPS = [
   {
     id: 1, page: 'any', selector: null,
-    title: "👋 Bienvenue dans SUM'IT",
-    text: "Tour rapide en 6 étapes pour bien démarrer.<br><br>Tu peux <strong>réduire</strong> cette fenêtre à tout moment pour explorer librement.",
-    nextLabel: 'Commencer →',
+    title: "Bienvenue dans SUM'IT",
+    text: "Six étapes pour passer de tes traces GPX à ton plan de course. Tu peux <strong>réduire</strong> cette fenêtre à tout moment pour explorer librement.",
+    nextLabel: 'Commencer',
     nextAction: 'goto:profil',
   },
   {
     id: 2, page: 'profil', selector: '.import-section',
-    title: 'Étape 1/5 — Importe tes activités',
-    text: "Importe <strong>au moins 3 GPX</strong> (idéalement 5-10) de tes sorties récentes. GPX manuel ou Strava (sélection multiple possible).<br><br>Plus tu importes, plus les prédictions sont précises.",
-    nextLabel: "J'ai importé mes GPX",
+    title: 'Importe tes activités',
+    text: "Connecte-toi avec Google, puis importe <strong>au moins 3 traces GPX</strong> de tes sorties récentes (5 à 10, c'est idéal), en fichier ou depuis Strava. Plus tu en importes, plus la prédiction est juste.",
+    nextLabel: "J'ai importé mes traces",
     nextAction: 'next',
     checkCondition: async () => {
       try {
@@ -26,41 +28,41 @@ const ONBOARDING_STEPS = [
         return res.activities && res.activities.length >= 1;
       } catch { return true; }
     },
-    conditionMessage: 'Importe au moins une activité GPX',
+    conditionMessage: "Importe au moins une activité pour continuer.",
   },
   {
-    id: 3, page: 'profil', selector: '.activites-section, .activites-list',
-    title: 'Étape 2/5 — Explore tes activités',
-    text: "Clique sur une <strong>ligne d'activité</strong> pour voir sa <strong>carte GPS</strong> + altimétrie + KPIs détaillés.<br><br>Le crayon ✏️ te permet de renommer ou changer le type (course/entraînement/sortie).",
-    nextLabel: 'Suivant →',
+    id: 3, page: 'profil', selector: '.activites-section',
+    title: 'Explore tes activités',
+    text: "Clique sur une activité pour voir sa <strong>carte</strong>, son profil altimétrique et ses chiffres. Le crayon permet de la renommer ou de changer son type : course, entraînement, sortie.",
+    nextLabel: 'Suivant',
     nextAction: 'next',
   },
   {
-    id: 4, page: 'profil', selector: '.profil-kpis, .archetype-section',
-    title: 'Étape 3/5 — Découvre ton profil',
-    text: "Ton profil se construit automatiquement :<br><br>• <strong>VEP globale</strong> : vitesse éq. plat<br>• <strong>Archétype</strong> parmi 8 : Grimpeur, Cabri, Diesel, Funambule, Descendeur…<br>• <strong>Score de pente</strong> : forces par terrain<br>• <strong>Évolution</strong> : graphique multi-métriques",
-    nextLabel: 'Aller au simulateur →',
+    id: 4, page: 'profil', selector: '.archetype-section, .profil-kpis',
+    title: 'Découvre ton profil',
+    text: "Il se construit tout seul : ta <strong>VEP</strong> (vitesse équivalente plat), ton <strong>archétype</strong> parmi huit, ton score de pente terrain par terrain et ton évolution.",
+    nextLabel: 'Aller au simulateur',
     nextAction: 'goto:simulateur',
   },
   {
-    id: 5, page: 'simulateur', selector: '#dropzoneSim, .sidebar-sim, .sim-sidebar',
-    title: 'Étape 4/6 — Simule une course',
-    text: "Upload un GPX de course (UTMB, ta prochaine cible…) et lance la simulation.<br><br>L'algo prédit ton temps en tenant compte de la fatigue mécanique et de ton allure. Choisis Trail ou Rando selon le terrain.",
-    nextLabel: 'Compris !',
+    id: 5, page: 'simulateur', selector: '.sim-sidebar, #dropzoneSim',
+    title: 'Simule une course',
+    text: "Dépose le GPX de ta course objectif, ajoute tes ravitos et lance la simulation. Pas de course sous la main ? Essaie la <strong>démo CCC</strong>.",
+    nextLabel: 'Suivant',
     nextAction: 'next',
   },
   {
     id: 6, page: 'simulateur', selector: '#btnPin, .btn-pin',
-    title: 'Étape 5/6 — Épingle tes simulations',
-    text: "Clique sur <strong>⭐ Épingler</strong> pour sauver une simulation avant ta course.<br><br>Retrouve-les dans <strong>Mon compte</strong>, rouvre-les avec ton GPX et tes ravitos, et recalcule-les avec ton profil mis à jour.",
+    title: 'Épingle ta simulation',
+    text: "Une fois la simulation lancée, le bouton <strong>Épingler</strong> la garde dans Mon compte. Tu pourras la rouvrir avec ton GPX et tes ravitos, et la recalculer quand ton profil progresse.",
     nextLabel: 'Et après la course ?',
     nextAction: 'goto:bilan',
   },
   {
-    id: 7, page: 'bilan', selector: '.bilan-selectors, .bilan-header',
-    title: 'Étape 6/6 — Compare réel vs prédit',
-    text: "Après ta course, importe-la en type <strong>🏅 Résultat</strong> dans Mon profil.<br><br>Ici, compare ta <strong>simulation</strong> à ta <strong>performance réelle</strong> : écart par ravito, ajustement du modèle, commentaire personnel. Ton profil apprend de chaque course !",
-    nextLabel: 'Terminer le tour 🎉',
+    id: 7, page: 'bilan', selector: '.bilan-selectors',
+    title: 'Compare réel et prédit',
+    text: "Après ta course, importe-la dans Mon profil avec le type <strong>Résultat</strong>. Ici, compare-la à ta simulation : écart à chaque ravito, recalibrage du modèle, notes personnelles.",
+    nextLabel: 'Terminer le tour',
     nextAction: 'finish',
   },
 ];
@@ -102,6 +104,8 @@ function basculerReduction() {
     localStorage.setItem(ONBOARDING_MIN_KEY, '1');
   }
   afficherEtapeOnboarding(getOnboardingStep());
+  const focusCible = estReduit() ? document.querySelector('.onb-mini') : document.getElementById('onb-btn-next');
+  if (focusCible) focusCible.focus({ preventScroll: true });
 }
 
 (function reprendreOnboardingSiActif() {
@@ -145,8 +149,9 @@ function afficherEtapeOnboarding(stepId) {
   if (step.selector) {
     const selectors = step.selector.split(',').map(s => s.trim());
     for (const sel of selectors) {
-      target = document.querySelector(sel);
-      if (target) break;
+      const el = document.querySelector(sel);
+      // On ignore les éléments masqués (pas de repère à 0,0)
+      if (el && el.getClientRects().length && el.getBoundingClientRect().width > 0) { target = el; break; }
     }
   }
   afficherWidget(step, target);
@@ -159,180 +164,200 @@ function injecterStylesOnboarding() {
   style.textContent = `
     .onb-spotlight {
       position: absolute;
-      border-radius: 8px;
-      border: 2px solid var(--sun);
-      box-shadow: 0 0 0 4px rgba(255, 200, 87, 0.15), 0 0 20px rgba(255, 200, 87, 0.4);
+      border-radius: 10px;
+      outline: 2px solid #1E5FD8;
+      outline-offset: 0;
+      box-shadow: 0 0 0 6px rgba(30, 95, 216, 0.14);
       pointer-events: none;
-      transition: all 0.4s ease;
-      animation: onbPulse 2s ease-in-out infinite;
-      z-index: 100;
+      z-index: 90;
+      animation: onbSpot 1.6s cubic-bezier(0.23, 1, 0.32, 1) 2;
     }
-    @keyframes onbPulse {
-      0%, 100% { box-shadow: 0 0 0 4px rgba(255, 200, 87, 0.15), 0 0 20px rgba(255, 200, 87, 0.4); }
-      50%       { box-shadow: 0 0 0 6px rgba(255, 200, 87, 0.25), 0 0 35px rgba(255, 200, 87, 0.6); }
+    @keyframes onbSpot {
+      0%   { box-shadow: 0 0 0 0 rgba(30, 95, 216, 0.30); }
+      70%  { box-shadow: 0 0 0 10px rgba(30, 95, 216, 0); }
+      100% { box-shadow: 0 0 0 6px rgba(30, 95, 216, 0.14); }
     }
     .onb-widget {
       position: fixed;
-      bottom: 24px; right: 24px;
+      right: max(24px, env(safe-area-inset-right));
+      bottom: max(24px, env(safe-area-inset-bottom));
       width: 360px;
       max-width: calc(100vw - 32px);
-      background: var(--bg);
-      border: 1.5px solid var(--sun);
+      background: #FFFFFF;
+      color: #0E1116;
+      border: 1px solid #E4E7EB;
       border-radius: 12px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 200, 87, 0.12);
+      box-shadow: 0 1px 2px rgba(14, 17, 22, 0.06), 0 12px 32px rgba(14, 17, 22, 0.14);
       z-index: 9999;
-      animation: onbSlideIn 0.4s ease;
-      overflow: hidden;
+      font-family: 'Sora', system-ui, sans-serif;
+      transform-origin: bottom right;
+      animation: onbIn 260ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    @keyframes onbSlideIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @keyframes onbIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
     }
     .onb-widget-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 16px;
-      background: linear-gradient(90deg, rgba(255, 200, 87, 0.10), rgba(107, 179, 107, 0.05));
-      border-bottom: 1px solid rgba(255, 200, 87, 0.2);
+      gap: 8px;
+      padding: 12px 12px 0 18px;
     }
-    .onb-widget-tag {
-      font-family: var(--font-display);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--sun);
-    }
-    .onb-widget-actions { display: flex; gap: 6px; }
+    .onb-widget-tag { font-size: 13px; font-weight: 600; color: #5C6370; font-variant-numeric: tabular-nums; }
+    .onb-widget-actions { display: flex; gap: 2px; }
     .onb-icon-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-3);
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      transition: all 0.2s;
-      width: 26px; height: 26px;
+      width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center;
+      border: 0; border-radius: 6px;
+      background: transparent;
+      color: #5C6370;
+      cursor: pointer;
+      transition: background-color 160ms ease, color 160ms ease;
     }
-    .onb-icon-btn:hover { color: var(--text); background: var(--bg-3); }
-    .onb-icon-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
-    .onb-widget-body { padding: 18px 20px 20px; }
+    .onb-icon-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    @media (hover: hover) and (pointer: fine) {
+      .onb-icon-btn:hover { background: #F2F4F7; color: #0E1116; }
+    }
+    .onb-widget-body { padding: 10px 18px 18px; }
     .onb-progress { display: flex; gap: 4px; margin-bottom: 14px; }
-    .onb-dot {
-      flex: 1; height: 3px;
-      background: var(--bg-3);
-      border-radius: 2px;
-      transition: background 0.3s;
-    }
-    .onb-dot.active { background: var(--sun); }
-    .onb-dot.done   { background: var(--leaf); }
-    .onb-title {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-      letter-spacing: 0.02em;
-    }
-    .onb-text {
-      font-size: 13px;
-      color: var(--text-2);
-      line-height: 1.55;
-      margin-bottom: 18px;
-    }
-    .onb-text strong { color: var(--sun); font-weight: 600; }
+    .onb-dot { flex: 1; height: 4px; border-radius: 2px; background: #EEF0F2; }
+    .onb-dot.done { background: #0E1116; }
+    .onb-dot.active { background: #1E5FD8; }
+    .onb-title { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 6px; }
+    .onb-text { font-size: 14px; line-height: 1.55; color: #3A404A; margin-bottom: 16px; }
+    .onb-text strong { color: #0E1116; font-weight: 600; }
     .onb-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .onb-btn {
-      font-family: var(--font-display);
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 9px 16px;
-      border-radius: 4px;
+      min-height: 40px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color 160ms ease, color 160ms ease, transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .onb-btn-skip { background: transparent; color: var(--text-3); border: none; }
-    .onb-btn-skip:hover { color: var(--text-2); }
-    .onb-btn-next {
-      background: var(--gradient-summit);
-      color: var(--bg);
-      border: none;
+    .onb-btn:active { transform: scale(0.97); }
+    .onb-btn-skip { background: transparent; color: #5C6370; padding: 0 8px; }
+    .onb-btn-next { background: #0E1116; color: #FFFFFF; }
+    .onb-btn-next:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    @media (hover: hover) and (pointer: fine) {
+      .onb-btn-skip:hover { color: #0E1116; }
+      .onb-btn-next:hover:not(:disabled) { background: #2A2F37; }
     }
-    .onb-btn-next:hover { transform: translateY(-1px); opacity: 0.95; }
-    .onb-btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
     .onb-warning {
-      background: rgba(243, 146, 55, 0.12);
-      color: var(--warning);
-      border: 1px solid rgba(243, 146, 55, 0.3);
-      padding: 8px 10px;
-      border-radius: 4px;
-      font-size: 11px;
-      margin-bottom: 12px;
       display: none;
+      margin-bottom: 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #FDE68A;
+      background: #FFFBEB;
+      color: #92400E;
+      font-size: 13px;
+      line-height: 1.45;
     }
     .onb-warning.show { display: block; }
     .onb-mini {
       position: fixed;
-      bottom: 24px; right: 24px;
-      background: var(--bg);
-      border: 1.5px solid var(--sun);
-      color: var(--sun);
-      padding: 10px 18px;
-      border-radius: 30px;
+      right: max(24px, env(safe-area-inset-right));
+      bottom: max(24px, env(safe-area-inset-bottom));
+      display: flex; align-items: center; gap: 8px;
+      min-height: 44px;
+      padding: 0 16px 0 8px;
+      border: 0;
+      border-radius: 999px;
+      background: #0E1116;
+      color: #FFFFFF;
+      font-family: 'Sora', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-      font-family: var(--font-display);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
       z-index: 9999;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-      transition: all 0.2s;
-      animation: onbSlideIn 0.4s ease;
-      display: flex; align-items: center;
+      box-shadow: 0 8px 24px rgba(14, 17, 22, 0.22);
+      animation: onbIn 220ms cubic-bezier(0.23, 1, 0.32, 1);
+      transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    .onb-mini:hover { transform: translateY(-2px); }
+    .onb-mini:active { transform: scale(0.97); }
     .onb-mini-progress {
-      display: inline-block;
-      width: 24px; height: 24px;
-      background: var(--sun);
-      color: var(--bg);
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
-      text-align: center;
-      line-height: 24px;
-      font-size: 10px;
-      font-weight: 800;
-      margin-right: 8px;
+      background: #FFC53D;
+      color: #0E1116;
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .onb-done {
+      position: fixed;
+      left: 50%;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      display: flex; align-items: center; gap: 10px;
+      max-width: calc(100vw - 32px);
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: #0E1116;
+      color: #FFFFFF;
+      font-family: 'Sora', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(14, 17, 22, 0.22);
+      animation: onbToast 260ms cubic-bezier(0.23, 1, 0.32, 1);
+      transition: opacity 200ms ease;
+    }
+    .onb-done svg { width: 18px; height: 18px; fill: none; stroke: #2FCB7F; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    @keyframes onbToast { from { opacity: 0; transform: translate(-50%, 8px); } }
+    @media (max-width: 560px) {
+      .onb-widget {
+        left: 12px; right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: auto; max-width: none;
+        transform-origin: bottom center;
+      }
+      .onb-mini { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .onb-spotlight, .onb-widget, .onb-mini, .onb-done { animation: none; }
     }
   `;
   document.head.appendChild(style);
 }
 
+let onbRepositionner = null;
+
 function retirerWidget() {
   document.querySelectorAll('#onb-widget, .onb-mini, .onb-spotlight').forEach(el => el.remove());
+  if (onbRepositionner) {
+    window.removeEventListener('resize', onbRepositionner);
+    onbRepositionner = null;
+  }
 }
 
 function afficherWidget(step, target) {
   retirerWidget();
 
   if (target) {
-    const rect = target.getBoundingClientRect();
     const padding = 6;
     const spot = document.createElement('div');
     spot.className = 'onb-spotlight';
-    spot.style.cssText = `top: ${rect.top + window.scrollY - padding}px; left: ${rect.left + window.scrollX - padding}px; width: ${rect.width + padding * 2}px; height: ${rect.height + padding * 2}px;`;
+    spot.setAttribute('aria-hidden', 'true');
+    const placer = () => {
+      const r = target.getBoundingClientRect();
+      spot.style.cssText = `top:${r.top + window.scrollY - padding}px; left:${r.left + window.scrollX - padding}px; width:${r.width + padding * 2}px; height:${r.height + padding * 2}px;`;
+    };
+    placer();
     document.body.appendChild(spot);
+    onbRepositionner = placer;
+    window.addEventListener('resize', onbRepositionner);
 
-    if (rect.top < 80 || rect.bottom > window.innerHeight - 100) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => {
-        const r2 = target.getBoundingClientRect();
-        spot.style.top = `${r2.top + window.scrollY - padding}px`;
-        spot.style.left = `${r2.left + window.scrollX - padding}px`;
-      }, 500);
+    const rect = target.getBoundingClientRect();
+    if (rect.top < 80 || rect.top > window.innerHeight - 220) {
+      const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: Math.max(0, rect.top + window.scrollY - 88), behavior: reduit ? 'auto' : 'smooth' });
+      setTimeout(placer, 600);
     }
   }
 
@@ -341,38 +366,40 @@ function afficherWidget(step, target) {
     return;
   }
 
-  const widget = document.createElement('div');
-  widget.id = 'onb-widget';
-  widget.className = 'onb-widget';
-
   const totalSteps = ONBOARDING_STEPS.length;
-  let progressHTML = '<div class="onb-progress">';
+  let progressHTML = '<div class="onb-progress" aria-hidden="true">';
   for (let i = 1; i <= totalSteps; i++) {
     const cls = i < step.id ? 'done' : (i === step.id ? 'active' : '');
     progressHTML += `<div class="onb-dot ${cls}"></div>`;
   }
   progressHTML += '</div>';
 
+  const widget = document.createElement('div');
+  widget.id = 'onb-widget';
+  widget.className = 'onb-widget';
+  widget.setAttribute('role', 'dialog');
+  widget.setAttribute('aria-modal', 'false');
+  widget.setAttribute('aria-labelledby', 'onb-title');
   widget.innerHTML = `
     <div class="onb-widget-header">
-      <div class="onb-widget-tag">📘 Tutoriel · Étape ${step.id}/${totalSteps}</div>
+      <div class="onb-widget-tag">Tutoriel · étape ${step.id} sur ${totalSteps}</div>
       <div class="onb-widget-actions">
-        <button class="onb-icon-btn" onclick="basculerReduction()" title="Réduire">
-          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <button type="button" class="onb-icon-btn" onclick="basculerReduction()" title="Réduire" aria-label="Réduire le tutoriel">
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
         </button>
-        <button class="onb-icon-btn" onclick="stopperOnboarding()" title="Fermer">
-          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <button type="button" class="onb-icon-btn" onclick="stopperOnboarding()" title="Fermer" aria-label="Fermer le tutoriel">
+          <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
     <div class="onb-widget-body">
       ${progressHTML}
-      <div class="onb-title">${step.title}</div>
+      <div class="onb-title" id="onb-title">${step.title}</div>
       <div class="onb-text">${step.text}</div>
-      <div class="onb-warning" id="onb-warning"></div>
+      <div class="onb-warning" id="onb-warning" role="alert"></div>
       <div class="onb-actions">
-        <button class="onb-btn onb-btn-skip" onclick="stopperOnboarding()">Passer</button>
-        <button class="onb-btn onb-btn-next" id="onb-btn-next">${step.nextLabel || 'Suivant →'}</button>
+        <button type="button" class="onb-btn onb-btn-skip" onclick="stopperOnboarding()">Passer le tutoriel</button>
+        <button type="button" class="onb-btn onb-btn-next" id="onb-btn-next">${step.nextLabel || 'Suivant'}</button>
       </div>
     </div>
   `;
@@ -382,11 +409,24 @@ function afficherWidget(step, target) {
 }
 
 function afficherMini(step) {
-  const mini = document.createElement('div');
+  const mini = document.createElement('button');
+  mini.type = 'button';
   mini.className = 'onb-mini';
+  mini.setAttribute('aria-label', `Rouvrir le tutoriel, étape ${step.id} sur ${ONBOARDING_STEPS.length}`);
   mini.onclick = basculerReduction;
-  mini.innerHTML = `<span class="onb-mini-progress">${step.id}</span>Tutoriel`;
+  mini.innerHTML = `<span class="onb-mini-progress" aria-hidden="true">${step.id}</span>Tutoriel`;
   document.body.appendChild(mini);
+}
+
+function afficherFinOnboarding() {
+  injecterStylesOnboarding();
+  const toast = document.createElement('div');
+  toast.className = 'onb-done';
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Tu connais SUM'IT. Bonne course !`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; }, 3600);
+  setTimeout(() => toast.remove(), 3900);
 }
 
 async function handleNextOnboarding(step) {
@@ -395,14 +435,14 @@ async function handleNextOnboarding(step) {
 
   if (step.checkCondition) {
     btn.disabled = true;
-    btn.textContent = 'Vérification...';
+    btn.textContent = 'Vérification…';
     try {
       const ok = await step.checkCondition();
       if (!ok) {
-        warning.textContent = step.conditionMessage || 'Action non terminée';
+        warning.textContent = step.conditionMessage || 'Action non terminée.';
         warning.classList.add('show');
         btn.disabled = false;
-        btn.textContent = step.nextLabel || 'Suivant →';
+        btn.textContent = step.nextLabel || 'Suivant';
         return;
       }
     } catch (e) { /* on laisse passer */ }
@@ -410,26 +450,21 @@ async function handleNextOnboarding(step) {
 
   switch (step.nextAction) {
     case 'goto:profil':
-      setOnboardingStep(step.id + 1);
-      retirerWidget();
-      window.location.href = pathTo('profil');
-      break;
     case 'goto:simulateur':
+    case 'goto:bilan': {
+      const page = step.nextAction.split(':')[1];
       setOnboardingStep(step.id + 1);
       retirerWidget();
-      window.location.href = pathTo('simulateur');
+      if (getPageCourante() === page) afficherEtapeOnboarding(step.id + 1);
+      else window.location.href = pathTo(page);
       break;
-    case 'goto:bilan':
-      setOnboardingStep(step.id + 1);
-      retirerWidget();
-      window.location.href = pathTo('bilan');
-      break;
+    }
     case 'finish':
       stopperOnboarding();
-      setTimeout(() => alert("🎉 Bravo ! Tu maîtrises maintenant SUM'IT. Bon trail !"), 100);
+      afficherFinOnboarding();
       break;
     case 'next':
-    default:
+    default: {
       const nextStep = ONBOARDING_STEPS.find(s => s.id === step.id + 1);
       if (nextStep) {
         const pageCourante = getPageCourante();
@@ -444,6 +479,7 @@ async function handleNextOnboarding(step) {
         stopperOnboarding();
       }
       break;
+    }
   }
 }
 

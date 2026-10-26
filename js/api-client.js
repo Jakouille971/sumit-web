@@ -138,7 +138,7 @@ function afficherBandeauReveil() {
       <div class="reveil-spinner"></div>
       <div class="reveil-text">
         <strong>Réveil du serveur en cours…</strong>
-        <span>La première connexion après une période d'inactivité prend ~30 à 60 secondes. Merci de patienter, ça ne durera qu'une fois.</span>
+        <span>Après une période calme, le serveur met 30 à 60 secondes à redémarrer. Ça n'arrive qu'à la première connexion.</span>
       </div>
       <div class="reveil-timer" id="sumit-reveil-timer">0s</div>
     </div>
@@ -173,54 +173,42 @@ function injecterStylesReveil() {
   s.id = 'sumit-reveil-styles';
   s.textContent = `
     #sumit-reveil-banner {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: linear-gradient(90deg, rgba(255,200,87,0.14), rgba(107,179,107,0.10));
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,200,87,0.35);
-      z-index: 99999;
-      animation: reveilSlide 0.3s ease;
+      position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: min(560px, calc(100vw - 24px));
+      background: #0E1116; color: #FFFFFF;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px -8px rgba(14, 17, 22, 0.35);
+      z-index: 99999; overflow: hidden;
+      font-family: 'Sora', system-ui, sans-serif;
+      animation: reveilSlide 260ms cubic-bezier(0.23, 1, 0.32, 1);
     }
-    @keyframes reveilSlide { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-    .reveil-inner {
-      display: flex; align-items: center; gap: 16px;
-      max-width: 1000px; margin: 0 auto;
-      padding: 14px 24px;
-    }
+    @keyframes reveilSlide { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .reveil-inner { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
     .reveil-spinner {
-      width: 22px; height: 22px; flex-shrink: 0;
-      border: 2.5px solid rgba(255,200,87,0.25);
-      border-top-color: #FFC857;
+      width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: #FFC53D;
       border-radius: 50%;
       animation: reveilSpin 0.8s linear infinite;
     }
     @keyframes reveilSpin { to { transform: rotate(360deg); } }
-    .reveil-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-    .reveil-text strong {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 14px; color: #FFC857; letter-spacing: 0.02em;
-    }
-    .reveil-text span { font-size: 12px; color: rgba(244,241,232,0.75); line-height: 1.4; }
-    .reveil-timer {
-      font-family: 'Space Grotesk', monospace;
-      font-size: 18px; font-weight: 700; color: #FFC857;
-      min-width: 44px; text-align: right;
-    }
-    .reveil-progress { height: 3px; background: rgba(255,255,255,0.06); }
-    .reveil-progress-bar {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #FFC857, #6BB36B);
-      transition: width 1s linear;
-    }
-    @media (max-width: 600px) {
-      .reveil-text span { display: none; }
-      .reveil-inner { padding: 12px 16px; }
-    }
+    .reveil-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .reveil-text strong { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+    .reveil-text span { font-size: 13px; color: #C9CED6; line-height: 1.45; }
+    .reveil-timer { font-size: 15px; font-weight: 600; color: #FFC53D; min-width: 40px; text-align: right; font-variant-numeric: tabular-nums; }
+    .reveil-progress { height: 3px; background: rgba(255,255,255,0.12); }
+    .reveil-progress-bar { height: 100%; width: 0%; background: #FFC53D; transition: width 1s linear; }
+    @media (max-width: 600px) { .reveil-text span { display: none; } }
+    @media (prefers-reduced-motion: reduce) { #sumit-reveil-banner, .reveil-spinner { animation: none; } }
   `;
   document.head.appendChild(s);
 }
 
 // Réveil proactif : ping /api/health au chargement (ne bloque pas).
 async function reveillerServeurEnArrierePlan() {
+  // Sur la page d'accueil, le réveil se fait sans bandeau : le visiteur n'attend rien du serveur.
+  const silencieux = typeof window !== 'undefined' && !!window.SUMIT_SILENT_WAKE;
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 3000);
@@ -230,15 +218,15 @@ async function reveillerServeurEnArrierePlan() {
   } catch (e) {
     // Serveur endormi → on affiche le bandeau et on ping en boucle jusqu'au réveil
   }
-  afficherBandeauReveil();
+  if (!silencieux) afficherBandeauReveil();
   for (let i = 0; i < 30; i++) {
     try {
       const res = await fetch(`${API_URL}/api/health`, { mode: 'cors' });
-      if (res.ok) { cacherBandeauReveil(); return; }
+      if (res.ok) { if (!silencieux) cacherBandeauReveil(); return; }
     } catch (e) { /* encore endormi */ }
     await dormir(2500);
   }
-  cacherBandeauReveil();
+  if (!silencieux) cacherBandeauReveil();
 }
 
 

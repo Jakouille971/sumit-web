@@ -1,8 +1,10 @@
 // ══════════════════════════════════════════════════════════════
-//  SUM'IT — nav-user.js v2
-//  Garantit l'uniformité de la nav sur toutes les pages :
+//  SUM'IT — nav-user.js v3
+//  Garantit l'uniformité de la barre du haut sur tous les écrans :
 //   - Liens : Accueil, Mon profil, Simulateur, Bilan, Mon compte, À venir
-//   - Bouton "Se connecter" OU avatar utilisateur
+//   - Bouton « Se connecter » OU avatar utilisateur
+//   - Menu plein écran sur téléphone
+//  Les styles vivent dans css/style.css.
 // ══════════════════════════════════════════════════════════════
 
 (async function initNavUniforme() {
@@ -10,10 +12,8 @@
   if (!nav) return;
 
   // Chaque étape est isolée : si l'une échoue (API endormie, script manquant…),
-  // les autres s'exécutent quand même. Avant, une erreur pouvait laisser la page
-  // avec sa nav de secours et sans menu mobile.
+  // les autres s'exécutent quand même.
   const etape = (nom, fn) => { try { return fn(); } catch (e) { console.warn(`[nav] ${nom} :`, e); } };
-  etape('styles', () => injecterStylesNav());
   etape('moment', () => poserMomentDePage());
   etape('liens',  () => uniformiserLiens(nav));
   etape('burger', () => creerBurgerMenu(nav));
@@ -26,7 +26,10 @@
   });
 })();
 
-// ── Chaque page = un moment de la course (voir style.css) ────────
+// Conservé pour compatibilité : les styles sont désormais dans style.css
+function injecterStylesNav() {}
+
+// ── Identifiant de l'écran courant (utilisé par le CSS) ────────
 function poserMomentDePage() {
   if (document.body.dataset.page) return;
   const p = window.location.pathname;
@@ -34,41 +37,53 @@ function poserMomentDePage() {
   document.body.dataset.page = id;
 }
 
-// ── Menu hamburger mobile ───────────────────────────────────────
+// ── Menu plein écran (téléphone) ───────────────────────────────
 function creerBurgerMenu(nav) {
-  // Évite les doublons
   if (nav.querySelector('.nav-burger')) return;
 
+  const links = nav.querySelector('.nav-links');
   const burger = document.createElement('button');
+  burger.type = 'button';
   burger.className = 'nav-burger';
-  burger.setAttribute('aria-label', 'Menu');
+  burger.setAttribute('aria-label', 'Ouvrir le menu');
+  burger.setAttribute('aria-expanded', 'false');
+  if (links) {
+    if (!links.id) links.id = 'nav-links-menu';
+    burger.setAttribute('aria-controls', links.id);
+  }
   burger.innerHTML = '<span></span><span></span><span></span>';
   nav.classList.add('has-burger');
 
+  const fermer = () => {
+    burger.classList.remove('open');
+    burger.setAttribute('aria-expanded', 'false');
+    burger.setAttribute('aria-label', 'Ouvrir le menu');
+    const l = nav.querySelector('.nav-links');
+    if (l) l.classList.remove('mobile-open');
+  };
+
   burger.addEventListener('click', () => {
-    const links = nav.querySelector('.nav-links');
-    burger.classList.toggle('open');
-    if (links) links.classList.toggle('mobile-open');
+    const l = nav.querySelector('.nav-links');
+    const ouvert = burger.classList.toggle('open');
+    burger.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+    burger.setAttribute('aria-label', ouvert ? 'Fermer le menu' : 'Ouvrir le menu');
+    if (l) l.classList.toggle('mobile-open', ouvert);
   });
 
-  // Insérer le burger juste avant le conteneur user (ou à la fin)
-  const userContainer = nav.querySelector('#nav-user-container');
-  if (userContainer) {
-    nav.insertBefore(burger, userContainer);
-  } else {
-    nav.appendChild(burger);
-  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && burger.classList.contains('open')) { fermer(); burger.focus(); }
+  });
 
   // Fermer le menu quand on clique sur un lien
-  const links = nav.querySelector('.nav-links');
   if (links) {
     links.addEventListener('click', (e) => {
-      if (e.target.classList.contains('nav-link')) {
-        burger.classList.remove('open');
-        links.classList.remove('mobile-open');
-      }
+      if (e.target.closest('.nav-link')) fermer();
     });
   }
+
+  const userContainer = nav.querySelector('#nav-user-container');
+  if (userContainer) nav.insertBefore(burger, userContainer);
+  else nav.appendChild(burger);
 }
 
 // ── 1. Uniformiser les liens de navigation ─────────────────────
@@ -77,7 +92,6 @@ function uniformiserLiens(nav) {
   const inPages = path.includes('/pages/');
   const prefix = inPages ? '' : 'pages/';
 
-  // Ordre voulu : Accueil, Mon profil, Simulateur, Mon compte, À venir
   const LIENS_ATTENDUS = [
     { label: 'Accueil',    href: inPages ? '../' : '/',         id: 'home' },
     { label: 'Mon profil', href: `${prefix}profil.html`,        id: 'profil' },
@@ -103,64 +117,57 @@ function uniformiserLiens(nav) {
   }
 
   navLinks.innerHTML = LIENS_ATTENDUS.map(lien => {
-    const activeClass = lien.id === currentId ? ' active' : '';
-    return `<a href="${lien.href}" class="nav-link${activeClass}">${lien.label}</a>`;
+    const actif = lien.id === currentId;
+    return `<a href="${lien.href}" class="nav-link${actif ? ' active' : ''}"${actif ? ' aria-current="page"' : ''}>${lien.label}</a>`;
   }).join('');
 }
 
-// ── 2. Slot utilisateur (login button OU avatar) + tutoriel ─────
+// ── 2. Bloc utilisateur (connexion OU avatar) + tutoriel ───────
 async function uniformiserUserSlot(nav) {
   let container = document.getElementById('nav-user-container');
   if (!container) {
     container = document.createElement('div');
     container.id = 'nav-user-container';
-    container.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:14px;';
     const oldCta = nav.querySelector('.nav-cta');
     if (oldCta) oldCta.remove();
     nav.appendChild(container);
   }
 
-  // Affichage IMMÉDIAT (synchrone) basé sur l'état local (token + cache)
-  // On ne bloque jamais sur fetchMe() qui peut prendre 30s si Render dort
+  // Affichage immédiat à partir de l'état local (token + cache) :
+  // on ne bloque jamais sur fetchMe(), qui peut prendre 30 s si le serveur dort.
   const tutoBtnHTML = construireBtnTutoriel();
   const tokenPresent = (typeof isLoggedIn === 'function') && isLoggedIn();
   const cachedUser = (typeof getCachedUser === 'function') ? getCachedUser() : null;
 
   if (tokenPresent && cachedUser) {
-    // On affiche déjà l'avatar avec les infos en cache (rapide)
     renderLoggedIn(container, cachedUser, tutoBtnHTML);
   } else if (tokenPresent) {
-    // Token mais pas de cache : on affiche un avatar générique en attendant
     renderLoggedIn(container, { prenom: 'Coureur', email: '' }, tutoBtnHTML);
   } else {
-    // Pas connecté → bouton de connexion direct
     renderLoggedOut(container, tutoBtnHTML);
   }
 
-  // Enrichissement async en arrière-plan (sans bloquer)
+  // Enrichissement en arrière-plan
   if (tokenPresent && typeof fetchMe === 'function') {
     fetchMe().then(user => {
-      // Mise à jour du DOM avec les vraies infos
       renderLoggedIn(container, user, tutoBtnHTML);
     }).catch(e => {
-      // Si le token est invalide (401), on bascule en mode déconnecté
+      // Token invalide (401) → mode déconnecté ; simple coupure réseau → on garde l'affichage
       if (e && e.message && e.message.includes('expirée')) {
         if (typeof clearToken === 'function') clearToken();
         renderLoggedOut(container, tutoBtnHTML);
       }
-      // Si c'est juste un timeout réseau / Render down, on garde l'UI actuelle
-      // (l'utilisateur peut toujours utiliser l'app en mode offline-cache)
     });
   }
 }
 
 function construireBtnTutoriel() {
-  // Toujours afficher le bouton tutoriel, même si onboarding.js pas encore chargé
   return `
-    <button class="nav-tuto-btn" onclick="if(typeof demarrerOnboarding==='function'){demarrerOnboarding()}else{alert('Tutoriel en cours de chargement...');}" title="Voir le tutoriel">
-      <svg viewBox="0 0 24 24" width="16" height="16">
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/>
-        <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z"/>
+    <button type="button" class="nav-tuto-btn" onclick="if(typeof demarrerOnboarding==='function'){demarrerOnboarding()}else{alert('Le tutoriel se charge, réessaie dans un instant.');}" title="Voir le tutoriel">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <circle cx="12" cy="16.9" r="0.95" fill="currentColor"/>
       </svg>
       <span>Tutoriel</span>
     </button>
@@ -168,7 +175,7 @@ function construireBtnTutoriel() {
 }
 
 function renderLoggedOut(container, tutoBtnHTML = '') {
-  // Fallback de sécurité : construit l'URL même si loginGoogle() n'est pas dispo
+  // Construit l'URL même si loginGoogle() n'est pas disponible
   const API_BASE = (typeof API_URL !== 'undefined') ? API_URL :
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:8000'
@@ -176,13 +183,17 @@ function renderLoggedOut(container, tutoBtnHTML = '') {
 
   container.innerHTML = `
     ${tutoBtnHTML}
-    <a href="${API_BASE}/api/auth/google/login" class="nav-login-btn" style="text-decoration:none;">
-      <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right:8px;">
+    <a href="${API_BASE}/api/auth/google/login" class="nav-login-btn">
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
         <path fill="currentColor" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/>
       </svg>
       Se connecter
     </a>
   `;
+}
+
+function echapperNav(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function renderLoggedIn(container, user, tutoBtnHTML = '') {
@@ -195,84 +206,12 @@ function renderLoggedIn(container, user, tutoBtnHTML = '') {
   container.innerHTML = `
     ${tutoBtnHTML}
     <a href="${compteHref}" class="nav-user-link" title="Mon compte">
-      <div class="nav-user-avatar">
+      <span class="nav-user-avatar">
         ${user.picture
-          ? `<img src="${user.picture}" alt="${prenom}">`
-          : `<span>${initiale}</span>`}
-      </div>
-      <span class="nav-user-name">${prenom}</span>
+          ? `<img src="${echapperNav(user.picture)}" alt="" referrerpolicy="no-referrer">`
+          : `<span>${echapperNav(initiale)}</span>`}
+      </span>
+      <span class="nav-user-name">${echapperNav(prenom)}</span>
     </a>
   `;
-}
-
-// ── 3. Styles ──────────────────────────────────────────────────
-function injecterStylesNav() {
-  if (document.getElementById('nav-user-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'nav-user-styles';
-  style.textContent = `
-    .nav-login-btn {
-      background: var(--sun);
-      color: var(--ink, #111722);
-      font-family: var(--font-display);
-      font-size: 15px; font-weight: 700;
-      letter-spacing: 0.005em;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex; align-items: center;
-      white-space: nowrap;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
-      transition: transform 0.15s, background 0.2s;
-    }
-    .nav-login-btn:hover { transform: translateY(-1px); background: #FFD166; }
-
-    .nav-tuto-btn {
-      background: transparent;
-      color: var(--text-2);
-      font-family: var(--font-display);
-      font-size: 14px;
-      font-weight: 600;
-      padding: 8px 12px;
-      border: 1px solid var(--line-2);
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      transition: color 0.2s, border-color 0.2s, background 0.2s;
-    }
-    .nav-tuto-btn:hover { color: var(--text); border-color: rgba(234,240,247,0.35); background: rgba(234,240,247,0.05); }
-    .nav-tuto-btn svg { stroke: currentColor; }
-    .nav-user-link {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 4px 14px 4px 4px;
-      border-radius: 999px;
-      border: 1px solid var(--line-2);
-      background: rgba(234,240,247,0.04);
-      text-decoration: none;
-      color: var(--text);
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .nav-user-link:hover { border-color: rgba(234,240,247,0.35); background: rgba(234,240,247,0.08); }
-    .nav-user-avatar {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: var(--gradient-summit);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-hero, var(--font-display));
-      font-size: 17px; font-weight: 800;
-      color: var(--ink, #111722);
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-    .nav-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .nav-user-name {
-      font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 600;
-    }
-  `;
-  document.head.appendChild(style);
 }
