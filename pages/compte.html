@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#F2F4F7">
+  <meta name="theme-color" content="#133621">
   <meta name="description" content="Ton espace SUM'IT : simulations épinglées, réglages et connexion Strava.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="SUM'IT — Mon compte">
@@ -19,7 +19,7 @@
   <title>SUM'IT — Mon compte</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261027">
+  <link rel="stylesheet" href="../css/style.css?v=20261028">
   <style>
     /* ── Mon compte ─────────────────────────────────────────── */
     .compte-section { display: grid; gap: 16px; min-width: 0; }
@@ -38,8 +38,8 @@
     .compte-header-avatar {
       width: 56px; height: 56px;
       border-radius: 50%;
-      background: var(--ink);
-      color: var(--paper);
+      background: var(--action);
+      color: var(--action-ink);
       display: flex; align-items: center; justify-content: center;
       font-size: 22px; font-weight: 700;
       overflow: hidden;
@@ -67,10 +67,10 @@
     .form-row-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
     .save-feedback { font-size: 13px; font-weight: 600; color: var(--positive); opacity: 0; transition: opacity 200ms ease; }
     .save-feedback.show { opacity: 1; }
-    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--action); color: var(--action-ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
     .btn-save:active { transform: scale(0.97); }
     .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
-    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled) { background: #2A2F37; } }
+    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled) { background: var(--action-hover); } }
 
     .strava-card { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
     .strava-logo { width: 40px; height: 40px; border-radius: 10px; background: var(--ground); display: flex; align-items: center; justify-content: center; color: var(--ink); }
@@ -81,12 +81,12 @@
     .strava-status-badge.connected { background: var(--positive-bg); color: var(--positive-ink); }
     .strava-status-badge.disconnected { background: var(--active); color: var(--muted); }
     .btn-strava-action { min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; white-space: nowrap; transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
-    .btn-strava-connect { background: var(--ink); color: var(--paper); }
-    .btn-strava-disconnect { background: #E6E9ED; color: var(--ink); }
+    .btn-strava-connect { background: var(--action); color: var(--action-ink); }
+    .btn-strava-disconnect { background: #E2E6DD; color: var(--ink); }
     .btn-strava-action:active { transform: scale(0.97); }
     @media (hover: hover) and (pointer: fine) {
-      .btn-strava-connect:hover { background: #2A2F37; }
-      .btn-strava-disconnect:hover { background: #DADEE3; }
+      .btn-strava-connect:hover { background: var(--action-hover); }
+      .btn-strava-disconnect:hover { background: #D5DBCE; }
     }
 
     /* Simulations épinglées */
@@ -99,10 +99,10 @@
     .sim-card-time { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
     .sim-card-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
     .sim-card-profile-tag { justify-self: start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); }
-    .btn-open-sim { margin-top: 6px; justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-open-sim { margin-top: 6px; justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--action); color: var(--action-ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
     .btn-open-sim svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-open-sim:active { transform: scale(0.97); }
-    @media (hover: hover) and (pointer: fine) { .btn-open-sim:hover { background: #2A2F37; } }
+    @media (hover: hover) and (pointer: fine) { .btn-open-sim:hover { background: var(--action-hover); } }
     .btn-delete-sim { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
     .btn-delete-sim svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     @media (hover: hover) and (pointer: fine) { .btn-delete-sim:hover { background: var(--negative-bg); color: var(--negative); } }
@@ -151,6 +151,7 @@
   </nav>
 
   <header class="app-head">
+    <img class="app-head-photo" src="../assets/Photos/montee-massif-960.webp" srcset="../assets/Photos/montee-massif-960.webp 960w, ../assets/Photos/montee-massif-2400.webp 2400w" sizes="38vw" width="960" height="1280" alt="Une traileuse monte face au massif du Mont-Blanc." style="object-position: 62% 35%">
     <div>
       <h1>Mon compte</h1>
       <p>Tes simulations épinglées, tes réglages et tes connexions.</p>
@@ -173,10 +174,10 @@
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261027"></script>
-  <script src="../js/api-client.js?v=20261027"></script>
-  <script src="../js/nav-user.js?v=20261027"></script>
-  <script src="../js/onboarding.js?v=20261027"></script>
+  <script src="../js/main.js?v=20261028"></script>
+  <script src="../js/api-client.js?v=20261028"></script>
+  <script src="../js/nav-user.js?v=20261028"></script>
+  <script src="../js/onboarding.js?v=20261028"></script>
   <script>
 
     let currentUser = null;

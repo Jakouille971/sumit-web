@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-  <meta name="theme-color" content="#F2F4F7">
+  <meta name="theme-color" content="#133621">
   <meta name="description" content="Ton profil de coureur SUM'IT : vitesse équivalente plat sur sept pentes, archétype, évolution. Construit automatiquement depuis tes sorties GPX et Strava.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="SUM'IT — Mon profil de coureur">
@@ -19,7 +19,7 @@
   <title>SUM'IT — Mon profil</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261027">
+  <link rel="stylesheet" href="../css/style.css?v=20261028">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
@@ -52,7 +52,7 @@
       user-select: none;
       transition: color var(--t-hover) ease, background-color var(--t-hover) ease;
     }
-    .profil-tab.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    .profil-tab.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(15, 36, 24, 0.08); }
     @media (hover: hover) and (pointer: fine) { .profil-tab:not(.active):hover { color: var(--ink); } }
 
     /* KPI : un seul conteneur, quatre cellules */
@@ -97,12 +97,12 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--ink);
-      background: #E6E9ED;
+      background: #E2E6DD;
       border-radius: var(--radius-control);
       transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
     }
     .btn-voir-archetypes:active { transform: scale(0.97); }
-    @media (hover: hover) and (pointer: fine) { .btn-voir-archetypes:hover { background: #DADEE3; } }
+    @media (hover: hover) and (pointer: fine) { .btn-voir-archetypes:hover { background: #D5DBCE; } }
 
     /* Score de pente */
     .terrain-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; }
@@ -126,14 +126,14 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--ink);
-      background: #E6E9ED;
+      background: #E2E6DD;
       border-radius: var(--radius-control);
       transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
     }
     .btn-recalc svg { width: 14px; height: 14px; }
     .btn-recalc:active { transform: scale(0.97); }
     .btn-recalc:disabled { opacity: 0.55; cursor: default; }
-    @media (hover: hover) and (pointer: fine) { .btn-recalc:hover:not(:disabled) { background: #DADEE3; } }
+    @media (hover: hover) and (pointer: fine) { .btn-recalc:hover:not(:disabled) { background: #D5DBCE; } }
     .score-scale { display: grid; grid-template-columns: 150px 1fr 64px; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--muted); }
     .score-scale span:nth-child(2) { display: flex; justify-content: space-between; }
     .score-scale i { font-style: normal; font-variant-numeric: tabular-nums; }
@@ -156,7 +156,7 @@
       white-space: nowrap;
       transition: color var(--t-hover) ease, background-color var(--t-hover) ease;
     }
-    .ev-metric-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    .ev-metric-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(15, 36, 24, 0.08); }
     @media (hover: hover) and (pointer: fine) { .ev-metric-btn:not(.active):hover { color: var(--ink); } }
     .evolution-chart-container { position: relative; min-height: 220px; }
     .evolution-chart-svg { width: 100%; height: 280px; display: block; overflow: visible; }
@@ -172,15 +172,15 @@
       padding: 8px 10px;
       font-size: 13px;
       line-height: 1.45;
-      color: var(--paper);
-      background: var(--ink);
+      color: var(--ground);
+      background: var(--green);
       border-radius: 6px;
       box-shadow: var(--shadow-float);
       pointer-events: none;
       white-space: nowrap;
     }
     .ev-tooltip-title { font-weight: 700; font-variant-numeric: tabular-nums; }
-    .ev-tooltip-meta { color: #C9CED6; font-size: 12px; }
+    .ev-tooltip-meta { color: #C3CBBE; font-size: 12px; }
     .evolution-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; font-size: 13px; color: var(--muted); }
     .ev-legend-item { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
     .ev-legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--data); background: var(--paper); }
@@ -251,7 +251,7 @@
     .activite-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .activite-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
     .activite-type-tag { justify-self: start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); white-space: nowrap; }
-    .activite-type-tag.course { background: var(--data-soft); color: #123E8E; }
+    .activite-type-tag.course { background: var(--data-soft); color: #1B4A66; }
     .activite-type-tag.resultat { background: var(--notice-bg); color: var(--notice-ink); }
     .activite-meta { font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .activite-actions { display: flex; justify-content: flex-end; gap: 4px; }
@@ -272,7 +272,7 @@
     .archetypes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .archetype-card { position: relative; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius-card); }
     .archetype-card.is-mine { border: 2px solid var(--ink); padding: 15px 17px; }
-    .archetype-card-badge { position: absolute; top: 14px; right: 14px; height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--ink); color: var(--paper); }
+    .archetype-card-badge { position: absolute; top: 14px; right: 14px; height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--action); color: var(--action-ink); }
     .archetype-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding-right: 90px; }
     .archetype-card-icon { width: 40px; height: 40px; flex-shrink: 0; color: var(--ink); }
     .archetype-card-icon svg { width: 40px; height: 40px; }
@@ -317,7 +317,7 @@
     .strava-search select { width: 120px; }
     .strava-search-count { grid-column: 1 / -1; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
     .strava-batch-actions { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0 12px; position: sticky; top: 0; background: var(--paper); padding: 8px 0; z-index: 1; }
-    .btn-import-sa { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-import-sa { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--action); color: var(--action-ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
     .btn-import-sa:active { transform: scale(0.97); }
     .btn-import-sa:disabled { opacity: 0.4; cursor: not-allowed; }
     .strava-activity-checkable { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-card); margin-bottom: 8px; cursor: pointer; transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease; }
@@ -346,10 +346,10 @@
     .field-help { margin-top: 4px; font-size: 13px; color: var(--muted); }
     .modal-actions { display: flex; gap: 8px; }
     .modal-actions > * { flex: 1; }
-    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--action); color: var(--action-ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
     .btn-save:active { transform: scale(0.97); }
     .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
-    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled), .btn-import-sa:hover:not(:disabled) { background: #2A2F37; } }
+    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled), .btn-import-sa:hover:not(:disabled) { background: var(--action-hover); } }
 
     /* ── Tablette et téléphone ────────────────────────────────── */
     @media (max-width: 1000px) {
@@ -410,6 +410,7 @@
   </nav>
 
   <header class="app-head">
+    <img class="app-head-photo" src="../assets/Photos/descente-960.webp" srcset="../assets/Photos/descente-960.webp 960w, ../assets/Photos/descente-1440.webp 1440w" sizes="38vw" width="960" height="1280" alt="Un coureur dévale un sentier, bras écartés." style="object-position: 50% 28%">
     <div>
       <h1>Mon profil</h1>
       <p>Construit à partir de tes sorties GPX et Strava, recalculé à chaque import.</p>
@@ -559,11 +560,11 @@
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261027"></script>
-  <script src="../js/api-client.js?v=20261027"></script>
-  <script src="../js/nav-user.js?v=20261027"></script>
-  <script src="../js/onboarding.js?v=20261027"></script>
-  <script src="../js/pictos.js?v=20261027"></script>
+  <script src="../js/main.js?v=20261028"></script>
+  <script src="../js/api-client.js?v=20261028"></script>
+  <script src="../js/nav-user.js?v=20261028"></script>
+  <script src="../js/onboarding.js?v=20261028"></script>
+  <script src="../js/pictos.js?v=20261028"></script>
   <script>
 
     let currentProfilType = 'trail';
@@ -1360,7 +1361,7 @@
       // Polyline du tracé
       const latlngs = pts.map(p => [p.lat, p.lon]);
       const polyline = L.polyline(latlngs, {
-        color: '#1E5FD8',
+        color: '#2B6A8C',
         weight: 3.5,
         opacity: 1,
       }).addTo(detailMapInstance);
@@ -1369,10 +1370,10 @@
       const start = pts[0];
       const end = pts[pts.length - 1];
       L.circleMarker([start.lat, start.lon], {
-        radius: 7, color: '#0E1116', fillColor: '#FFFFFF', fillOpacity: 1, weight: 3
+        radius: 7, color: '#0F2418', fillColor: '#FFFFFF', fillOpacity: 1, weight: 3
       }).bindTooltip('Départ', { permanent: false }).addTo(detailMapInstance);
       L.circleMarker([end.lat, end.lon], {
-        radius: 7, color: '#FFFFFF', fillColor: '#0E1116', fillOpacity: 1, weight: 2
+        radius: 7, color: '#FFFFFF', fillColor: '#0F2418', fillOpacity: 1, weight: 2
       }).bindTooltip('Arrivée', { permanent: false }).addTo(detailMapInstance);
 
       // Fit aux bornes du tracé
