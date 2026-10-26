@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="La feuille de route de SUM'IT : ce qui est en ligne, ce qui arrive, et comment être prévenu.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — À venir">
+  <meta property="og:description" content="La feuille de route de SUM'IT : ce qui est en ligne, ce qui arrive, et comment être prévenu.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/avenir.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — À venir">
+  <meta name="twitter:description" content="La feuille de route de SUM'IT : ce qui est en ligne, ce qui arrive, et comment être prévenu.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — À venir</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
+  <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    /* ── Mon compte ─────────────────────────────────────────── */
+    .compte-section { display: grid; gap: 16px; min-width: 0; }
+    .compte-section > * { min-width: 0; }
+
+    .compte-header {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 16px 20px;
+      align-items: center;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 18px 20px;
+    }
+    .compte-header-avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700;
+      overflow: hidden;
+    }
+    .compte-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .compte-header-info { min-width: 0; }
+    .compte-header-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .compte-header-email { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+    .compte-header-stats { display: flex; border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .compte-header-stat { padding: 8px 16px; font-size: 13px; color: var(--muted); border-left: 1px solid var(--border); min-width: 0; }
+    .compte-header-stat:first-child { border-left: 0; }
+    .compte-header-stat strong { display: block; font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    /* Sections en deux colonnes : intitulé à gauche, panneau à droite */
+    .compte-header + .compte-card { border-top: 0; padding-top: 8px; }
+    .compte-card { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px 32px; padding: 24px 0; border-top: 1px solid var(--border); }
+    .compte-card-intro h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    .compte-card-intro p { margin-top: 4px; font-size: 14px; color: var(--muted); max-width: 40ch; }
+    .compte-card-intro .count { margin-top: 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .compte-panel { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 20px; min-width: 0; }
+
+
+    /* ── À venir ───────────────────────────────────────────── */
+    .rm-wrap { display: grid; gap: 16px; min-width: 0; }
+    .rm-wrap > * { min-width: 0; }
+    .rm-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+    .rm-step { position: relative; display: grid; gap: 2px; padding: 18px 20px 16px; border-left: 1px solid var(--border); color: var(--ink); text-decoration: none; transition: background-color var(--t-hover) ease; }
+    .rm-step:first-child { border-left: 0; }
+    .rm-step::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--rule); }
+    .rm-step.is-live::before { background: var(--positive); }
+    .rm-step.is-next::before { background: var(--sun); }
+    @media (hover: hover) and (pointer: fine) { .rm-step:hover { background: var(--raised); } }
+    .rm-code { font-size: 13px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .rm-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .rm-status { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .rm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--control); }
+    .is-live .rm-dot { background: var(--positive); }
+    .is-next .rm-dot { background: #E0A100; }
+    .is-live .rm-status { color: var(--positive); }
+    .is-next .rm-status { color: var(--notice-ink); }
+
+    .notify-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 16px 32px; align-items: center; background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 20px; }
+    .notify-card h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    .notify-card p { margin-top: 2px; font-size: 14px; color: var(--muted); }
+    .notify-wrap { display: flex; gap: 8px; }
+    .notify-wrap input { flex: 1; min-width: 0; }
+    .notify-wrap .btn-primary { flex-shrink: 0; }
+    .notify-status { grid-column: 2; font-size: 13px; font-weight: 600; min-height: 0; }
+    .notify-status:empty { display: none; }
+    .notify-status.err { color: var(--negative); }
+    .notify-success { display: none; grid-column: 2; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: var(--radius-control); background: var(--positive-bg); color: var(--positive-ink); font-size: 14px; font-weight: 600; }
+    .notify-success svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    .rm-version { scroll-margin-top: 84px; }
+    .rm-version .compte-card-intro h2 { display: flex; align-items: baseline; gap: 8px; }
+    .rm-h-code { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .rm-pill { display: inline-flex; align-items: center; height: 22px; margin-top: 10px; padding: 0 8px; border-radius: var(--radius-chip); font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); }
+    .rm-pill.is-live { background: var(--positive-bg); color: var(--positive-ink); }
+    .rm-pill.is-next { background: var(--notice-bg); color: var(--notice-ink); }
+    .rm-panel { padding: 0; }
+    .rm-list { list-style: none; margin: 0; padding: 0; }
+    .rm-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 24px; padding: 14px 20px; border-top: 1px solid var(--rule); }
+    .rm-row:first-child { border-top: 0; }
+    .rm-row h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .rm-row p { margin-top: 2px; font-size: 14px; color: var(--muted); max-width: 68ch; }
+    .rm-link { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); background: #E6E9ED; color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .rm-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .rm-link:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .rm-link:hover { background: #DADEE3; } }
+    .rm-version.is-later .rm-row h3 { color: var(--ink); }
+
+    .rm-cta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; align-items: center; margin-top: 8px; padding: 28px; border-radius: var(--radius-card); background: var(--ink); color: var(--paper); }
+    .rm-cta h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .rm-cta p { margin-top: 6px; font-size: 15px; color: #B9C0CA; max-width: 56ch; }
+    .rm-cta .btn-primary { background: var(--paper); color: var(--ink); }
+    .rm-cta .btn-ghost { background: #2A2F37; color: var(--paper); }
+    @media (hover: hover) and (pointer: fine) {
+      .rm-cta .btn-primary:hover { background: #E6E9ED; }
+      .rm-cta .btn-ghost:hover { background: #363C46; }
+    }
+
+    @media (max-width: 860px) {
+      .compte-card { grid-template-columns: 1fr; gap: 12px; padding: 20px 0; }
+      .rm-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .rm-step:nth-child(3) { border-left: 0; }
+      .rm-step:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .notify-card { grid-template-columns: 1fr; }
+      .notify-status, .notify-success { grid-column: 1; }
+      .rm-cta { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .rm-step { padding: 16px 14px 14px; }
+      .rm-name { font-size: 16px; }
+      .rm-row { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+      .notify-wrap { flex-direction: column; }
+      .notify-wrap .btn-primary { width: 100%; }
+      .rm-cta { padding: 22px 20px; }
+      .rm-cta .hero-btns > * { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body data-page="avenir">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link active" aria-current="page">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Ce qui arrive</h1>
+      <p>SUM'IT avance version par version. Voici ce qui tourne déjà, et ce qu'on construit ensuite.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="rm-wrap">
+      <nav class="rm-strip" aria-label="Versions">
+        <a class="rm-step is-live" href="#v1">
+          <span class="rm-code">V1</span>
+          <span class="rm-name">Fondations</span>
+          <span class="rm-status"><span class="rm-dot" aria-hidden="true"></span>En ligne</span>
+        </a>
+        <a class="rm-step is-live" href="#v2">
+          <span class="rm-code">V2</span>
+          <span class="rm-name">Analyse</span>
+          <span class="rm-status"><span class="rm-dot" aria-hidden="true"></span>En ligne</span>
+        </a>
+        <a class="rm-step is-next" href="#v3">
+          <span class="rm-code">V3</span>
+          <span class="rm-name">Partage et jour J</span>
+          <span class="rm-status"><span class="rm-dot" aria-hidden="true"></span>À venir</span>
+        </a>
+        <a class="rm-step is-later" href="#v4">
+          <span class="rm-code">V4</span>
+          <span class="rm-name">Coaching</span>
+          <span class="rm-status"><span class="rm-dot" aria-hidden="true"></span>Plus tard</span>
+        </a>
+      </nav>
+
+      <section class="notify-card" aria-labelledby="t-notify">
+        <div>
+          <h2 id="t-notify">Sois prévenu à chaque version</h2>
+          <p>Un e-mail quand une nouveauté arrive. Rien d'autre.</p>
+        </div>
+        <form class="notify-wrap" id="notifyWrap" onsubmit="event.preventDefault(); sInscrire();" novalidate>
+          <label for="notifyEmail" class="sr-only">Ton adresse e-mail</label>
+          <input type="email" id="notifyEmail" placeholder="ton@email.com" autocomplete="email" inputmode="email" required>
+          <button type="submit" class="btn-primary" id="notifyBtn">Me prévenir</button>
+        </form>
+        <div class="notify-success" id="notifySuccess" role="status">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+          C'est noté, tu seras prévenu à chaque nouvelle version.
+        </div>
+        <div class="notify-status" id="notifyStatus" role="alert"></div>
+      </section>
+
+    <section class="compte-card rm-version" id="v1" aria-labelledby="t-v1">
+      <div class="compte-card-intro">
+        <h2 id="t-v1"><span class="rm-h-code">V1</span> Fondations</h2>
+        <p>Le moteur : ton profil de coureur, la simulation et les imports.</p>
+        <span class="rm-pill is-live">En ligne</span>
+      </div>
+      <div class="compte-panel rm-panel">
+        <ul class="rm-list">
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Analyse GPX multi-traces</h3><p>SUM'IT calcule ta vitesse équivalente plat (VEP) terrain par terrain, avec un modèle d'équivalence-pente inspiré de Minetti, pondéré par type de sortie.</p></div>
+              <a class="rm-link" href="profil.html">Importer une trace<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Huit archétypes de coureur</h3><p>Cabri, Grimpeur, Descendeur, Diesel… ton profil type et ton score de pente détaillé, en trail comme en rando.</p></div>
+              <a class="rm-link" href="profil.html">Voir mon profil<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Simulateur de course</h3><p>Temps de passage à chaque ravito, fourchette basse et haute, heures de passage calées sur ton heure de départ.</p></div>
+              <a class="rm-link" href="simulateur.html?demo=ccc">Essayer sur la CCC<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Import Strava</h3><p>Connecte ton compte et choisis tes activités, sans exporter un seul fichier.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Roadbook PDF</h3><p>Ton plan de course en A4 : profil, ravitos, heures de passage. Prêt à imprimer ou à partager avec ton équipe d'assistance.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Simulations épinglées</h3><p>Garde tes courses objectifs et recalcule-les quand ton profil progresse.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Terrain OpenStreetMap</h3><p>Route, piste, sentier ou montagne : le terrain de chaque portion est reconnu automatiquement.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Compte Google</h3><p>Connexion en un clic ; tes profils trail et rando sont sauvegardés.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Tutoriel guidé</h3><p>Un tour de l'import jusqu'au bilan, relançable à tout moment depuis le bouton Tutoriel.</p></div>
+              
+            </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="compte-card rm-version" id="v2" aria-labelledby="t-v2">
+      <div class="compte-card-intro">
+        <h2 id="t-v2"><span class="rm-h-code">V2</span> Analyse</h2>
+        <p>Comparer ta prédiction à la réalité et suivre ta progression.</p>
+        <span class="rm-pill is-live">En ligne</span>
+      </div>
+      <div class="compte-panel rm-panel">
+        <ul class="rm-list">
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Bilan réel contre prédit</h3><p>Importe ta course finie : écart ravito par ravito, et recalibrage de ton coefficient pour viser plus juste la prochaine fois.</p></div>
+              <a class="rm-link" href="bilan.html">Ouvrir le Bilan<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></a>
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Évolution du profil</h3><p>Ta VEP et ton archétype suivis activité après activité.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Bilans épinglés</h3><p>Garde tes bilans avec tes notes de course pour préparer la suivante.</p></div>
+              
+            </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="compte-card rm-version" id="v3" aria-labelledby="t-v3">
+      <div class="compte-card-intro">
+        <h2 id="t-v3"><span class="rm-h-code">V3</span> Partage et jour J</h2>
+        <p>Rendre SUM'IT utile le jour de la course et facile à partager.</p>
+        <span class="rm-pill is-next">À venir</span>
+      </div>
+      <div class="compte-panel rm-panel">
+        <ul class="rm-list">
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Lien public de simulation</h3><p>Un lien à envoyer à ton coach, ton assistance ou tes amis, lisible sans compte.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Comparer plusieurs simulations</h3><p>Deux ou trois courses côte à côte : profils superposés et temps comparés, pour construire ta saison.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Mode jour J</h3><p>Sur ton téléphone pendant la course : prochain ravito, heure visée et avance ou retard.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Application iOS et Android</h3><p>SUM'IT dans la poche, avec notifications et lecture hors-ligne de ton roadbook.</p></div>
+              
+            </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="compte-card rm-version" id="v4" aria-labelledby="t-v4">
+      <div class="compte-card-intro">
+        <h2 id="t-v4"><span class="rm-h-code">V4</span> Coaching</h2>
+        <p>Transformer ton profil en plan d'action : nutrition et entraînement.</p>
+        <span class="rm-pill is-later">Plus tard</span>
+      </div>
+      <div class="compte-panel rm-panel">
+        <ul class="rm-list">
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Plan nutrition</h3><p>Glucides, eau et sel à prévoir entre chaque ravito, calculés sur tes temps de passage.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Séances types</h3><p>Des séances choisies selon ton archétype pour travailler tes points faibles.</p></div>
+              
+            </li>
+            <li class="rm-row">
+              <div class="rm-row-text"><h3>Plan d'entraînement</h3><p>Un plan construit sur ton profil, semaine par semaine, jusqu'à ta course objectif.</p></div>
+              
+            </li>
+        </ul>
+      </div>
+    </section>
+
+      <section class="rm-cta" aria-labelledby="t-cta">
+        <div>
+          <h2 id="t-cta">Ta prochaine course commence ici.</h2>
+          <p>La démo CCC s'ouvre sans compte. Pour ton profil, connecte-toi avec Google et importe deux ou trois traces.</p>
+        </div>
+        <div class="hero-btns">
+          <a class="btn-primary" href="profil.html">Créer mon profil</a>
+          <a class="btn-ghost" href="simulateur.html?demo=ccc">Essayer la démo CCC</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+
+  <script>
+    let emailPret = false;
+    function emailDispo() {
+      if (!window.emailjs) return false;
+      if (!emailPret) { emailjs.init('rc324sv1XWdtOjTM6'); emailPret = true; }
+      return true;
+    }
+    function sInscrire() {
+      const input = document.getElementById('notifyEmail');
+      const status = document.getElementById('notifyStatus');
+      const btn = document.getElementById('notifyBtn');
+      const email = input.value.trim();
+      status.className = 'notify-status';
+      status.textContent = '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        status.className = 'notify-status err';
+        status.textContent = 'Entre une adresse e-mail valide.';
+        input.focus();
+        return;
+      }
+      if (!emailDispo()) {
+        status.className = 'notify-status err';
+        status.textContent = "L'envoi est indisponible pour le moment (service bloqué par le navigateur). Réessaie plus tard.";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Envoi…';
+      emailjs.send('sumit_outlook', 'template_2yb8f5l', {
+        to_email:    'sup.sumit@outlook.com',
+        email_notif: email,
+        date:        new Date().toLocaleDateString('fr-FR'),
+        source:      'Page À venir — notification roadmap',
+      })
+        .then(() => {
+          document.getElementById('notifyWrap').style.display = 'none';
+          document.getElementById('notifySuccess').style.display = 'flex';
+        })
+        .catch(() => {
+          status.className = 'notify-status err';
+          status.textContent = "L'envoi a échoué. Réessaie dans un instant.";
+        })
+        .finally(() => { btn.disabled = false; btn.textContent = 'Me prévenir'; });
+    }
+  </script>
+</body>
+</html>

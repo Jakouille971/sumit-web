@@ -340,7 +340,8 @@ Génération entièrement côté client via **jsPDF + html2canvas** :
 
 ### 6.4 Interface (refonte V2)
 
-- **Accueil** : la journée de course de la CCC racontée en « dossiers » de couleur (une couleur par moment de la journée), roadbook modifiable en direct, index des tronçons, questions fréquentes, création d'une course, contact.
+- **Accueil** : construit autour des photos de Jess Meniere. Le titre « Prédis / ta course » reste en place pendant qu'une bande de photos défile entre ses deux moitiés ; quatre verbes plein écran (Importe, Simule, Cours, Compare) ; les huit archétypes en cartes sur une photo tenue ; l'horaire de la CCC réglable (heure de départ, pause aux ravitos) ; questions fréquentes, grand bouton « Simule », contact. Palette tirée des photos : vert bouteille `#133621`, or `#F4D96C`, blanc de brouillard `#EEF0EA`.
+- **Photos** : `assets/photos/`, en WebP (600, 960, 1440 px, 2 400 px pour la photo paysage), chargées à la demande. Crédit « Photos : Jess Meniere » dans le pied de toutes les pages.
 - **Écrans de l'application** (profil, simulateur, bilan, compte, à venir) : système sobre, une police (Sora), encre `#0E1116`, bleu de données `#1E5FD8`, vert et rouge réservés aux écarts.
 - **Pages réservées** : un visiteur non connecté voit ce que la page lui apportera, avec un aperçu construit sur les vraies données de la démo CCC.
 - **Accessibilité et mobile** : navigation au clavier, focus visibles, champs à 16 px (pas de zoom iOS), zones sûres des écrans à encoche, mouvement réduit respecté.
@@ -485,6 +486,7 @@ sumit-web/
 ├── og-image.png            # Image d'aperçu des liens (1200 × 630)
 ├── fonts/                  # Sora (woff2, latin et latin étendu) + licence OFL
 ├── assets/
+│   ├── photos/             # Photos de Jess Meniere (WebP, plusieurs tailles)
 │   ├── ccc-utmb.gpx        # Trace de la démo CCC
 │   └── profil-demo.json    # Profil de coureur d'exemple (Grimpeur, 12 sorties)
 ├── css/

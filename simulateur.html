@@ -1,0 +1,2244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Simulateur de course">
+  <meta property="og:description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/simulateur.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Simulateur de course">
+  <meta name="twitter:description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Simulateur de course</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    /* ── Simulateur ─────────────────────────────────────────── */
+    .sim-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .sim-layout > * { min-width: 0; }
+
+    /* Colonne de saisie */
+    .sim-sidebar {
+      position: sticky;
+      top: calc(var(--nav-h) + 12px);
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+    }
+    .step-block { padding-bottom: 20px; }
+    .step-block + .step-block, .step-divider + .step-block { padding-top: 20px; border-top: 1px solid var(--rule); }
+    #profilSelector[style*="display:none"] + .step-block, #profilSelector[style*="display: none"] + .step-block { padding-top: 0; border-top: 0; }
+    .step-divider { display: none; }
+    .step-header { margin-bottom: 12px; }
+    .step-num { display: none; }
+    .step-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; }
+    .step-desc { margin-top: 2px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    .profil-toggle-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: 3px !important; padding: 3px; background: var(--active); border-radius: 8px; margin-top: 0 !important; }
+    .profil-toggle-btn { min-height: 34px; border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--muted); transition: color var(--t-hover) ease, background-color var(--t-hover) ease; }
+    .profil-toggle-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    #profilSelectorInfo { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+    #profilSelectorInfo a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+    .upload-zone-sm {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      column-gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border: 1.5px dashed var(--control);
+      border-radius: var(--radius-card);
+      background: var(--raised);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease;
+    }
+    .upload-zone-sm svg { grid-row: span 2; width: 36px; height: 36px; padding: 8px; border-radius: 8px; background: var(--paper); border: 1px solid var(--border); fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .upload-zone-sm p { font-size: 14px; font-weight: 600; pointer-events: none; }
+    .upload-zone-sm p + p { font-size: 13px; font-weight: 400; color: var(--muted); }
+    .upload-zone-sm.is-over { border-color: var(--data); background: var(--data-soft); }
+    @media (hover: hover) and (pointer: fine) { .upload-zone-sm:hover { border-color: var(--ink); background: var(--paper); } }
+
+    .demo-cta { margin-top: 12px; }
+    .demo-cta-or { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+    .demo-cta-or::before, .demo-cta-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .btn-demo-ccc {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 40px 1fr 16px;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: var(--radius-card);
+      background: var(--ink);
+      color: var(--paper);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-demo-ccc:active { transform: scale(0.98); }
+    @media (hover: hover) and (pointer: fine) { .btn-demo-ccc:hover { background: #2A2F37; } }
+    .demo-ccc-emoji { width: 40px; height: 40px; border-radius: 8px; background: var(--sky); display: flex; align-items: center; justify-content: center; }
+    .demo-ccc-emoji svg { width: 30px; height: 22px; }
+    .btn-demo-ccc > svg { width: 16px; height: 16px; }
+    .demo-ccc-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .demo-ccc-text strong { font-size: 15px; font-weight: 600; }
+    .demo-ccc-text small { font-size: 13px; color: #C9CED6; font-variant-numeric: tabular-nums; }
+    .demo-cta-note { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+    .file-detected { display: none; margin-top: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .file-detected.show { display: block; }
+    .file-detected-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-meta-row { display: flex; gap: 24px; }
+    .file-meta-val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .file-meta-label { font-size: 12px; color: var(--muted); }
+    .input-group { margin-top: 14px; }
+    .input-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+
+    /* Ravitaillements */
+    .ravitos-head, .ravito-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 64px 32px; gap: 6px; align-items: center; }
+    .ravito-row input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+    .ravito-row input[type="number"]::-webkit-outer-spin-button, .ravito-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ravitos-head { margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .ravitos-head span:first-child, .ravitos-head span:nth-child(3) { text-align: center; }
+    .ravitos-list { display: grid; gap: 6px; margin-bottom: 10px; }
+    .ravito-row input { min-height: 36px; padding: 6px 8px; font-size: 15px; }
+    .ravito-km-input, .ravito-pause-input { text-align: center; font-variant-numeric: tabular-nums; }
+    .btn-del-ravito { width: 32px; height: 36px; border-radius: 6px; font-size: 18px; line-height: 1; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .btn-del-ravito:hover { background: var(--negative-bg); color: var(--negative); } }
+    .btn-add-ravito { min-height: 36px; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 600; background: #E6E9ED; color: var(--ink); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-add-ravito:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-add-ravito:hover { background: #DADEE3; } }
+    .ravitos-hint { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+    /* Profil de référence */
+    .ref-rows { border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .ref-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; font-size: 14px; border-top: 1px solid var(--rule); }
+    .ref-row:first-child { border-top: 0; }
+    .ref-row span:first-child { color: var(--muted); display: inline-flex; align-items: center; }
+    .ref-row span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .ref-note { margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .ref-note a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+    .btn-simulate {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 4px;
+      border-radius: var(--radius-control);
+      font-size: 15px;
+      font-weight: 600;
+      background: var(--ink);
+      color: var(--paper);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
+    }
+    .btn-simulate:active { transform: scale(0.98); }
+    .btn-simulate:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    @media (hover: hover) and (pointer: fine) { .btn-simulate:hover:not(:disabled) { background: #2A2F37; } }
+
+    /* Zone de résultats */
+    .sim-main { display: grid; gap: 16px; }
+    .sim-main > *, #simResults > *, .sim-pair > * { min-width: 0; }
+    .empty-state {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+      gap: 24px 40px;
+      align-items: center;
+      padding: 32px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+    .empty-copy { display: grid; justify-items: start; gap: 8px; }
+    .empty-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .empty-sub { font-size: 15px; color: var(--ink); max-width: 46ch; }
+    .empty-state .btn-primary { margin-top: 12px; }
+    .empty-preview { background: var(--ground); border-radius: var(--radius-card); padding: 16px; min-width: 0; }
+    .empty-preview .gp-range { font-size: 15px; }
+    .empty-preview .gp-table tr:last-child td { border-top: 1px solid var(--border); }
+    @media (max-width: 1240px) { .empty-state { grid-template-columns: 1fr; } }
+
+    #simResults { display: grid; gap: 16px; }
+    .sim-results-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; }
+    .sim-results-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .sim-results-head p { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sim-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-pdf, .btn-pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius-control);
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
+    }
+    .btn-pdf { background: #E6E9ED; color: var(--ink); }
+    .btn-pin { background: var(--ink); color: var(--paper); }
+    .btn-pdf svg, .btn-pin svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-pdf svg { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+    .btn-pin svg { fill: currentColor; }
+    .btn-pdf:active, .btn-pin:active { transform: scale(0.97); }
+    .btn-pdf:disabled, .btn-pin:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-pin.pinned { background: var(--positive); }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-pdf:hover:not(:disabled) { background: #DADEE3; }
+      .btn-pin:hover:not(:disabled):not(.pinned) { background: #2A2F37; }
+    }
+
+    /* Bande de chiffres : le temps estimé mène */
+    .result-strip {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(4, minmax(0, 1fr));
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+    .result-kpi, .fourch-item { padding: 16px 16px; border-left: 1px solid var(--border); min-width: 0; }
+    .result-kpi.lead { border-left: 0; }
+    .result-kpi-label, .fourch-label { display: flex; align-items: center; font-size: 13px; color: var(--muted); white-space: nowrap; }
+    .result-kpi-val, .fourch-val { margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .result-kpi-val.cyan { font-size: 32px; font-weight: 700; color: var(--data); }
+    .fourch-sub { font-size: 12px; color: var(--muted); }
+
+    .chart-card, .map-card, .ravito-card, .terrain-card, .feedback-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .chart-header, .ravito-header, .terrain-header, .map-header { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: 16px 18px 0; }
+    .chart-title, .ravito-header, .terrain-header, .map-header { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    .chart-title { display: flex; align-items: center; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .legend-label { font-variant-numeric: tabular-nums; }
+    .chart-toggles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 18px 0; font-size: 13px; color: var(--muted); }
+    .chart-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; user-select: none; }
+    .chart-toggle input { width: 16px; height: 16px; }
+    .toggle-dot { width: 16px; height: 0; border-top: 2px dashed var(--ink); }
+    .toggle-dot.fc { border-top-style: dotted; border-top-color: var(--negative); border-top-width: 3px; }
+    .toggle-label { color: var(--ink); }
+    .chart-body { position: relative; padding: 8px 10px 10px; }
+    #profilChart { width: 100%; display: block; overflow: visible; }
+    #profilChart text { font-family: var(--font); }
+    .chart-tooltip {
+      position: absolute;
+      display: none;
+      z-index: 20;
+      min-width: 190px;
+      padding: 10px 12px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 8px;
+      box-shadow: var(--shadow-float);
+      pointer-events: none;
+      font-size: 13px;
+    }
+    .chart-tooltip .tt-header { font-size: 14px; font-weight: 700; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .chart-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+    .chart-tooltip .tt-ic { display: none; }
+    .chart-tooltip .tt-lbl { color: #B9C0CB; }
+    .chart-tooltip .tt-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chart-tooltip .tt-row-split { justify-content: flex-start; gap: 16px; }
+
+    .sim-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    .map-card { overflow: hidden; display: flex; flex-direction: column; }
+    .map-header { padding-bottom: 12px; }
+    #leafletMap { flex: 1; min-height: 320px; width: 100%; background: var(--raised); border-top: 1px solid var(--border); }
+    .terrain-body { padding: 8px 18px 14px; display: grid; gap: 2px; }
+    .terrain-bar-row {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr) auto 52px;
+      grid-template-areas: "icon label time pct" ". track track track";
+      column-gap: 10px;
+      row-gap: 6px;
+      align-items: center;
+      padding: 6px 0;
+    }
+    .terrain-icon { grid-area: icon; }
+    .terrain-label { grid-area: label; }
+    .terrain-track { grid-area: track; }
+    .terrain-time { grid-area: time; }
+    .terrain-pct { grid-area: pct; }
+    .terrain-icon { width: 20px; height: 20px; color: var(--muted); }
+    .terrain-icon svg { width: 20px; height: 20px; }
+    .terrain-label { font-size: 13px; }
+    .terrain-track { height: 8px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+    .terrain-fill { height: 100%; border-radius: 2px; transition: width 700ms var(--ease-out); }
+    .terrain-time { font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+    .terrain-pct { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+    .ravito-header { padding-bottom: 10px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ravito-card .data-table th:first-child, .ravito-card .data-table td:first-child { padding-left: 18px; }
+    .ravito-card .data-table th:last-child, .ravito-card .data-table td:last-child { padding-right: 18px; }
+    .ravito-card .data-table td:first-child { white-space: normal; min-width: 150px; }
+    .ravito-card .data-table td.t { font-weight: 600; }
+    .pause-badge { display: inline-flex; align-items: center; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); white-space: nowrap; vertical-align: 1px; }
+
+    .feedback-card { display: flex; justify-content: space-between; align-items: center; gap: 12px 24px; flex-wrap: wrap; padding: 16px 18px; }
+    .feedback-card p { font-size: 14px; color: var(--muted); }
+    .feedback-card strong { display: block; font-size: 15px; color: var(--ink); }
+
+    /* Bandeau du mode édition */
+    #editingBanner {
+      position: sticky;
+      top: var(--nav-h);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px var(--shell-x);
+      font-size: 14px;
+      background: var(--ink);
+      color: var(--paper);
+    }
+    #editingBanner strong { font-weight: 600; }
+    #editingBanner button { min-height: 32px; padding: 0 12px; border-radius: 6px; font-size: 13px; font-weight: 600; background: rgba(255, 255, 255, 0.14); color: var(--paper); white-space: nowrap; }
+    @media (hover: hover) and (pointer: fine) { #editingBanner button:hover { background: rgba(255, 255, 255, 0.24); } }
+
+    /* Avis */
+    .rating-group { display: flex; gap: 6px; }
+    .rating-btn { width: 44px; height: 40px; border-radius: 6px; background: var(--ground); font-size: 15px; font-weight: 600; transition: background-color var(--t-hover) ease, color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .rating-btn:active { transform: scale(0.95); }
+    .rating-btn.selected { background: var(--ink); color: var(--paper); }
+    .checkbox-item { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 6px; background: var(--ground); font-size: 14px; cursor: pointer; user-select: none; transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    .checkbox-item.checked { background: var(--ink); color: var(--paper); }
+    .avis-field { margin-bottom: 16px; }
+    .avis-success { display: none; padding: 16px 0 4px; }
+    .avis-success h3 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .avis-success p { font-size: 14px; color: var(--muted); }
+
+    /* ── Tablette et téléphone ────────────────────────────────── */
+    @media (max-width: 1180px) {
+      .result-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .result-kpi-label, .fourch-label { white-space: normal; }
+      .result-kpi.lead { grid-column: 1 / -1; border-bottom: 1px solid var(--border); }
+      .result-strip > :nth-child(2) { border-left: 0; }
+      .sim-pair { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 1000px) {
+      .sim-layout { grid-template-columns: 1fr; }
+      .sim-sidebar { position: static; }
+      .empty-state { padding: 20px; }
+      .empty-preview { padding: 10px; margin: 0 -6px; }
+    }
+    @media (max-width: 600px) {
+      .result-strip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .result-kpi-label, .fourch-label { white-space: normal; }
+      .result-kpi-val, .fourch-val { font-size: 19px; white-space: normal; }
+      .result-strip > * { border-left: 0 !important; border-top: 1px solid var(--border); }
+      .result-strip > :nth-child(odd):not(.lead) { border-left: 1px solid var(--border) !important; }
+      .result-kpi.lead { border-top: 0; border-bottom: 0; }
+      .result-kpi-val.cyan { font-size: 28px; }
+      .terrain-bar-row { grid-template-columns: 20px minmax(0, 1fr) auto 48px; }
+      #leafletMap { min-height: 260px; }
+      .sim-actions { width: 100%; }
+      .sim-actions > * { flex: 1; justify-content: center; }
+      .ravito-card .data-table td:first-child, .ravito-card .data-table th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; min-width: 130px; }
+    }
+    .no-clock th:nth-child(4), .no-clock td:nth-child(4) { display: none; }
+  </style>
+</head>
+<body data-page="simulateur">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link active" aria-current="page">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Simulateur</h1>
+      <p>Charge le GPX de ta course, place tes ravitos : tu obtiens ton temps et tes heures de passage.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+  <div class="sim-layout">
+    <!-- Colonne de saisie -->
+    <aside class="sim-sidebar" aria-label="Paramètres de la simulation">
+
+      <div class="step-block" id="profilSelector" style="display:none;">
+        <div class="step-header">
+          <div class="step-title">Profil utilisé</div>
+          <div class="step-desc">Le profil de coureur appliqué à cette course.</div>
+        </div>
+        <div class="profil-toggle-row" role="group" aria-label="Profil utilisé">
+          <button type="button" class="profil-toggle-btn active" data-type="trail" onclick="switchProfilSim('trail')">Trail</button>
+          <button type="button" class="profil-toggle-btn" data-type="rando" onclick="switchProfilSim('rando')">Rando</button>
+        </div>
+        <div id="profilSelectorInfo"></div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-header">
+          <div class="step-title">Trace de la course</div>
+          <div class="step-desc">Le fichier GPX de ta prochaine course.</div>
+        </div>
+        <div class="upload-zone-sm" id="dropzoneSim" role="button" tabindex="0" aria-label="Importer le fichier GPX de la course">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <p>Importer le GPX</p>
+          <p>Glisse le fichier ici ou clique</p>
+        </div>
+        <input type="file" id="fileGPX" accept=".gpx" style="display:none">
+
+        <div class="demo-cta">
+          <div class="demo-cta-or"><span>ou</span></div>
+          <button type="button" class="btn-demo-ccc" onclick="lancerDemoCCC()">
+            <span class="demo-ccc-emoji" aria-hidden="true"><svg viewBox="0 0 30 22"><path d="M1 21 8 9l4 5 6-11 11 18z" fill="#FFFFFF"/><path d="M8 9l4 5 6-11" fill="none" stroke="#FFC53D" stroke-width="1.6" stroke-linejoin="round"/></svg></span>
+            <span class="demo-ccc-text">
+              <strong>Essayer avec la CCC</strong>
+              <small>98,4 km · 5 742 m D+ · Courmayeur → Chamonix</small>
+            </span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4 12.5 8l-4 4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+          <p class="demo-cta-note">Une simulation complète sans compte, avec un profil de coureur d'exemple.</p>
+        </div>
+
+        <div class="file-detected" id="fileInfo">
+          <div class="file-detected-name" id="fileName">—</div>
+          <div style="margin-top:6px;"><span class="tag tag-cyan" id="fileCat">—</span></div>
+          <div class="file-meta-row" style="margin-top:10px;">
+            <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
+            <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé positif</div></div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="nomCourse">Nom de la course</label>
+          <input type="text" id="nomCourse" placeholder="Ex : Trail des Aiguilles 2026" maxlength="80">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="heureDepart">Heure de départ <span style="font-weight:400;color:var(--muted)">(facultatif)</span></label>
+          <input type="time" id="heureDepart" aria-describedby="heureDepartAide">
+          <div class="ravitos-hint" id="heureDepartAide">Pour lire tes heures de passage, en plus des temps de course.</div>
+        </div>
+      </div>
+
+      <div class="step-block">
+        <div class="step-header">
+          <div class="step-title">Ravitaillements et points clés<span class="info-i tip-left" tabindex="0" data-tip="Tes points de passage clés : ravitaillements, cols, refuges, bases de vie. Indique le kilomètre, un nom et ta pause prévue. Laisse vide pour quatre points automatiques."></span></div>
+          <div class="step-desc">Kilomètre, nom et pause prévue de chaque point.</div>
+        </div>
+        <div class="ravitos-head" aria-hidden="true">
+          <span>km</span>
+          <span>Nom du point</span>
+          <span title="Temps d'arrêt en minutes">Pause</span>
+          <span></span>
+        </div>
+        <div id="ravitosList" class="ravitos-list"></div>
+        <button type="button" class="btn-add-ravito" onclick="ajouterRavito()">Ajouter un point</button>
+        <input type="hidden" id="ravitos">
+      </div>
+
+      <div class="step-block">
+        <div class="step-header">
+          <div class="step-title">Profil de référence</div>
+          <div class="step-desc" id="profilRefDesc">Issu de l'analyse de tes sorties.</div>
+        </div>
+        <div class="ref-rows">
+          <div class="ref-row"><span>VEP globale<span class="info-i tip-left" tabindex="0" data-tip="Vitesse équivalente plat : ta vitesse ramenée à du plat, dénivelé neutralisé. L'indicateur clé de ta forme, indépendant du parcours."></span></span><span id="profilVEP">—</span></div>
+          <div class="ref-row"><span>Drain d'énergie<span class="info-i tip-left" tabindex="0" data-tip="La vitesse à laquelle tu vides ta batterie d'énergie, estimée depuis ta fréquence cardiaque. Plus il est élevé, plus la fatigue arrive vite sur la durée."></span></span><span id="profilDrain">—</span></div>
+          <div class="ref-row"><span>Coefficient course</span><span id="profilCoeff">—</span></div>
+        </div>
+        <p class="ref-note">Pas encore de profil ? <a href="profil.html">Analyse tes sorties</a></p>
+      </div>
+
+      <button type="button" class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>Lancer la simulation</button>
+    </aside>
+
+    <!-- Résultats -->
+    <section class="sim-main" aria-label="Résultats de la simulation">
+      <div class="empty-state" id="emptyStateSim">
+        <div class="empty-copy">
+          <div class="empty-title">Ta simulation s'affichera ici</div>
+          <div class="empty-sub">Importe la trace GPX de ta course, place tes ravitos et lance la simulation. Pas de fichier sous la main ? Essaie la CCC : 98,4 km, une nuit en montagne, et chaque heure de passage.</div>
+          <button type="button" class="btn-primary" id="btnDemoVide" onclick="lancerDemoCCC()">Lancer la démo sur la CCC</button>
+        </div>
+        <figure class="empty-preview" aria-label="Aperçu d'un résultat">
+          <div class="gp-card">
+            <div class="gp-banner">
+              <div><small>Départ</small><b>9&nbsp;h&nbsp;00</b></div>
+              <div><small>Temps estimé</small><b>24&nbsp;h&nbsp;53</b></div>
+              <div><small>Arrivée</small><b>9&nbsp;h&nbsp;53</b></div>
+            </div>
+            <table class="gp-table">
+              <thead><tr><th scope="col">Point</th><th scope="col">km</th><th scope="col">Heure</th><th scope="col">Course</th></tr></thead>
+              <tbody>
+                <tr><td>Courmayeur</td><td>0,0</td><td>9 h 00</td><td>0 h 00</td></tr>
+                <tr><td>Refuge Bertone</td><td>14,1</td><td>12 h 41</td><td>3 h 41</td></tr>
+                <tr><td>Champex-Lac</td><td>55,4</td><td>20 h 49</td><td>11 h 49</td></tr>
+                <tr><td>Trient</td><td>69,6</td><td>0 h 47</td><td>15 h 47</td></tr>
+                <tr><td><b>Chamonix</b></td><td>98,4</td><td><b>9 h 53</b></td><td><b>24 h 53</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <figcaption class="gate-cap">Aperçu : la CCC pour le coureur de la démo, profil Grimpeur.</figcaption>
+        </figure>
+      </div>
+
+      <div id="simResults" style="display:none;">
+        <div class="sim-results-head">
+          <div>
+            <h2 id="simTitle">Ta simulation</h2>
+            <p id="simSub">—</p>
+          </div>
+          <div class="sim-actions">
+            <button type="button" class="btn-pdf" onclick="genererPDF()">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Télécharger en PDF
+            </button>
+            <button type="button" class="btn-pin" id="btnPin" onclick="epinglerSimulationActuelle()" style="display:none;">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 3H8v2l1 1v5l-3 3v2h5v5l1 1 1-1v-5h5v-2l-3-3V6l1-1z"/></svg>
+              <span id="btnPinLabel">Épingler cette simulation</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="result-strip">
+          <div class="result-kpi lead">
+            <div class="result-kpi-label">Temps estimé<span class="info-icon" tabindex="0" data-tooltip="Temps de course prédit segment par segment sur la trace, avec ton profil et le modèle de fatigue (mécanique et batterie d'énergie). Les pauses saisies sont comprises."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+            <div class="result-kpi-val cyan" id="resTemps">—</div>
+            <div class="fourch-sub" id="resArrivee">Temps de course, pauses comprises</div>
+          </div>
+          <div class="fourch-item fg"><div class="fourch-label">Top condition<span class="info-icon" tabindex="0" data-tooltip="Temps optimiste, tiré de la fourchette basse de la variabilité de tes performances par terrain : un jour où tout se passe bien."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchBas">—</div><div class="fourch-sub">Tout se passe bien</div></div>
+          <div class="fourch-item fr"><div class="fourch-label">Jour difficile<span class="info-icon" tabindex="0" data-tooltip="Temps prudent, tiré de la fourchette haute : météo, fatigue résiduelle ou gestion difficile."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="fourch-val" id="fourchHaut">—</div><div class="fourch-sub">Conditions dégradées</div></div>
+          <div class="result-kpi"><div class="result-kpi-label">Allure moyenne</div><div class="result-kpi-val" id="resAllure">—</div><div class="fourch-sub">hors pauses</div></div>
+          <div class="result-kpi"><div class="result-kpi-label">Catégorie<span class="info-icon tip-left" tabindex="0" data-tooltip="Court (moins de 25 km), moyen (25 à 50), long (50 à 80) ou ultra (plus de 80). Chaque catégorie applique un facteur de gestion d'allure : on court plus vite sur 20 km que sur 100."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div><div class="result-kpi-val" id="resCat">—</div><div class="fourch-sub">selon la distance</div></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Profil de course et allure prévue<span class="info-icon" tabindex="0" data-tooltip="Le profil de la course, coloré par l'allure prédite : plus le bleu est foncé, plus tu avances lentement. Les repères en haut marquent tes ravitos (km). Survole ou glisse le doigt pour le détail."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+            <div class="chart-legend" aria-label="Allure prédite">
+              <div class="legend-item"><div class="legend-dot" style="background:#9DBEF2"></div><span class="legend-label">moins de 10'/km</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#5C8FE6"></div><span class="legend-label">10 à 13'</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#1E5FD8"></div><span class="legend-label">13 à 18'</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:#0E3A8C"></div><span class="legend-label">plus de 18'/km</span></div>
+            </div>
+          </div>
+          <div class="chart-toggles">
+            <span>Superposer</span>
+            <label class="chart-toggle">
+              <input type="checkbox" id="toggleAllure" onchange="dessinerProfilChart(window.lastSimData)">
+              <span class="toggle-dot" aria-hidden="true"></span>
+              <span class="toggle-label">Allure (min/km)</span>
+            </label>
+            <label class="chart-toggle">
+              <input type="checkbox" id="toggleFC" onchange="dessinerProfilChart(window.lastSimData)">
+              <span class="toggle-dot fc" aria-hidden="true"></span>
+              <span class="toggle-label">Fréquence cardiaque estimée</span>
+            </label>
+          </div>
+          <div class="chart-body">
+            <svg id="profilChart" viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Profil altimétrique de la course coloré par allure prédite"></svg>
+            <div id="chartTooltip" class="chart-tooltip"></div>
+          </div>
+        </div>
+
+        <div class="ravito-card">
+          <div class="ravito-header">Temps de passage</div>
+          <div class="table-scroll">
+            <table class="data-table no-clock">
+              <thead>
+                <tr>
+                  <th scope="col">Point</th>
+                  <th scope="col">Distance</th>
+                  <th scope="col">Temps</th>
+                  <th scope="col">Heure</th>
+                  <th scope="col">Top</th>
+                  <th scope="col">Difficile</th>
+                  <th scope="col">D+</th>
+                  <th scope="col">D−</th>
+                </tr>
+              </thead>
+              <tbody id="ravitoBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sim-pair">
+          <div class="map-card">
+            <div class="map-header">Tracé de la course</div>
+            <div id="leafletMap"></div>
+          </div>
+          <div class="terrain-card">
+            <div class="terrain-header">Temps passé par type de pente</div>
+            <div class="terrain-body" id="terrainBars"></div>
+          </div>
+        </div>
+
+        <div class="feedback-card">
+          <p><strong>Cette prédiction te semble juste ?</strong>Ton avis sert directement à affiner l'algorithme.</p>
+          <button type="button" class="btn-ghost" onclick="ouvrirModal()">Donner mon avis</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  </main>
+
+  <!-- Fenêtre : avis bêta -->
+  <div class="modal-overlay" id="modalAvis" onclick="if(event.target===this) fermerModal()">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="avisTitle">
+      <button type="button" class="modal-close" onclick="fermerModal()" aria-label="Fermer">×</button>
+      <h2 id="avisTitle">Ton avis nous aide</h2>
+      <p class="modal-sub">Aide-nous à améliorer SUM'IT en partageant ton expérience.</p>
+
+      <div id="formAvis">
+        <div class="avis-field">
+          <span class="input-label" id="lblRatingPred">Justesse des temps prédits (1 à 5)</span>
+          <div class="rating-group" id="ratingPred" role="group" aria-labelledby="lblRatingPred">
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,1)">1</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,2)">2</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,3)">3</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,4)">4</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingPred',this,5)">5</button>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <span class="input-label" id="lblRatingProfil">Ressemblance du profil de coureur (1 à 5)</span>
+          <div class="rating-group" id="ratingProfil" role="group" aria-labelledby="lblRatingProfil">
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,1)">1</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,2)">2</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,3)">3</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,4)">4</button>
+            <button type="button" class="rating-btn" aria-pressed="false" onclick="selectRating('ratingProfil',this,5)">5</button>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <span class="input-label">Ce que tu aimerais voir arriver</span>
+          <div id="modalFeatures" style="display:flex;flex-wrap:wrap;gap:6px;">
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Import automatique Strava</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Import automatique Garmin</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Conseils nutritionnels</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Coach IA personnalisé</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Intégration météo</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Suivi d'autres athlètes</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Application mobile</div>
+            <div class="checkbox-item" role="checkbox" aria-checked="false" tabindex="0" onclick="this.classList.toggle('checked');this.setAttribute('aria-checked',this.classList.contains('checked'))" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();this.click();}">Profil coach (multi-athlètes)</div>
+          </div>
+        </div>
+
+        <div class="avis-field">
+          <label class="input-label" for="modalCommentaire">Commentaire libre</label>
+          <textarea id="modalCommentaire" placeholder="Améliorations, bugs, idées…"></textarea>
+        </div>
+
+        <div class="avis-field">
+          <label class="input-label" for="modalEmail">Email (facultatif)</label>
+          <input type="email" id="modalEmail" placeholder="ton@email.com" autocomplete="email">
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%;min-height:48px;" onclick="envoyerAvis()">Envoyer mon avis</button>
+      </div>
+
+      <div id="successAvis" class="avis-success" role="status">
+        <h3>Merci pour ton retour.</h3>
+        <p>Ton avis a bien été envoyé à l'équipe.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+  <script>
+// Garde-fou : si le CDN d'EmailJS est bloqué (bloqueur de pub, réseau filtré),
+// le reste de la page doit continuer à fonctionner.
+if (window.emailjs) emailjs.init('rc324sv1XWdtOjTM6');
+
+// Variables globales
+let gpxFile = null;
+
+// ══ DÉMO : CCC de l'UTMB ══════════════════════════════════════
+// Profil de coureur d'exemple (intermédiaire-confirmé, légèrement grimpeur)
+// Permet de lancer une simulation complète sans compte ni import.
+async function lancerDemoCCC() {
+  const btn = document.querySelector('.btn-demo-ccc');
+  const btnVide = document.getElementById('btnDemoVide');
+  const txtOrig = btn ? btn.querySelector('.demo-ccc-text strong').textContent : '';
+  if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none';
+             btn.querySelector('.demo-ccc-text strong').textContent = 'Chargement de la CCC…'; }
+  if (btnVide) btnVide.disabled = true;
+
+  try {
+    // 1) Récupérer le GPX d'exemple et le transformer en File
+    const resGpx = await fetch('../assets/ccc-utmb.gpx');
+    if (!resGpx.ok) throw new Error('GPX CCC introuvable');
+    const gpxText = await resGpx.text();
+    gpxFile = new File([gpxText], 'CCC-UTMB.gpx', { type: 'application/gpx+xml' });
+
+    // 2) Charger le profil de coureur d'exemple dans la session
+    const resProfil = await fetch('../assets/profil-demo.json');
+    if (!resProfil.ok) throw new Error('Profil démo introuvable');
+    const profilDemo = await resProfil.json();
+    sessionStorage.setItem('sumit_profil', JSON.stringify({
+      profil:      profilDemo.profil,
+      drain_moy_h: profilDemo.drain_moy_h,
+      coefficient: profilDemo.coefficient,
+      archetype:   profilDemo.archetype,
+      fcmax:       profilDemo.fcmax,
+      prenom:      profilDemo.prenom,
+      nb_traces:   profilDemo.nb_traces,
+      vep_globale: profilDemo.vep_globale,
+      profil_type: profilDemo.profil_type,
+      is_demo:     true,
+      timestamp:   Date.now(),
+    }));
+
+    // 3) Afficher l'aperçu fichier + le profil dans la colonne de saisie
+    if (document.getElementById('fileInfo')) {
+      document.getElementById('fileInfo').classList.add('show');
+      document.getElementById('fileName').textContent = 'CCC 2025 — UTMB';
+      document.getElementById('fileDist').textContent  = '98,4 km';
+      document.getElementById('fileDplus').textContent = '5 742 m';
+      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = 'Ultra';
+    }
+    afficherProfilSidebar();
+
+    // 4) Ravitos officiels de la CCC, placés au kilomètre où la trace les traverse
+    const ravitosCCC = [
+      [14.1, 'Refuge Bertone'],
+      [25.8, 'Arnouvaz'],
+      [39.8, 'La Fouly'],
+      [55.4, 'Champex-Lac'],
+      [69.6, 'Trient'],
+      [80.1, 'Vallorcine'],
+    ];
+    const list = document.getElementById('ravitosList');
+    if (list) {
+      list.innerHTML = '';
+      ravitosCCC.forEach(([km, nom]) => list.appendChild(creerLigneRavito(km, nom, '')));
+      syncRavitos();
+    }
+
+    // 5) Nom de course et heure de départ (la CCC part à 9 h 00 de Courmayeur)
+    if (document.getElementById('nomCourse')) {
+      document.getElementById('nomCourse').value = 'CCC — UTMB (démo)';
+    }
+    const hd = document.getElementById('heureDepart');
+    if (hd) hd.value = '09:00';
+
+    // 6) Lancer la simulation
+    if (btn) btn.querySelector('.demo-ccc-text strong').textContent = 'Simulation en cours…';
+    await lancerSimulation();
+
+  } catch (e) {
+    alert('Impossible de charger la démo : ' + e.message);
+  } finally {
+    if (btn) {
+      btn.style.opacity = ''; btn.style.pointerEvents = '';
+      btn.querySelector('.demo-ccc-text strong').textContent = txtOrig || 'Essayer avec la CCC';
+    }
+    if (btnVide) btnVide.disabled = false;
+  }
+}
+
+// ══ Gestion dynamique des ravitos / points d'intérêt ══════════
+let _ravitoSeq = 0;
+
+function creerLigneRavito(km = '', nom = '', pause = '') {
+  _ravitoSeq++;
+  const id = _ravitoSeq;
+  const row = document.createElement('div');
+  row.className = 'ravito-row';
+  row.dataset.rid = id;
+  row.innerHTML = `
+    <input type="number" class="ravito-km-input" min="0" step="0.1" inputmode="decimal" placeholder="km" aria-label="Kilomètre du point" value="${km}" oninput="syncRavitos()">
+    <input type="text" class="ravito-nom-input" maxlength="60" placeholder="Refuge, col, base de vie…" aria-label="Nom du point" value="${String(nom).replace(/"/g, '&quot;')}" oninput="syncRavitos()">
+    <input type="number" class="ravito-pause-input" min="0" step="1" inputmode="numeric" placeholder="min" aria-label="Pause en minutes" title="Temps d'arrêt en minutes" value="${pause}" oninput="syncRavitos()">
+    <button type="button" class="btn-del-ravito" onclick="supprimerRavito(${id})" title="Retirer ce point" aria-label="Retirer ce point">×</button>
+  `;
+  return row;
+}
+
+function ajouterRavito(km = '', nom = '', pause = '') {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.appendChild(creerLigneRavito(km, nom, pause));
+  syncRavitos();
+}
+
+function supprimerRavito(id) {
+  const row = document.querySelector(`.ravito-row[data-rid="${id}"]`);
+  if (row) row.remove();
+  syncRavitos();
+}
+
+// Récupère le mapping {km: minutes de pause} pour l'envoi backend
+function getRavitosPauses() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const map = {};
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    const pause = r.querySelector('.ravito-pause-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km)) && pause !== '' && parseFloat(pause) > 0) {
+      map[parseFloat(km).toFixed(1)] = parseFloat(pause);
+    }
+  });
+  return map;
+}
+
+// Synchronise la liste vers le champ caché #ravitos (km) — compat existant
+function syncRavitos() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const kms = [];
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km))) kms.push(parseFloat(km));
+  });
+  const hidden = document.getElementById('ravitos');
+  if (hidden) hidden.value = kms.join(',');
+}
+
+// Récupère le mapping {km: nom} pour l'envoi backend
+function getRavitosNoms() {
+  const rows = document.querySelectorAll('#ravitosList .ravito-row');
+  const map = {};
+  rows.forEach(r => {
+    const km = r.querySelector('.ravito-km-input').value.trim();
+    const nom = r.querySelector('.ravito-nom-input').value.trim();
+    if (km !== '' && !isNaN(parseFloat(km)) && nom) {
+      map[parseFloat(km).toFixed(1)] = nom;
+    }
+  });
+  return map;
+}
+
+// Pré-remplit la liste depuis une chaîne "12,25,42" (réouverture sim) + noms optionnels
+function chargerRavitosDansListe(ravitosKmStr, nomsMap = {}, pausesMap = {}) {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.innerHTML = '';
+  const kms = (ravitosKmStr || '').split(',').map(s => s.trim()).filter(s => s !== '' && !isNaN(parseFloat(s)));
+  if (kms.length === 0) {
+    initRavitosDefaut();
+    return;
+  }
+  kms.forEach(km => {
+    const k = parseFloat(km);
+    const nom = nomsMap[k.toFixed(1)] || '';
+    const pause = pausesMap[k.toFixed(1)] || '';
+    list.appendChild(creerLigneRavito(k, nom, pause));
+  });
+  syncRavitos();
+}
+
+// 3 ravitos vides par défaut
+function initRavitosDefaut() {
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  list.innerHTML = '';
+  for (let i = 0; i < 3; i++) list.appendChild(creerLigneRavito('', ''));
+  syncRavitos();
+}
+
+
+// Constantes d'affichage : une seule teinte pour les barres, des pictogrammes neutres
+const TERRAIN_COLORS = {
+  montee_raide:'#1E5FD8', montee_soutenue:'#1E5FD8', montee_douce:'#1E5FD8',
+  plat:'#1E5FD8', descente_douce:'#1E5FD8', descente_soutenue:'#1E5FD8', descente_raide:'#1E5FD8'
+};
+const TERRAIN_LABELS_S = {
+  montee_raide:'Montée raide', montee_soutenue:'Montée soutenue',
+  montee_douce:'Montée douce', plat:'Plat',
+  descente_douce:'Descente douce', descente_soutenue:'Descente soutenue', descente_raide:'Descente raide'
+};
+const TERRAIN_ICONS_S = {
+  montee_raide:    `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,11 7,2 11,7"/></svg>`,
+  montee_soutenue: `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,11 5,7 9,4 11,3"/></svg>`,
+  montee_douce:    `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,10 6,8 10,5 11,4"/></svg>`,
+  plat:            `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="7" x2="11" y2="7"/></svg>`,
+  descente_douce:  `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 4,5 8,8 11,9"/></svg>`,
+  descente_soutenue:`<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,3 5,6 9,9 11,10"/></svg>`,
+  descente_raide:  `<svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,2 11,9 7,11"/></svg>`,
+};
+
+// Formats à la française
+const pad2S = n => String(n).padStart(2, '0');
+function fmtDuree(sec) {
+  const T = Math.round((Number(sec) || 0) / 60);
+  return `${Math.floor(T / 60)} h ${pad2S(T % 60)}`;
+}
+function fmtHeure(totalMin) {
+  const T = Math.round(totalMin);
+  return `${Math.floor(T / 60) % 24} h ${pad2S(((T % 60) + 60) % 60)}`;
+}
+function fmtAllure(minParKm) {
+  const v = Number(minParKm) || 0;
+  if (!v) return '—';
+  let m = Math.floor(v), s = Math.round((v - m) * 60);
+  if (s === 60) { m += 1; s = 0; }
+  return `${m}'${pad2S(s)}"/km`;
+}
+const fmtKmS = km => (Number(km) || 0).toFixed(1).replace('.', ',');
+const fmtEntierS = n => Math.round(Number(n) || 0).toLocaleString('fr-FR').replace(/ | /g, ' ');
+function lireHeureDepart() {
+  const el = document.getElementById('heureDepart');
+  if (!el || !el.value) return null;
+  const m = el.value.match(/^(\d{1,2}):(\d{2})/);
+  return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null;
+}
+
+const ORDRE_T2 = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+
+// ── INIT — Sélection du fichier ────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('fileGPX');
+  const zone  = document.getElementById('dropzoneSim');
+
+  // 3 ravitos vides par défaut (sauf si réouverture d'une sim, géré plus loin)
+  if (!new URLSearchParams(window.location.search).get('sim_id')) {
+    initRavitosDefaut();
+  }
+
+  // Click sur la zone → ouvrir le sélecteur
+  zone.addEventListener('click', () => input.click());
+
+  // Sélection d'un fichier via le dialog
+  input.addEventListener('change', e => {
+    if (e.target.files.length > 0) chargerFichier(e.target.files[0]);
+  });
+
+  // Drag & drop
+  zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('is-over');
+  });
+  zone.addEventListener('dragleave', () => { zone.classList.remove('is-over'); });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('is-over');
+    if (e.dataTransfer.files.length > 0) chargerFichier(e.dataTransfer.files[0]);
+  });
+
+  // Heure de départ : met à jour les heures de passage sans relancer le calcul
+  const hd = document.getElementById('heureDepart');
+  if (hd) hd.addEventListener('input', () => {
+    if (window.lastSimData) window.lastSimData.heure_depart = hd.value || undefined;
+    majHeures();
+  });
+
+  // Charger le profil sauvegardé dans la colonne de saisie
+  initSimulateur();
+});
+
+// ── Profil utilisé : Trail / Rando ─────────────────────────────────
+let currentSimProfilType = 'trail';
+
+async function initSimulateur() {
+  // Si connecté → afficher le sélecteur de profil et charger les profils
+  if (isLoggedIn()) {
+    document.getElementById('profilSelector').style.display = 'block';
+
+    try {
+      const user = await fetchMe();
+      const trail = user.profiles.find(p => p.type === 'trail');
+      const rando = user.profiles.find(p => p.type === 'rando');
+
+      // Au chargement, on prend trail par défaut (sauf si trail vide et rando OK)
+      if (!trail && rando) currentSimProfilType = 'rando';
+      else currentSimProfilType = 'trail';
+
+      // Mettre à jour les boutons
+      document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === currentSimProfilType);
+      });
+
+      // Indiquer s'il manque un profil
+      const info = document.getElementById('profilSelectorInfo');
+      if (!trail && !rando) {
+        info.innerHTML = 'Aucun profil pour l\'instant. <a href="profil.html">Crée-le</a> à partir de tes sorties, ou lance la démo.';
+      } else if (currentSimProfilType === 'trail' && !trail) {
+        info.innerHTML = 'Profil trail vide. <a href="profil.html">Crée-le</a> ou passe en rando.';
+      } else if (currentSimProfilType === 'rando' && !rando) {
+        info.innerHTML = 'Profil rando vide. <a href="profil.html">Crée-le</a> ou passe en trail.';
+      } else {
+        info.innerHTML = '';
+      }
+
+      // Charger le profil depuis BDD
+      await chargerProfilActuel(currentSimProfilType);
+    } catch (e) {
+      console.warn('Erreur chargement profils:', e);
+    }
+  }
+
+  afficherProfilSidebar();
+
+  // Si on arrive via ?sim_id=XX, on charge la simulation épinglée
+  const params = new URLSearchParams(window.location.search);
+  const simId = params.get('sim_id');
+  if (simId && isLoggedIn()) {
+    await chargerSimulationEpinglee(parseInt(simId));
+  }
+
+  // Depuis l'accueil (« Essayer sur la CCC ») : lancement direct de la démo
+  if (!simId && params.get('demo') === 'ccc') {
+    lancerDemoCCC();
+    return;
+  }
+
+  // Depuis l'accueil (« Nouvelle course ») : on reprend le nom et le profil choisis
+  if (!simId) {
+    let cible = null;
+    try { cible = JSON.parse(localStorage.getItem('sumit_course_cible') || 'null'); } catch (e) {}
+    const nomParam = params.get('course') || (cible && cible.nom) || '';
+    const typeParam = params.get('type') || (cible && cible.type) || '';
+    const champ = document.getElementById('nomCourse');
+    if (nomParam && champ && !champ.value) champ.value = nomParam.slice(0, 80);
+    if (typeParam === 'rando' && isLoggedIn() && currentSimProfilType !== 'rando') {
+      await switchProfilSim('rando');
+    }
+  }
+}
+
+// ── Chargement d'une simulation épinglée ──────────────────────
+async function chargerSimulationEpinglee(simId) {
+  try {
+    const sim = await getSimulation(simId);
+
+    // Switch sur le bon profil
+    if (sim.type_profil && sim.type_profil !== currentSimProfilType) {
+      await switchProfilSim(sim.type_profil);
+    }
+
+    // Recharger le GPX original si présent
+    if (sim.gpx_base64) {
+      const bin = atob(sim.gpx_base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const reconstitueFile = new File([bytes], `${sim.name}.gpx`, { type: 'application/gpx+xml' });
+      chargerFichier(reconstitueFile);
+    }
+
+    // Restaurer le nom de course + ravitos
+    if (document.getElementById('nomCourse')) {
+      document.getElementById('nomCourse').value = sim.name;
+    }
+    // Charger les ravitos (km + noms + pauses) dans la liste dynamique.
+    // Récupérés depuis sim_data.ravitos s'ils existent.
+    let nomsMap = {};
+    let pausesMap = {};
+    if (sim.sim_data && Array.isArray(sim.sim_data.ravitos)) {
+      sim.sim_data.ravitos.forEach(rv => {
+        if (rv.km != null) {
+          const k = Number(rv.km).toFixed(1);
+          if (rv.nom) nomsMap[k] = rv.nom;
+          if (rv.pause_min && rv.pause_min > 0) pausesMap[k] = rv.pause_min;
+        }
+      });
+    }
+    if (sim.ravitos_km) {
+      chargerRavitosDansListe(sim.ravitos_km, nomsMap, pausesMap);
+    } else {
+      initRavitosDefaut();
+    }
+
+    // Restaurer les stats du fichier depuis sim_data
+    if (sim.dist_km && document.getElementById('fileDist')) {
+      document.getElementById('fileDist').textContent  = `${fmtKmS(sim.dist_km)} km`;
+      document.getElementById('fileDplus').textContent = `${fmtEntierS(sim.dplus_m)} m`;
+    }
+
+    // Restaurer les résultats si présents (sans recalculer)
+    if (sim.sim_data && Object.keys(sim.sim_data).length > 0) {
+      const data = sim.sim_data;
+      // On reconstruit l'affichage sans appel API
+      window.lastSimData = data;
+      const hd = document.getElementById('heureDepart');
+      if (hd && data.heure_depart) hd.value = data.heure_depart;
+      afficherResultats(data);
+    }
+
+    // Bascule en mode édition
+    window.editingSimId = simId;
+    window.editingSimName = sim.name;
+    afficherBandeauEdition();
+
+  } catch (e) {
+    alert('Impossible d\'ouvrir la simulation épinglée : ' + e.message);
+  }
+}
+
+function afficherBandeauEdition() {
+  let bandeau = document.getElementById('editingBanner');
+  if (!bandeau) {
+    bandeau = document.createElement('div');
+    bandeau.id = 'editingBanner';
+    bandeau.setAttribute('role', 'status');
+    document.body.insertBefore(bandeau, document.body.querySelector('.nav').nextSibling);
+  }
+  bandeau.innerHTML = `
+    <div>Simulation épinglée : <strong>${escapeHTMLSim(window.editingSimName || 'Simulation')}</strong>. Tes modifications mettront à jour cette version.</div>
+    <button type="button" onclick="quitterModeEdition()">Quitter le mode édition</button>
+  `;
+
+  // Mettre à jour le label du bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Mettre à jour la simulation épinglée';
+}
+
+function quitterModeEdition() {
+  window.editingSimId = null;
+  window.editingSimName = null;
+  const bandeau = document.getElementById('editingBanner');
+  if (bandeau) bandeau.remove();
+  // Reset URL
+  const url = new URL(window.location);
+  url.searchParams.delete('sim_id');
+  window.history.replaceState({}, '', url.toString());
+  // Reset bouton épingler
+  const btnPinLabel = document.getElementById('btnPinLabel');
+  if (btnPinLabel) btnPinLabel.textContent = 'Épingler cette simulation';
+}
+
+function escapeHTMLSim(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function switchProfilSim(type) {
+  currentSimProfilType = type;
+  document.querySelectorAll('.profil-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  try {
+    await chargerProfilActuel(type);
+
+    // Re-check si le profil a été chargé ou est vide
+    const user = await fetchMe();
+    const p = user.profiles.find(pp => pp.type === type);
+    const info = document.getElementById('profilSelectorInfo');
+    if (!p) {
+      info.innerHTML = `Profil ${type === 'trail' ? 'trail' : 'rando'} vide. <a href="profil.html">Crée-le</a> à partir de tes sorties.`;
+    } else {
+      info.innerHTML = '';
+    }
+  } catch (e) { console.warn(e); }
+  afficherProfilSidebar();
+}
+
+// ── Chargement du fichier ──────────────────────────────────────────
+function chargerFichier(file) {
+  if (!file.name.toLowerCase().endsWith('.gpx')) {
+    alert('Seuls les fichiers .gpx sont acceptés !');
+    return;
+  }
+  gpxFile = file;
+  // Après la démo, un vrai fichier repasse sur le profil du coureur connecté
+  try {
+    const cur = chargerProfil();
+    if (cur && cur.is_demo && typeof isLoggedIn === 'function' && isLoggedIn()) {
+      chargerProfilActuel(currentSimProfilType).then(afficherProfilSidebar).catch(() => {});
+    }
+  } catch (e) {}
+  // Affichage info fichier
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileDist').textContent = '...';
+  document.getElementById('fileDplus').textContent = '...';
+  document.getElementById('fileCat').textContent = 'Prête';
+  document.getElementById('fileInfo').classList.add('show');
+  document.getElementById('btnSimuler').disabled = false;
+  console.log('Fichier chargé :', file.name, file.size, 'octets');
+}
+
+// ── Profil sidebar ─────────────────────────────────────────────────
+function afficherProfilSidebar() {
+  const p = chargerProfil();
+  const desc = document.getElementById('profilRefDesc');
+  if (p && p.profil) {
+    // Même VEP globale que sur la page profil
+    const vep = p.vep_globale ? p.vep_globale.toFixed(1).replace('.', ',') : '—';
+    document.getElementById('profilVEP').textContent   = `${vep} km/h`;
+    document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1).replace('.', ',')} %/h`;
+    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2).replace('.', ',')}`;
+    if (desc) {
+      desc.textContent = p.is_demo
+        ? `Profil d'exemple (démo) : ${(p.archetype && p.archetype.nom) || 'coureur'}, ${p.nb_traces || 0} sorties.`
+        : 'Issu de l\'analyse de tes sorties.';
+    }
+  } else {
+    document.getElementById('profilVEP').textContent   = '—';
+    document.getElementById('profilDrain').textContent = '—';
+    document.getElementById('profilCoeff').textContent = '—';
+    if (desc) desc.textContent = 'Issu de l\'analyse de tes sorties.';
+  }
+}
+
+// ── Lancer la simulation ──────────────────────────────────────────
+// Résumé du profil utilisé pour une simulation (enregistré avec elle)
+function resumeProfilSim(p) {
+  if (!p) return null;
+  return {
+    archetype:   p.archetype ? { nom: p.archetype.nom } : null,
+    vep_globale: p.vep_globale || null,
+    coefficient: p.coefficient,
+    drain_moy_h: p.drain_moy_h,
+    fcmax:       p.fcmax || 193,
+    nb_traces:   p.nb_traces || null,
+  };
+}
+// Profil à afficher pour la simulation à l'écran : celui qui l'a calculée, sinon le profil courant
+function profilDeLaSim() {
+  const r = window.lastSimData && window.lastSimData.profil_resume;
+  return (r && r.coefficient != null) ? r : chargerProfil();
+}
+
+async function lancerSimulation() {
+  if (!gpxFile) { alert('Importe d\'abord la trace GPX de ta course.'); return; }
+
+  const p = chargerProfil();
+  if (!p || !p.profil) {
+    alert('Aucun profil de coureur pour l\'instant. Crée-le sur la page « Mon profil », ou lance la démo sur la CCC.');
+    return;
+  }
+
+  syncRavitos();
+  const ravitos = document.getElementById('ravitos').value.trim();
+  const ravitosNoms = getRavitosNoms();
+  const ravitosPauses = getRavitosPauses();
+  const btn     = document.getElementById('btnSimuler');
+  btn.textContent = 'Analyse du parcours…';
+  btn.disabled = true;
+
+  try {
+    // Points GPS pour la carte
+    trackPoints = await chargerTrackPoints(gpxFile);
+
+    const data = await simulerCourseAPI(
+      gpxFile, ravitos,
+      p.profil, p.drain_moy_h, p.coefficient, p.fcmax || 193,
+      ravitosNoms, ravitosPauses
+    );
+
+    const hd = lireHeureDepart();
+    if (hd !== null) data.heure_depart = document.getElementById('heureDepart').value;
+    data.profil_resume = resumeProfilSim(p);
+    afficherResultats(data);
+
+    // Sur téléphone, les résultats sont sous la saisie : on les amène à l'écran
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => document.getElementById('simResults').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' }), 120);
+    }
+
+    // Carte après les résultats
+    setTimeout(() => afficherCarte(trackPoints), 200);
+
+    envoyerMailSimulation(data);
+
+  } catch(err) {
+    console.error('Erreur simulation:', err);
+    alert(`La simulation n'a pas abouti : ${err.message}\n\nRéessaie dans un instant.`);
+  } finally {
+    btn.textContent = 'Lancer la simulation';
+    btn.disabled = false;
+  }
+}
+
+// ── Affichage résultats ───────────────────────────────────────────
+function afficherResultats(data) {
+  document.getElementById('emptyStateSim').style.display = 'none';
+  document.getElementById('simResults').style.display    = 'grid';
+
+  // Bouton Épingler visible seulement si connecté
+  const btnPin = document.getElementById('btnPin');
+  if (isLoggedIn()) {
+    btnPin.style.display = 'inline-flex';
+    btnPin.classList.remove('pinned');
+    btnPin.disabled = false;
+    document.getElementById('btnPinLabel').textContent = window.editingSimId ? 'Mettre à jour la simulation épinglée' : 'Épingler cette simulation';
+  } else {
+    btnPin.style.display = 'none';
+  }
+
+  const cat = data.categorie || {};
+  const nom = (document.getElementById('nomCourse')?.value || '').trim();
+  document.getElementById('simTitle').textContent = nom || 'Ta simulation';
+  document.getElementById('simSub').textContent =
+    `${fmtKmS(data.distance_km)} km · ${fmtEntierS(data.dplus_m)} m D+ · ${cat.nom || '—'}`;
+
+  // Chiffres
+  document.getElementById('resTemps').textContent  = data.temps_total_s ? fmtDuree(data.temps_total_s) : (data.temps_fmt || '—');
+  document.getElementById('resAllure').textContent = data.allure_moy ? fmtAllure(data.allure_moy) : '—';
+  document.getElementById('resCat').textContent    = cat.nom || '—';
+
+  // Mise à jour de l'aperçu du fichier
+  document.getElementById('fileDist').textContent  = `${fmtKmS(data.distance_km)} km`;
+  document.getElementById('fileDplus').textContent = `${fmtEntierS(data.dplus_m)} m`;
+  document.getElementById('fileCat').textContent   = cat.nom || '—';
+
+  // Fourchettes
+  document.getElementById('fourchBas').textContent  = data.temps_bas_s ? fmtDuree(data.temps_bas_s) : (data.bas_fmt || '—');
+  document.getElementById('fourchHaut').textContent = data.temps_haut_s ? fmtDuree(data.temps_haut_s) : (data.haut_fmt || '—');
+
+  // Heure de départ éventuelle (simulation épinglée)
+  const hd = document.getElementById('heureDepart');
+  if (hd && data.heure_depart && !hd.value) hd.value = data.heure_depart;
+
+  // Graphique
+  dessinerProfilChart(data);
+
+  // Tableau des points de passage
+  const tbody = document.getElementById('ravitoBody');
+  const distTot  = data.distance_km || 0;
+  const dplusTot = data.dplus_m || 0;
+  const dmoinsTot= data.dmoins_m || dplusTot;
+
+  let html = `
+    <tr>
+      <td><strong>Départ</strong></td>
+      <td>0,0 km</td>
+      <td class="t">0 h 00</td>
+      <td class="clock" data-s="0">—</td>
+      <td class="range-col">0 h 00</td>
+      <td class="range-col">0 h 00</td>
+      <td class="dplus-col">0 m</td>
+      <td class="dmoins-col">0 m</td>
+    </tr>`;
+  (data.ravitos || []).forEach(r => {
+    const pauseBadge = (r.pause_min && r.pause_min > 0)
+      ? `<span class="pause-badge">pause ${Math.round(r.pause_min)} min</span>`
+      : '';
+    const label = (r.nom && r.nom.trim())
+      ? `<strong>${escapeHTMLSim(r.nom)}</strong>${pauseBadge}`
+      : `Ravito${pauseBadge}`;
+    html += `
+      <tr>
+        <td>${label}</td>
+        <td>${fmtKmS(r.km)} km</td>
+        <td class="t">${r.temps_s != null ? fmtDuree(r.temps_s) : r.temps_fmt}</td>
+        <td class="clock" data-s="${r.temps_s != null ? r.temps_s : ''}">—</td>
+        <td class="range-col">${r.temps_bas_s != null ? fmtDuree(r.temps_bas_s) : r.bas_fmt}</td>
+        <td class="range-col">${r.temps_haut_s != null ? fmtDuree(r.temps_haut_s) : r.haut_fmt}</td>
+        <td class="dplus-col">+${fmtEntierS(r.dplus_cum || 0)} m</td>
+        <td class="dmoins-col">−${fmtEntierS(r.dmoins_cum || 0)} m</td>
+      </tr>`;
+  });
+  html += `
+    <tr>
+      <td>Arrivée</td>
+      <td>${fmtKmS(distTot)} km</td>
+      <td class="t">${data.temps_total_s ? fmtDuree(data.temps_total_s) : data.temps_fmt}</td>
+      <td class="clock" data-s="${data.temps_total_s || ''}">—</td>
+      <td class="range-col">${data.temps_bas_s ? fmtDuree(data.temps_bas_s) : data.bas_fmt}</td>
+      <td class="range-col">${data.temps_haut_s ? fmtDuree(data.temps_haut_s) : data.haut_fmt}</td>
+      <td class="dplus-col">+${fmtEntierS(dplusTot)} m</td>
+      <td class="dmoins-col">−${fmtEntierS(dmoinsTot)} m</td>
+    </tr>`;
+  tbody.innerHTML = html;
+  majHeures();
+
+  // Barres de répartition par terrain
+  const tbars  = document.getElementById('terrainBars');
+  tbars.innerHTML = '';
+  const rep    = data.repartition || {};
+  const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+  ORDRE_T2.forEach(terrain => {
+    const r = rep[terrain];
+    if (!r) return;
+    tbars.innerHTML += `
+      <div class="terrain-bar-row">
+        <div class="terrain-icon">${TERRAIN_ICONS_S[terrain] || ''}</div>
+        <div class="terrain-label">${TERRAIN_LABELS_S[terrain]}</div>
+        <div class="terrain-track">
+          <div class="terrain-fill"
+               style="width:0%;background:${TERRAIN_COLORS[terrain]}"
+               data-target="${(r.pct/maxPct)*100}"></div>
+        </div>
+        <div class="terrain-time">${r.temps_s != null ? fmtDuree(r.temps_s) : r.temps_fmt}</div>
+        <div class="terrain-pct">${String(r.pct).replace('.', ',')} %</div>
+      </div>`;
+  });
+  setTimeout(() => {
+    document.querySelectorAll('.terrain-fill[data-target]').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 100);
+}
+
+// Heures de passage (si une heure de départ est saisie)
+function majHeures() {
+  const depart = lireHeureDepart();
+  const table = document.querySelector('.ravito-card .data-table');
+  if (table) table.classList.toggle('no-clock', depart === null);
+  const sub = document.getElementById('resArrivee');
+  document.querySelectorAll('#ravitoBody td.clock').forEach(td => {
+    const s = td.dataset.s;
+    td.textContent = (depart === null || s === '') ? '—' : fmtHeure(depart + Number(s) / 60);
+  });
+  if (sub) {
+    const data = window.lastSimData;
+    if (depart !== null && data && data.temps_total_s) {
+      const fin = depart + data.temps_total_s / 60;
+      const jours = Math.floor(Math.round(fin) / 1440);
+      sub.textContent = `Arrivée vers ${fmtHeure(fin)}${jours === 1 ? ', le lendemain' : (jours > 1 ? `, ${jours} jours plus tard` : '')}`;
+    } else {
+      sub.textContent = 'Temps de course, pauses comprises';
+    }
+  }
+}
+
+// ── Graphique profil SVG avec courbes optionnelles + tooltip ───
+const TERRAIN_LABELS_TT = {
+  montee_raide: 'Montée raide',
+  montee_soutenue: 'Montée soutenue',
+  montee_douce: 'Montée douce',
+  plat: 'Plat',
+  descente_douce: 'Descente douce',
+  descente_soutenue: 'Descente soutenue',
+  descente_raide: 'Descente raide',
+};
+
+function dessinerProfilChart(data) {
+  if (!data) return;
+  window.lastSimData = data;
+
+  const svg = document.getElementById('profilChart');
+  const pts = data.profil_chart || [];
+  if (pts.length === 0) return;
+
+  const showAllure = document.getElementById('toggleAllure')?.checked || false;
+  const showFC     = document.getElementById('toggleFC')?.checked || false;
+
+  // Dessin à la taille réelle de l'écran : le texte garde 11 px partout
+  const largeur = Math.round(svg.getBoundingClientRect().width) || 680;
+  const W = Math.max(300, largeur);
+  const H = W < 560 ? 220 : 260;
+  const padL=48, padR=(showAllure || showFC) ? 44 : 14, padT=30, padB=28;
+  const cW=W-padL-padR, cH=H-padT-padB;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+
+  const alts   = pts.map(p => p.altitude);
+  const minA   = Math.min(...alts);
+  const maxA   = Math.max(...alts);
+  const rangeA = maxA - minA || 1;
+  const dist   = data.distance_km;
+  const profil = profilDeLaSim();
+  const fcmax  = profil?.fcmax || 193;
+
+  // Allure prédite : une seule teinte, plus foncée quand c'est plus lent
+  const couleur = v => {
+    const a = 60 / Math.max(v, 0.1);
+    if (a < 10) return '#9DBEF2';
+    if (a < 13) return '#5C8FE6';
+    if (a < 18) return '#1E5FD8';
+    return '#0E3A8C';
+  };
+  const x = km => padL + (km / dist) * cW;
+  const y = a  => padT + cH - ((a - minA) / rangeA) * cH;
+  const yPct = pct => padT + cH - (pct / 100) * cH;
+
+  // D+ / D- cumulés et pente par point (pour l'infobulle)
+  let dplus = 0, dmoins = 0;
+  const pointsEnriched = pts.map((p, i) => {
+    let pente = 0;
+    if (i > 0) {
+      const dz = p.altitude - pts[i-1].altitude;
+      if (dz > 0) dplus += dz; else dmoins += -dz;
+      const dx_m = (p.dist_km - pts[i-1].dist_km) * 1000;
+      pente = dx_m > 0 ? (dz / dx_m) * 100 : 0;
+    }
+    return { ...p, dplus_cum: dplus, dmoins_cum: dmoins, pente };
+  });
+
+  let c = '';
+  const nbX = W < 560 ? 3 : 5;
+  for (let k = 0; k < nbX; k++) {
+    const p = k / (nbX - 1);
+    const xp = padL + p * cW;
+    const ancre = k === 0 ? 'start' : (k === nbX - 1 ? 'end' : 'middle');
+    c += `<text x="${xp}" y="${H-8}" font-size="11" fill="#5C6370" text-anchor="${ancre}">${(p*dist).toFixed(0)} km</text>`;
+  }
+  // Axe gauche : altitude
+  [minA, (minA+maxA)/2, maxA].forEach(a => {
+    const yp = y(a);
+    c += `<line x1="${padL}" y1="${yp}" x2="${W-padR}" y2="${yp}" stroke="#E4E7EB" stroke-width="1" stroke-dasharray="3,4"/>`;
+    c += `<text x="${padL-6}" y="${yp+4}" font-size="11" fill="#5C6370" text-anchor="end">${fmtEntierS(a)} m</text>`;
+  });
+  // Axe droit
+  if (showAllure || showFC) {
+    [0, 50, 100].forEach(p => {
+      const yp = yPct(p);
+      let label = `${p} %`;
+      if (showAllure && !showFC) {
+        const allure = 5 + (100 - p) * 0.25;
+        label = `${allure.toFixed(0)}'`;
+      }
+      c += `<text x="${W-padR+6}" y="${yp+4}" font-size="11" fill="#5C6370" text-anchor="start">${label}</text>`;
+    });
+  }
+
+  // Profil coloré par allure prédite : un tracé par plage de même allure (pas de coutures)
+  // Couleur lue sur une moyenne glissante (5 points) : l'allure se lit par tronçons, sans scintillement
+  const vLisse = pts.map((p, i) => {
+    let s = 0, n = 0;
+    for (let k = Math.max(0, i - 2); k <= Math.min(pts.length - 1, i + 2); k++) { s += pts[k].vitesse_kmh; n++; }
+    return s / n;
+  });
+  const plages = [];
+  for (let i = 1; i < pts.length; i++) {
+    const col = couleur(vLisse[i]);
+    const derniere = plages[plages.length - 1];
+    if (derniere && derniere.col === col) derniere.pts.push(pts[i]);
+    else plages.push({ col, pts: [pts[i-1], pts[i]] });
+  }
+  const base = padT + cH;
+  plages.forEach(pl => {
+    const ligne = pl.pts.map((p, k) => `${k ? 'L' : 'M'}${x(p.dist_km).toFixed(1)},${y(p.altitude).toFixed(1)}`).join(' ');
+    const x0 = x(pl.pts[0].dist_km).toFixed(1), x1 = x(pl.pts[pl.pts.length - 1].dist_km).toFixed(1);
+    c += `<path d="${ligne} L${x1},${base} L${x0},${base} Z" fill="${pl.col}" fill-opacity="0.22" stroke="none"/>`;
+  });
+  plages.forEach(pl => {
+    const ligne = pl.pts.map((p, k) => `${k ? 'L' : 'M'}${x(p.dist_km).toFixed(1)},${y(p.altitude).toFixed(1)}`).join(' ');
+    c += `<path d="${ligne}" fill="none" stroke="${pl.col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  c += `<line x1="${padL}" y1="${padT+cH}" x2="${W-padR}" y2="${padT+cH}" stroke="#CDD2D9" stroke-width="1"/>`;
+
+  // Courbe d'allure (min/km)
+  if (showAllure) {
+    let path = '';
+    pts.forEach((p, i) => {
+      const allure = 60 / Math.max(p.vitesse_kmh, 0.1);
+      const ratio = Math.max(0, Math.min(100, 100 - (allure - 5) / 0.25));
+      path += (i === 0 ? 'M' : 'L') + `${x(p.dist_km)},${yPct(ratio)} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#0E1116" stroke-width="1.6" stroke-dasharray="4,3"/>`;
+  }
+
+  // Fréquence cardiaque estimée
+  if (showFC) {
+    let path = '';
+    const vepGlobale = profil?.vep_globale || 9;
+    pts.forEach((p, i) => {
+      const intensite = Math.min(1.0, p.vitesse_kmh / (vepGlobale * 1.3));
+      const fcEstimee = (0.65 + 0.30 * intensite) * 100;
+      path += (i === 0 ? 'M' : 'L') + `${x(p.dist_km)},${yPct(fcEstimee)} `;
+    });
+    c += `<path d="${path}" fill="none" stroke="#C2262E" stroke-width="2" stroke-dasharray="1.5,3" stroke-linecap="round"/>`;
+  }
+
+  // Repères des ravitos
+  (data.ravitos || []).forEach(r => {
+    const xR = x(r.km);
+    const closest = pts.reduce((p, q) => Math.abs(q.dist_km - r.km) < Math.abs(p.dist_km - r.km) ? q : p, pts[0]);
+    c += `
+      <line x1="${xR}" y1="${padT - 6}" x2="${xR}" y2="${y(closest.altitude)}" stroke="#0E1116" stroke-width="1" stroke-dasharray="2,3" opacity="0.45"/>
+      <circle cx="${xR}" cy="${padT - 12}" r="4" fill="#FFFFFF" stroke="#0E1116" stroke-width="1.5"/>
+      <text x="${xR}" y="${padT - 20}" font-size="10" fill="#0E1116" text-anchor="middle">${Number(r.km).toFixed(0)}</text>`;
+  });
+
+  // Curseur (ligne + point) et zone d'interaction
+  c += `
+    <line id="chartCursor" x1="0" y1="${padT}" x2="0" y2="${padT+cH}"
+          stroke="#0E1116" stroke-width="1" stroke-dasharray="3,3" opacity="0" pointer-events="none"/>
+    <circle id="chartCursorDot" cx="0" cy="0" r="4.5" fill="#FFFFFF" stroke="#0E1116" stroke-width="2" opacity="0" pointer-events="none"/>
+    <rect id="chartHotzone" x="${padL}" y="${padT}" width="${cW}" height="${cH}" fill="transparent" pointer-events="all" style="cursor:crosshair"/>
+  `;
+
+  svg.innerHTML = c;
+
+  window.chartPointsEnriched = pointsEnriched;
+  window.chartConfig = { padL, padR, padT, padB, cW, cH, W, H, dist };
+
+  attacherTooltipGraphique();
+}
+
+// Redessin à la nouvelle largeur
+let _redessinTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_redessinTimer);
+  _redessinTimer = setTimeout(() => { if (window.lastSimData && document.getElementById('simResults').style.display !== 'none') dessinerProfilChart(window.lastSimData); }, 200);
+});
+
+// ── Tooltip curseur au survol du graphique ──────────────────
+// ── Infobulle du graphique ─────────────────────────────────────
+const TERRAIN_TYPE_INFO = {
+  route:             { nom: 'Route' },
+  piste:             { nom: 'Piste' },
+  sentier_large:     { nom: 'Sentier large' },
+  sentier_montagne:  { nom: 'Sentier de montagne' },
+  hors_trace:        { nom: 'Hors-trace' },
+};
+
+function attacherTooltipGraphique() {
+  const svg = document.getElementById('profilChart');
+  const hotzone = document.getElementById('chartHotzone');
+  const cursor = document.getElementById('chartCursor');
+  const cursorDot = document.getElementById('chartCursorDot');
+  const tooltip = document.getElementById('chartTooltip');
+  if (!hotzone || !cursor || !tooltip) return;
+
+  const cfg = window.chartConfig;
+  const pts = window.chartPointsEnriched;
+  if (!cfg || !pts) return;
+
+  const profil = profilDeLaSim();
+  const vepGlobale = profil?.vep_globale || 9;
+  const minAlt = Math.min(...pts.map(p => p.altitude));
+  const maxAlt = Math.max(...pts.map(p => p.altitude));
+
+  function montrer(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = cfg.W / rect.width;
+    const mouseX_svg = (clientX - rect.left) * scaleX;
+    const distKm = ((mouseX_svg - cfg.padL) / cfg.cW) * cfg.dist;
+
+    const closest = pts.reduce((best, p) =>
+      Math.abs(p.dist_km - distKm) < Math.abs(best.dist_km - distKm) ? p : best, pts[0]);
+
+    const cursorX = cfg.padL + (closest.dist_km / cfg.dist) * cfg.cW;
+    const cursorY = cfg.padT + cfg.cH - ((closest.altitude - minAlt) / (maxAlt - minAlt || 1)) * cfg.cH;
+    cursor.setAttribute('x1', cursorX);
+    cursor.setAttribute('x2', cursorX);
+    cursor.setAttribute('opacity', '0.6');
+    cursorDot.setAttribute('cx', cursorX);
+    cursorDot.setAttribute('cy', cursorY);
+    cursorDot.setAttribute('opacity', '1');
+
+    const tInfo = TERRAIN_TYPE_INFO[closest.type_terrain] || TERRAIN_TYPE_INFO['sentier_large'];
+    const penteFmt = (closest.pente >= 0 ? '+' : '−') + Math.abs(closest.pente).toFixed(1).replace('.', ',');
+
+    const showAllure = document.getElementById('toggleAllure')?.checked || false;
+    const showFC     = document.getElementById('toggleFC')?.checked || false;
+    let extraRows = '';
+    if (showAllure) {
+      extraRows += `<div class="tt-row"><span class="tt-lbl">Allure prévue</span><strong>${fmtAllure(60 / Math.max(closest.vitesse_kmh, 0.1))}</strong></div>`;
+    }
+    if (showFC) {
+      const intensite = Math.min(1.0, closest.vitesse_kmh / (vepGlobale * 1.3));
+      const fcBpm = Math.round((0.65 + 0.30 * intensite) * (profil?.fcmax || 193));
+      extraRows += `<div class="tt-row"><span class="tt-lbl">FC estimée</span><strong>${fcBpm} bpm</strong></div>`;
+    }
+
+    tooltip.innerHTML = `
+      <div class="tt-header">km ${closest.dist_km.toFixed(2).replace('.', ',')}</div>
+      <div class="tt-row"><span class="tt-lbl">Terrain</span><strong>${tInfo.nom}</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Pente</span><strong>${penteFmt} %</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Altitude</span><strong>${fmtEntierS(closest.altitude)} m</strong></div>
+      <div class="tt-row"><span class="tt-lbl">Cumul</span><strong>+${fmtEntierS(closest.dplus_cum)} / −${fmtEntierS(closest.dmoins_cum)} m</strong></div>
+      ${extraRows}
+    `;
+
+    const chartRect = svg.getBoundingClientRect();
+    const showRight = (clientX - chartRect.left) < chartRect.width / 2;
+    tooltip.style.display = 'block';
+    if (showRight) {
+      tooltip.style.left = (clientX - chartRect.left + 26) + 'px';
+      tooltip.style.right = 'auto';
+    } else {
+      tooltip.style.left = 'auto';
+      tooltip.style.right = (chartRect.width - (clientX - chartRect.left) + 6) + 'px';
+    }
+    tooltip.style.top = Math.max(0, clientY - chartRect.top - 10) + 'px';
+  }
+  function cacher() {
+    cursor.setAttribute('opacity', '0');
+    cursorDot.setAttribute('opacity', '0');
+    tooltip.style.display = 'none';
+  }
+
+  hotzone.addEventListener('mousemove', e => montrer(e.clientX, e.clientY));
+  hotzone.addEventListener('mouseleave', cacher);
+  // Au doigt : on glisse sur le profil
+  hotzone.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) montrer(t.clientX, t.clientY); }, { passive: true });
+  hotzone.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) montrer(t.clientX, t.clientY); }, { passive: true });
+  hotzone.addEventListener('touchend', () => setTimeout(cacher, 1600));
+}
+
+// ── Envoi mail simulation ─────────────────────────────────────────
+function envoyerMailSimulation(data) {
+  const cat = data.categorie || {};
+  const params = {
+    to_email:   'sup.sumit@outlook.com',
+    date:       new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+    distance:   `${data.distance_km.toFixed(1)} km`,
+    denivelé:   `${Math.round(data.dplus_m)} m D+`,
+    categorie:  `${cat.emoji || ''} ${cat.nom || '—'}`,
+    temps_estime: data.temps_fmt,
+    coeff_course: `×${data.coefficient_course}`,
+    nb_ravitos:   (data.ravitos || []).length,
+    ravitos_km:   (data.ravitos || []).map(r => `${r.km.toFixed(1)}km → ${r.temps_fmt}`).join(' | '),
+  };
+  if (!window.emailjs) return;   // envoi silencieux : rien à signaler à l'utilisateur
+  emailjs.send('sumit_outlook', 'template_6htljlf', params)
+    .then(() => console.log('Simulation envoyée'))
+    .catch(e => console.warn('EmailJS:', e));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CARTE LEAFLET — affiche le tracé GPX
+// ══════════════════════════════════════════════════════════════
+let leafletMap = null;
+let trackPoints = [];
+
+async function chargerTrackPoints(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(e.target.result, 'text/xml');
+      const pts    = doc.querySelectorAll('trkpt');
+      const coords = [];
+      pts.forEach(pt => {
+        coords.push([
+          parseFloat(pt.getAttribute('lat')),
+          parseFloat(pt.getAttribute('lon'))
+        ]);
+      });
+      resolve(coords);
+    };
+    reader.readAsText(file);
+  });
+}
+
+function afficherCarte(coords) {
+  if (!coords || coords.length === 0 || typeof L === 'undefined') return;
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+
+  leafletMap = L.map('leafletMap', { scrollWheelZoom: false }).setView(coords[0], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO',
+    maxZoom: 19,
+    subdomains: 'abcd',
+    crossOrigin: true
+  }).addTo(leafletMap);
+
+  const polyline = L.polyline(coords, { color: '#1E5FD8', weight: 3.5, opacity: 1 }).addTo(leafletMap);
+
+  L.circleMarker(coords[0], { radius: 7, color: '#0E1116', fillColor: '#FFFFFF', fillOpacity: 1, weight: 3 })
+    .bindTooltip('Départ').addTo(leafletMap);
+  L.circleMarker(coords[coords.length-1], { radius: 7, color: '#FFFFFF', fillColor: '#0E1116', fillOpacity: 1, weight: 2 })
+    .bindTooltip('Arrivée').addTo(leafletMap);
+
+  leafletMap.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+
+  // Recalcul de la taille après affichage
+  setTimeout(() => leafletMap && leafletMap.invalidateSize(), 100);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PDF — roadbook sur une page A4, aux couleurs des écrans SUM'IT
+// ══════════════════════════════════════════════════════════════
+const PDF_COLORS = {
+  ink:      [14, 17, 22],
+  muted:    [92, 99, 112],
+  line:     [228, 231, 235],
+  soft:     [242, 244, 247],
+  white:    [255, 255, 255],
+  data:     [30, 95, 216],
+  data2:    [143, 176, 236],
+  positive: [31, 122, 76],
+  negative: [194, 38, 46],
+  sun:      [255, 197, 61],
+  leaf:     [47, 203, 127],
+  sky:      [46, 125, 246],
+};
+
+// jsPDF (Helvetica) ne connaît que le jeu WinAnsi : on remplace les quelques signes typographiques
+function textePDF(s) {
+  return String(s == null ? '' : s)
+    .replace(/[−–—]/g, '-')
+    .replace(/[   ]/g, ' ')
+    .replace(/[‘’]/g, "'")
+    .replace(/[^\x00-\xFF€]/g, '');
+}
+
+async function genererPDF() {
+  const { jsPDF } = window.jspdf;
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Coureur';
+  const nomCourse = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+  const data = window.lastSimData || {};
+
+  const btn = document.querySelector('.btn-pdf');
+  const btnHTML = btn.innerHTML;
+  btn.innerHTML = 'Génération…';
+  btn.disabled = true;
+
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const W = 210, H = 297, PAD = 14;
+    const C = PDF_COLORS;
+    const T = (s, x, y, opt) => pdf.text(textePDF(s), x, y, opt);
+    let y = 0;
+
+    // ═══ En-tête ═══
+    const lx = PAD, ly = 12, ls = 11;
+    pdf.setFillColor(...C.ink);
+    pdf.roundedRect(lx, ly, ls, ls, 2.4, 2.4, 'F');
+    pdf.setFillColor(...C.sun);
+    pdf.triangle(lx + 3.9, ly + 4.4, lx + 5.1, ly + 8.8, lx + 2.6, ly + 8.8, 'F');
+    pdf.setFillColor(...C.white);
+    pdf.triangle(lx + 6.9, ly + 2.9, lx + 9.6, ly + 8.8, lx + 4.1, ly + 8.8, 'F');
+
+    pdf.setTextColor(...C.ink);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    T("SUM'IT", lx + ls + 3, ly + 6.2);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(...C.muted);
+    T('Plan your peaks', lx + ls + 3, ly + 10);
+
+    pdf.setFontSize(8.5);
+    T(new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }), W - PAD, ly + 4.5, { align: 'right' });
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(...C.ink);
+    pdf.setFontSize(10);
+    T(prenom, W - PAD, ly + 9.5, { align: 'right' });
+
+    // Filet aux trois couleurs de la marque
+    const bandY = ly + ls + 5;
+    [C.sun, C.leaf, C.sky].forEach((col, i) => {
+      pdf.setFillColor(...col);
+      pdf.rect(PAD + i * ((W - 2 * PAD) / 3), bandY, (W - 2 * PAD) / 3, 0.9, 'F');
+    });
+    y = bandY + 10;
+
+    // ═══ Titre ═══
+    pdf.setTextColor(...C.ink);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(19);
+    T(nomCourse, PAD, y);
+    const cat = data.categorie || {};
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.muted);
+    const depart = lireHeureDepart();
+    const sousTitre = [cat.nom, `${fmtKmS(data.distance_km)} km`, `${fmtEntierS(data.dplus_m)} m D+`,
+      depart !== null ? `départ ${fmtHeure(depart)}` : null, 'simulation personnalisée'].filter(Boolean).join(' · ');
+    T(sousTitre, PAD, y + 5.5);
+    y += 12;
+
+    // ═══ Chiffres clés ═══
+    const kpis = [
+      { label: 'Temps estimé', val: document.getElementById('resTemps').textContent, color: C.data },
+      { label: 'Allure moyenne', val: document.getElementById('resAllure').textContent, color: C.ink },
+      { label: 'Top condition', val: document.getElementById('fourchBas').textContent, color: C.ink },
+      { label: 'Jour difficile', val: document.getElementById('fourchHaut').textContent, color: C.ink },
+    ];
+    const kpiH = 19, kpiW = (W - 2 * PAD) / kpis.length;
+    pdf.setDrawColor(...C.line);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(PAD, y, W - 2 * PAD, kpiH, 1.6, 1.6, 'S');
+    kpis.forEach((k, i) => {
+      const kx = PAD + i * kpiW;
+      if (i > 0) pdf.line(kx, y + 3, kx, y + kpiH - 3);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T(k.label, kx + 4, y + 6);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(i === 0 ? 15 : 12.5);
+      pdf.setTextColor(...k.color);
+      T(k.val, kx + 4, y + 14);
+    });
+    y += kpiH + 5;
+
+    // ═══ Profil de coureur ═══
+    const profilSim = profilDeLaSim();
+    if (profilSim && profilSim.archetype) {
+      const profil = profilSim;
+      const profH = 13;
+      pdf.setFillColor(...C.soft);
+      pdf.roundedRect(PAD, y, W - 2 * PAD, profH, 1.6, 1.6, 'F');
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T('Profil de coureur', PAD + 4, y + 5);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10.5);
+      pdf.setTextColor(...C.ink);
+      T(profil.archetype.nom || 'Combattant', PAD + 4, y + 10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(...C.muted);
+      const vepStr = profil.vep_globale ? `VEP ${profil.vep_globale.toFixed(1).replace('.', ',')} km/h` : '';
+      T([vepStr, `coefficient course ×${Number(profil.coefficient).toFixed(2).replace('.', ',')}`,
+         `drain ${(profil.drain_moy_h*100).toFixed(1).replace('.', ',')} %/h`, `FC max ${profil.fcmax} bpm`,
+         profil.nb_traces ? `${profil.nb_traces} sorties` : ''].filter(Boolean).join('  ·  '), W - PAD - 4, y + 8, { align: 'right' });
+      y += profH + 5;
+    }
+
+    // ═══ Profil de course (capture du graphique) ═══
+    const chartEl = document.getElementById('profilChart');
+    if (chartEl && typeof html2canvas === 'function') {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Profil de course et allure prévue', PAD, y);
+      y += 2.5;
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:fixed;left:-10000px;top:0;background:#FFFFFF;padding:6px;width:760px;';
+      const clone = chartEl.cloneNode(true);
+      clone.setAttribute('width', '748');
+      clone.style.width = '748px';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      const canvas = await html2canvas(wrapper, { backgroundColor: '#FFFFFF', scale: 2 });
+      document.body.removeChild(wrapper);
+      const imgData = canvas.toDataURL('image/png');
+      const imgH = Math.min(52, (canvas.height * (W - 2 * PAD)) / canvas.width);
+      pdf.addImage(imgData, 'PNG', PAD, y, W - 2 * PAD, imgH);
+      y += imgH + 5;
+    }
+
+    // ═══ Score de pente et répartition (deux colonnes) ═══
+    const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+    const labelsT = {
+      montee_raide: 'Montée raide', montee_soutenue: 'Montée soutenue', montee_douce: 'Montée douce',
+      plat: 'Plat',
+      descente_douce: 'Descente douce', descente_soutenue: 'Descente soutenue', descente_raide: 'Descente raide',
+    };
+    if (profil && profil.profil) {
+      const colW = (W - 2 * PAD - 5) / 2;
+      const colH = 49;
+
+      // Score de pente
+      pdf.setDrawColor(...C.line);
+      pdf.roundedRect(PAD, y, colW, colH, 1.6, 1.6, 'S');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Score de pente (par rapport au plat)', PAD + 4, y + 6);
+      let ly2 = y + 12;
+      const barX = PAD + 32, barW = colW - 50, barC = barX + barW / 2;
+      ordreT.forEach(t => {
+        const p = profil.profil[t];
+        if (!p) return;
+        const ecart = p.ecart_plat_pct || 0;
+        const isPlat = t === 'plat';
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.ink);
+        T(labelsT[t], PAD + 4, ly2 + 1.4);
+        pdf.setFillColor(...C.soft);
+        pdf.rect(barX, ly2 - 0.6, barW, 1.8, 'F');
+        pdf.setDrawColor(...C.muted);
+        pdf.setLineWidth(0.25);
+        pdf.line(barC, ly2 - 1.6, barC, ly2 + 2.2);
+        if (!isPlat) {
+          const fillW = (Math.min(50, Math.abs(ecart)) / 100) * barW;
+          pdf.setFillColor(...(ecart >= 0 ? C.data : C.data2));
+          if (ecart >= 0) pdf.rect(barC, ly2 - 0.6, fillW, 1.8, 'F');
+          else pdf.rect(barC - fillW, ly2 - 0.6, fillW, 1.8, 'F');
+        }
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...C.ink);
+        const display = isPlat ? '0 %' : `${ecart > 0 ? '+' : (ecart < 0 ? '-' : '')}${Math.abs(ecart).toFixed(1).replace('.', ',')} %`;
+        T(display, PAD + colW - 4, ly2 + 1.4, { align: 'right' });
+        ly2 += 5.3;
+      });
+
+      // Répartition du temps
+      const cx2 = PAD + colW + 5;
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(cx2, y, colW, colH, 1.6, 1.6, 'S');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(9);
+      pdf.setTextColor(...C.ink);
+      T('Répartition du temps par terrain', cx2 + 4, y + 6);
+      const rep = data.repartition || {};
+      const maxPct = Math.max(...Object.values(rep).map(r => r.pct), 1);
+      let ly3 = y + 12;
+      const rX = cx2 + 32, rW = colW - 54;
+      ordreT.forEach(t => {
+        const r = rep[t];
+        if (!r) return;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(...C.ink);
+        T(labelsT[t], cx2 + 4, ly3 + 1.4);
+        pdf.setFillColor(...C.soft);
+        pdf.rect(rX, ly3 - 0.6, rW, 1.8, 'F');
+        pdf.setFillColor(...C.data);
+        pdf.rect(rX, ly3 - 0.6, (r.pct / maxPct) * rW, 1.8, 'F');
+        pdf.setFont('helvetica', 'bold');
+        T(`${String(r.pct).replace('.', ',')} %`, cx2 + colW - 4, ly3 + 1.4, { align: 'right' });
+        ly3 += 5.3;
+      });
+      y += colH + 6;
+    }
+
+    // ═══ Tableau des points de passage ═══
+    const avecHeure = lireHeureDepart() !== null;
+    const cols = [
+      { titre: 'Point', x: PAD + 2, align: 'left', i: 0 },
+      { titre: 'Distance', x: avecHeure ? 76 : 84, align: 'right', i: 1 },
+      { titre: 'Temps', x: avecHeure ? 98 : 108, align: 'right', i: 2 },
+    ];
+    if (avecHeure) cols.push({ titre: 'Heure', x: 118, align: 'right', i: 3 });
+    cols.push(
+      { titre: 'Top', x: avecHeure ? 138 : 130, align: 'right', i: 4 },
+      { titre: 'Difficile', x: avecHeure ? 158 : 152, align: 'right', i: 5 },
+      { titre: 'D+', x: avecHeure ? 178 : 174, align: 'right', i: 6 },
+      { titre: 'D-', x: W - PAD - 2, align: 'right', i: 7 },
+    );
+    const enteteTableau = () => {
+      pdf.setFillColor(...C.soft);
+      pdf.rect(PAD, y, W - 2 * PAD, 6, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      cols.forEach(c => T(c.titre, c.x, y + 4.1, { align: c.align }));
+      y += 6;
+    };
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9);
+    pdf.setTextColor(...C.ink);
+    T('Temps de passage', PAD, y);
+    y += 2.5;
+    enteteTableau();
+
+    const rows = document.querySelectorAll('#ravitoBody tr');
+    const rowH = 5.4;
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length < 8) return;
+      if (y + rowH > H - 16) {
+        pdf.addPage();
+        y = 16;
+        enteteTableau();
+      }
+      const isArrivee = cells[0].textContent.trim().startsWith('Arrivée');
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.2);
+      pdf.line(PAD, y + rowH, W - PAD, y + rowH);
+      cols.forEach(c => {
+        let txt = cells[c.i].textContent.replace(/\s+/g, ' ').trim();
+        if (c.i === 0) txt = txt.length > 30 ? txt.slice(0, 28) + '...' : txt;
+        const gras = isArrivee || c.i === 2 || (c.i === 0);
+        pdf.setFont('helvetica', gras ? 'bold' : 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(...(c.i === 2 && !isArrivee ? C.data : (c.i === 4 || c.i === 5 ? C.muted : C.ink)));
+        T(txt, c.x, y + 3.8, { align: c.align });
+      });
+      y += rowH;
+    });
+
+    // ═══ Pied de page (sur chaque page) ═══
+    const nbPages = pdf.getNumberOfPages();
+    for (let pg = 1; pg <= nbPages; pg++) {
+      pdf.setPage(pg);
+      pdf.setDrawColor(...C.line);
+      pdf.setLineWidth(0.3);
+      pdf.line(PAD, H - 12, W - PAD, H - 12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(...C.muted);
+      T("SUM'IT — prédiction calculée sur ton profil de coureur. Une estimation, pas une promesse : écoute ton corps le jour J.", PAD, H - 7.5);
+      T('sumit-web-nine.vercel.app', W - PAD, H - 7.5, { align: 'right' });
+    }
+
+    const filename = `SUMIT_${prenom}_${nomCourse}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') + '.pdf';
+    pdf.save(filename);
+
+  } catch(err) {
+    console.error('Erreur PDF:', err);
+    alert('Le PDF n\'a pas pu être créé : ' + err.message);
+  } finally {
+    btn.innerHTML = btnHTML;
+    btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MODAL AVIS
+// ══════════════════════════════════════════════════════════════
+const ratings = { ratingPred: '', ratingProfil: '' };
+
+function ouvrirModal()  { document.getElementById('modalAvis').classList.add('active'); setTimeout(() => { const b = document.querySelector('#ratingPred .rating-btn'); if (b) b.focus(); }, 60); }
+function fermerModal()  { document.getElementById('modalAvis').classList.remove('active'); }
+
+function selectRating(group, btn, val) {
+  ratings[group] = val;
+  document.querySelectorAll(`#${group} .rating-btn`).forEach(b => { b.classList.remove('selected'); b.setAttribute('aria-pressed', 'false'); });
+  btn.classList.add('selected');
+  btn.setAttribute('aria-pressed', 'true');
+}
+
+function envoyerAvis() {
+  const profil = chargerProfil();
+  const prenom = profil?.prenom || 'Anonyme';
+
+  // Récupération des fonctionnalités cochées
+  const features = [];
+  document.querySelectorAll('#modalFeatures .checkbox-item.checked').forEach(el => {
+    features.push(el.textContent.trim());
+  });
+
+  const params = {
+    to_email:        'sup.sumit@outlook.com',
+    prenom:          prenom,
+    niveau:          'Bêta-testeur simulateur',
+    note_prediction: ratings.ratingPred  || 'Non noté',
+    note_profil:     ratings.ratingProfil|| 'Non noté',
+    fonctionnalites: features.length > 0 ? features.join(', ') : 'Aucune sélection',
+    commentaire:     document.getElementById('modalCommentaire').value || 'Aucun',
+    email_testeur:   document.getElementById('modalEmail').value      || 'Non renseigné',
+    date:            new Date().toLocaleDateString('fr-FR'),
+  };
+  if (!window.emailjs) { alert("L'envoi est indisponible pour le moment (service de messagerie bloqué). Réessaie plus tard."); return; }
+
+  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
+    .then(() => {
+      document.getElementById('formAvis').style.display    = 'none';
+      document.getElementById('successAvis').style.display = 'block';
+      setTimeout(fermerModal, 2500);
+    })
+    .catch(err => alert("Erreur d'envoi : " + err.message));
+}
+
+// ── Épingler la simulation actuelle ──────────────────────────────
+async function epinglerSimulationActuelle() {
+  if (!isLoggedIn()) {
+    alert('Connecte-toi pour épingler tes simulations.');
+    return;
+  }
+  if (!window.lastSimData) {
+    alert('Lance d\'abord une simulation.');
+    return;
+  }
+
+  const btn = document.getElementById('btnPin');
+
+  // Mode édition : on met à jour la sim existante
+  if (window.editingSimId) {
+    btn.disabled = true;
+    document.getElementById('btnPinLabel').textContent = 'Mise à jour…';
+    try {
+      await updateSimulation(window.editingSimId, window.lastSimData);
+      btn.classList.add('pinned');
+      document.getElementById('btnPinLabel').textContent = 'Mise à jour enregistrée';
+      setTimeout(() => {
+        document.getElementById('btnPinLabel').textContent = 'Simulation à jour';
+      }, 1500);
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+      btn.disabled = false;
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la simulation épinglée';
+    }
+    return;
+  }
+
+  // Mode création : nouvelle sim épinglée
+  const nomDefault = document.getElementById('nomCourse').value.trim() || 'Course sans nom';
+  const nom = prompt('Nom de la simulation à épingler :', nomDefault);
+  if (!nom || !nom.trim()) return;
+
+  btn.disabled = true;
+  document.getElementById('btnPinLabel').textContent = 'Enregistrement…';
+
+  try {
+    const data = window.lastSimData;
+    const simPayload = {
+      distance_km:    data.distance_km,
+      dplus_m:        data.dplus_m,
+      dmoins_m:       data.dmoins_m,
+      dep_km:         data.dep_km,
+      temps_total_s:  data.temps_total_s,
+      temps_bas_s:    data.temps_bas_s,
+      temps_haut_s:   data.temps_haut_s,
+      temps_fmt:      data.temps_fmt,
+      bas_fmt:        data.bas_fmt,
+      haut_fmt:       data.haut_fmt,
+      allure_moy:     data.allure_moy,
+      categorie:      data.categorie,
+      batt_finale:    data.batt_finale,
+      coefficient_course: data.coefficient_course,
+      profil_chart:   data.profil_chart,
+      ravitos:        data.ravitos,
+      repartition:    data.repartition,
+      repartition_terrain_type: data.repartition_terrain_type,
+      profil_resume:  data.profil_resume || null,
+    };
+    if (data.heure_depart) simPayload.heure_depart = data.heure_depart;
+
+    // GPX en base64 (pour pouvoir recalculer plus tard)
+    let gpxBase64 = '';
+    if (gpxFile) {
+      try {
+        const arrBuf = await gpxFile.arrayBuffer();
+        const bytes = new Uint8Array(arrBuf);
+        let bin = '';
+        bytes.forEach(b => bin += String.fromCharCode(b));
+        gpxBase64 = btoa(bin);
+      } catch (e) {
+        console.warn('Impossible d\'encoder le GPX :', e);
+      }
+    }
+
+    syncRavitos();
+    const ravitosKm = document.getElementById('ravitos')?.value || '';
+
+    const res = await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload, gpxBase64, ravitosKm);
+
+    // On bascule en mode édition (la sim existe maintenant)
+    window.editingSimId = res.simulation_id;
+    window.editingSimName = nom.trim();
+    afficherBandeauEdition();
+
+    btn.classList.add('pinned');
+    document.getElementById('btnPinLabel').textContent = 'Épinglée';
+    setTimeout(() => {
+      document.getElementById('btnPinLabel').textContent = 'Mettre à jour la simulation épinglée';
+      btn.classList.remove('pinned');
+      btn.disabled = false;
+    }, 1500);
+  } catch (e) {
+    alert('Erreur : ' + e.message);
+    btn.disabled = false;
+    document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
+  }
+}
+
+// Échap ferme la fenêtre d'avis
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('modalAvis').classList.contains('active')) fermerModal();
+});
+</script>
+</body>
+</html>

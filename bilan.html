@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="Compare ta performance réelle à ta prédiction SUM'IT : l'écart à chaque ravitaillement, et un modèle qui s'ajuste course après course.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Bilan réel contre prédit">
+  <meta property="og:description" content="Compare ta performance réelle à ta prédiction SUM'IT : l'écart à chaque ravitaillement, et un modèle qui s'ajuste course après course.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/bilan.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Bilan réel contre prédit">
+  <meta name="twitter:description" content="Compare ta performance réelle à ta prédiction SUM'IT : l'écart à chaque ravitaillement, et un modèle qui s'ajuste course après course.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Bilan réel contre prédit</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
+  <style>
+    /* ── Bilan ──────────────────────────────────────────────── */
+    .bilan-wrap { display: grid; gap: 16px; min-width: 0; }
+    .bilan-wrap > *, #bilanMain > *, .bilan-result > * { min-width: 0; }
+    #bilanMain { display: grid; gap: 16px; }
+
+    .bilan-selectors {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+      gap: 12px 16px;
+      align-items: end;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 18px 20px;
+    }
+    .bilan-select-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+    .bilan-vs { align-self: end; padding-bottom: 10px; font-size: 14px; color: var(--muted); }
+    .bilan-cta { display: contents; }
+    .btn-comparer {
+      min-height: 40px;
+      padding: 0 20px;
+      border-radius: var(--radius-control);
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--ink);
+      color: var(--paper);
+      white-space: nowrap;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
+    }
+    .btn-comparer:active { transform: scale(0.97); }
+    .btn-comparer:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    @media (hover: hover) and (pointer: fine) { .btn-comparer:hover:not(:disabled) { background: #2A2F37; } }
+
+    .bilan-empty {
+      background: var(--paper);
+      border: 1px dashed var(--control);
+      border-radius: var(--radius-card);
+      padding: 24px;
+    }
+    .bilan-empty-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--ground); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+    .bilan-empty-icon svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .bilan-empty h3 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; }
+    .bilan-empty p { font-size: 14px; color: var(--muted); max-width: 70ch; }
+    .bilan-empty a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .bilan-empty .hero-btns { margin-top: 16px; }
+
+    .bilan-section-title { display: flex; align-items: center; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+
+    /* Bilans épinglés */
+    .bilans-pinned-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .bilan-pinned-card {
+      position: relative;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      padding: 16px 18px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      transition: border-color var(--t-hover) ease;
+    }
+    @media (hover: hover) and (pointer: fine) { .bilan-pinned-card:hover { border-color: var(--control); } }
+    .bilan-pinned-card h4 { font-size: 15px; font-weight: 600; padding-right: 32px; line-height: 1.35; }
+    .bilan-pinned-meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .bilan-pinned-ecart { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .bilan-pinned-ecart.faster { color: var(--positive); }
+    .bilan-pinned-ecart.slower { color: var(--negative); }
+    .bilan-pinned-comment { font-size: 13px; line-height: 1.5; padding: 8px 10px; background: var(--raised); border-radius: 6px; }
+    .bilan-pinned-comment.empty { color: var(--muted); background: none; padding: 0; }
+    .bilan-pinned-open { justify-self: start; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .bilan-comment-edit { justify-self: start; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+    @media (hover: hover) and (pointer: fine) { .bilan-comment-edit:hover { color: var(--ink); } }
+    .bilan-pinned-del { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 6px; font-size: 20px; line-height: 1; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .bilan-pinned-del:hover { background: var(--negative-bg); color: var(--negative); } }
+
+    /* Résultat */
+    .bilan-result { display: none; }
+    .bilan-result.show { display: grid; gap: 16px; animation: result-in 320ms var(--ease-out); }
+    @keyframes result-in { from { opacity: 0; transform: translateY(8px); } }
+
+    .ecart-banner {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+    .ecart-col { padding: 18px 20px; border-left: 1px solid var(--border); min-width: 0; }
+    .ecart-col:first-child { border-left: 0; }
+    .ecart-col-label { font-size: 13px; color: var(--muted); }
+    .ecart-col-time { margin-top: 4px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .ecart-col-sub { margin-top: 2px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .ecart-delta { margin-top: 4px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .ecart-delta.faster { color: var(--positive); }
+    .ecart-delta.slower { color: var(--negative); }
+    .ecart-delta-pct { margin-top: 2px; font-size: 13px; font-weight: 600; }
+
+    .bilan-table-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 0 6px; }
+    .bilan-table-card .bilan-section-title, .bilan-table-card .bilan-dist-warn, .bilan-table-card .bilan-note { margin-left: 18px; margin-right: 18px; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ravito-compare-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .ravito-compare-table th { font-size: 12px; font-weight: 600; color: var(--muted); text-align: right; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .ravito-compare-table td { font-size: 14px; text-align: right; padding: 11px 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+    .ravito-compare-table th:first-child, .ravito-compare-table td:first-child { text-align: left; padding-left: 18px; }
+    .ravito-compare-table th:last-child, .ravito-compare-table td:last-child { padding-right: 18px; }
+    .ravito-compare-table tr:last-child td { border-bottom: 0; }
+    .rc-predit { color: var(--muted); }
+    .rc-reel { font-weight: 600; }
+    .rc-ecart { font-weight: 600; }
+    .rc-ecart.faster { color: var(--positive); }
+    .rc-ecart.slower { color: var(--negative); }
+    .rc-bar-cell { width: 200px; }
+    .rc-bar-track { position: relative; height: 8px; background: var(--rule); border-radius: 2px; }
+    .rc-bar-center { position: absolute; left: 50%; top: -5px; bottom: -5px; width: 1px; background: var(--muted); }
+    .rc-bar-fill { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+    .rc-bar-fill.faster { background: var(--positive); right: 50%; }
+    .rc-bar-fill.slower { background: var(--negative); left: 50%; }
+    .rc-arrivee-row td { font-weight: 700; }
+    .rc-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-weight: 400; }
+
+    .bilan-dist-warn { margin-bottom: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.5; color: var(--notice-ink); background: var(--notice-bg); border: 1px solid var(--notice-line); border-radius: 6px; }
+    .bilan-note { margin-top: 10px; margin-bottom: 8px; font-size: 13px; color: var(--muted); }
+
+    .calibration-card { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 20px; }
+    .calibration-card h3 { display: flex; align-items: center; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 6px; }
+    .calibration-card p { font-size: 14px; line-height: 1.6; max-width: 80ch; margin-bottom: 16px; }
+    .calib-warn { margin-bottom: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5; background: var(--raised); border-radius: 6px; }
+    .calib-warn a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .calib-values { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+    .calib-box { padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); min-width: 160px; }
+    .calib-box.suggere { border: 2px solid var(--ink); padding: 9px 13px; }
+    .calib-box-label { font-size: 13px; color: var(--muted); }
+    .calib-box-val { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .calib-arrow { width: 20px; height: 20px; color: var(--muted); }
+    .calib-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-appliquer, .btn-ignorer, .btn-pin-bilan {
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: var(--radius-control);
+      font-size: 14px;
+      font-weight: 600;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out), opacity var(--t-hover) ease;
+    }
+    .btn-appliquer { background: var(--ink); color: var(--paper); }
+    .btn-ignorer { background: #E6E9ED; color: var(--ink); }
+    .btn-pin-bilan { background: var(--ink); color: var(--paper); }
+    .btn-appliquer:active, .btn-ignorer:active, .btn-pin-bilan:active { transform: scale(0.97); }
+    .btn-appliquer:disabled, .btn-pin-bilan:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-appliquer:hover:not(:disabled), .btn-pin-bilan:hover:not(:disabled) { background: #2A2F37; }
+      .btn-ignorer:hover { background: #DADEE3; }
+    }
+
+    .bilan-comment-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 20px; }
+    .bilan-comment-label { display: flex; align-items: center; font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .bilan-comment-input { min-height: 96px; }
+    .bilan-pin-bar { display: flex; justify-content: flex-end; }
+
+    @media (max-width: 860px) {
+      .bilan-selectors { grid-template-columns: 1fr; }
+      .bilan-vs { padding: 0; }
+      .btn-comparer { width: 100%; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      .ecart-banner { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .ecart-col:nth-child(2) { grid-column: 1 / -1; grid-row: 1; border-left: 0; border-bottom: 1px solid var(--border); }
+      .ecart-col:first-child { border-left: 0; }
+      .ecart-col:last-child { border-left: 1px solid var(--border); }
+      .ecart-col-time { font-size: 20px; }
+      .rc-bar-cell { display: none; }
+      .ravito-compare-table td:first-child, .ravito-compare-table th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; }
+      .bilan-pin-bar .btn-pin-bilan { width: 100%; }
+    }
+  </style>
+</head>
+<body data-page="bilan">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link active" aria-current="page">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Bilan</h1>
+      <p>Ta simulation d'avant course face à ta course réelle, point par point. Le modèle apprend de chaque écart.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+  <div class="bilan-wrap">
+
+    <div id="bilanAuth" style="display:none;">
+      <div class="gate">
+            <div>
+              <h2>Compare ta course à ta prédiction</h2>
+              <p class="gate-lede">Après ta course, importe-la : SUM'IT la met face à la simulation que tu avais épinglée, ravito par ravito.</p>
+              <ul class="gate-points">
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>L'écart à chaque ravito,</b> <span>pour voir où tu as gagné ou perdu du temps.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Un recalibrage,</b> <span>ton coefficient s'ajuste pour viser plus juste la prochaine fois.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Tes notes,</b> <span>gardées avec le bilan pour préparer la course suivante.</span></div></li>
+              </ul>
+              <div class="hero-btns">
+                <button type="button" class="btn-primary" onclick="loginGoogle()">Se connecter avec Google</button>
+                <a class="btn-ghost" href="simulateur.html?demo=ccc">Voir la démo CCC</a>
+              </div>
+            </div>
+            <figure class="gate-preview" aria-label="Aperçu">
+              <img class="gate-bg" src="../assets/photos/arrivee-penchee-960.webp" srcset="../assets/photos/arrivee-penchee-600.webp 600w, ../assets/photos/arrivee-penchee-960.webp 960w" sizes="(max-width: 900px) 100vw, 560px" width="960" height="1200" alt="Une traileuse reprend son souffle après l'arrivée, mains sur les genoux." loading="lazy" style="object-position: 35% 35%">
+              <div class="gp-card">
+                <div class="gp-banner">
+                  <div><small>Prédit</small><b>11 h 49</b></div>
+                  <div><small>Réel</small><b>12 h 07</b></div>
+                  <div><small>Écart</small><b class="slower">+18 min</b></div>
+                </div>
+                <table class="gp-table">
+                  <thead><tr><th scope="col">Point</th><th scope="col">Prédit</th><th scope="col">Réel</th><th scope="col">Écart</th></tr></thead>
+                  <tbody>
+                    <tr><td>Refuge Bertone</td><td>3 h 41</td><td>3 h 32</td><td class="faster">−9 min</td></tr>
+                    <tr><td>Arnouvaz</td><td>5 h 37</td><td>5 h 30</td><td class="faster">−7 min</td></tr>
+                    <tr><td>La Fouly</td><td>8 h 40</td><td>8 h 51</td><td class="slower">+11 min</td></tr>
+                    <tr><td>Champex-Lac</td><td>11 h 49</td><td>12 h 07</td><td class="slower">+18 min</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <figcaption class="gate-cap">Exemple illustratif : temps prédits de la démo CCC, temps réels fictifs.</figcaption>
+            </figure>
+          </div>
+    </div>
+
+    <div id="bilanMain" style="display:none;">
+      <div class="bilan-selectors">
+        <div class="bilan-select-group">
+          <label for="selectSim">Simulation prédite</label>
+          <select id="selectSim" onchange="onSelectionChange()">
+            <option value="">Choisir une simulation épinglée</option>
+          </select>
+        </div>
+        <div class="bilan-vs">contre</div>
+        <div class="bilan-select-group">
+          <label for="selectResultat">Course réelle</label>
+          <select id="selectResultat" onchange="onSelectionChange()">
+            <option value="">Choisir une course de type Résultat</option>
+          </select>
+        </div>
+        <div class="bilan-cta">
+          <button type="button" class="btn-comparer" id="btnComparer" onclick="lancerComparaison()" disabled>Comparer</button>
+        </div>
+      </div>
+
+      <div id="bilanEmptyState"></div>
+
+      <div id="bilansPinnedSection" style="display:none;">
+        <h2 class="bilan-section-title">Mes bilans épinglés</h2>
+        <div id="bilansPinnedList" class="bilans-pinned-grid"></div>
+      </div>
+
+      <div class="bilan-result" id="bilanResult">
+        <div class="ecart-banner">
+          <div class="ecart-col">
+            <div class="ecart-col-label">Temps prédit</div>
+            <div class="ecart-col-time predit" id="ecartPredit">—</div>
+            <div class="ecart-col-sub" id="ecartPreditSub"></div>
+          </div>
+          <div class="ecart-col">
+            <div class="ecart-col-label">Écart</div>
+            <div class="ecart-delta" id="ecartDelta">—</div>
+            <div class="ecart-delta-pct" id="ecartDeltaPct"></div>
+          </div>
+          <div class="ecart-col">
+            <div class="ecart-col-label">Temps réel</div>
+            <div class="ecart-col-time reel" id="ecartReel">—</div>
+            <div class="ecart-col-sub" id="ecartReelSub"></div>
+          </div>
+        </div>
+
+        <div class="bilan-table-card">
+          <h2 class="bilan-section-title">Analyse par point de passage <span class="info-i" tabindex="0" data-tip="Pour chaque ravitaillement, ton temps de passage prédit face à ton temps réel. Vert : plus rapide que prévu ; rouge : plus lent. La comparaison s'arrête au kilomètre commun aux deux parcours."></span></h2>
+          <div class="bilan-dist-warn" id="bilanDistWarn" style="display:none;"></div>
+          <div class="table-scroll">
+            <table class="ravito-compare-table">
+              <thead>
+                <tr>
+                  <th scope="col">Point</th>
+                  <th scope="col">Prédit</th>
+                  <th scope="col">Réel</th>
+                  <th scope="col">Écart</th>
+                  <th scope="col" class="rc-bar-cell"><span class="rc-legend"><span>plus rapide</span><span>plus lent</span></span></th>
+                </tr>
+              </thead>
+              <tbody id="ravitoCompareBody"></tbody>
+            </table>
+          </div>
+          <div class="bilan-note" id="bilanNote"></div>
+        </div>
+
+        <div class="calibration-card" id="calibrationCard">
+          <h3>Ajustement suggéré du modèle <span class="info-i" tabindex="0" data-tip="Le coefficient course traduit l'écart entre ton allure d'entraînement et ton allure en compétition. Plus rapide que prévu : on l'augmente ; plus lent : on le baisse. L'ajustement est volontairement amorti pour ne pas surréagir à une seule course, et rien n'est appliqué sans ta validation."></span></h3>
+          <p id="calibText"></p>
+          <div class="calib-values">
+            <div class="calib-box">
+              <div class="calib-box-label">Coefficient actuel</div>
+              <div class="calib-box-val" id="calibActuel">—</div>
+            </div>
+            <svg class="calib-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            <div class="calib-box suggere">
+              <div class="calib-box-label">Coefficient suggéré</div>
+              <div class="calib-box-val" id="calibSuggere">—</div>
+            </div>
+          </div>
+          <div class="calib-actions">
+            <button type="button" class="btn-appliquer" id="btnAppliquer" onclick="validerCalibration()">Appliquer cet ajustement</button>
+            <button type="button" class="btn-ignorer" onclick="ignorerCalibration()">Ignorer</button>
+          </div>
+        </div>
+
+        <div class="bilan-comment-section">
+          <label class="bilan-comment-label" for="bilanCommentaire">Commentaire personnel <span class="info-i" tabindex="0" data-tip="Note le contexte de ta course : météo, forme, nutrition, technicité du terrain. Tu comprendras mieux l'écart en relisant ce bilan plus tard."></span></label>
+          <textarea id="bilanCommentaire" class="bilan-comment-input" maxlength="2000"
+            placeholder="Ex : descente très technique, grosse chaleur l'après-midi, pas assez bu avant le km 15…"></textarea>
+        </div>
+        <div class="bilan-pin-bar">
+          <button type="button" class="btn-pin-bilan" id="btnPinBilan" onclick="pinnerCeBilan()">Épingler ce bilan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+  <script>
+  let bilanData = null;        // résultat de la dernière comparaison
+
+  // "7h38m24s" (format du serveur) → "7 h 38" ; écarts courts en minutes
+  function lireDuree(s) {
+    const m = String(s || '').trim().match(/^([+\-−]?)\s*(\d+)h(\d+)m(\d+)s$/);
+    if (!m) return null;
+    return { signe: (m[1] === '-' || m[1] === '−') ? '−' : (m[1] === '+' ? '+' : ''), sec: (+m[2]) * 3600 + (+m[3]) * 60 + (+m[4]) };
+  }
+  function fmtT(s) {
+    const d = lireDuree(s);
+    if (!d) return s || '—';
+    const T = Math.round(d.sec / 60);
+    return `${d.signe}${Math.floor(T / 60)} h ${String(T % 60).padStart(2, '0')}`;
+  }
+  const entierB = n => Math.round(Number(n) || 0).toLocaleString('fr-FR').replace(/\u202f|\u00a0/g, '\u00a0');
+  function fmtEcart(s) {
+    const d = lireDuree(s);
+    if (!d) return s || '—';
+    const T = Math.round(d.sec / 60);
+    return T < 60 ? `${d.signe}${T} min` : `${d.signe}${Math.floor(T / 60)} h ${String(T % 60).padStart(2, '0')}`;
+  }
+  let currentCandidats = null; // { simulations, resultats }
+
+  // ── Init ────────────────────────────────────────────────────
+  (async function initBilan() {
+    if (typeof isLoggedIn !== 'function' || !isLoggedIn()) {
+      document.getElementById('bilanAuth').style.display = 'block';
+      return;
+    }
+    document.getElementById('bilanMain').style.display = 'grid';
+    await chargerCandidats();
+    await chargerBilansPinnes();
+  })();
+
+  async function chargerBilansPinnes() {
+    try {
+      const data = await listerBilans();
+      const bilans = data.bilans || [];
+      const section = document.getElementById('bilansPinnedSection');
+      const list = document.getElementById('bilansPinnedList');
+
+      if (bilans.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = 'block';
+      list.innerHTML = bilans.map(b => {
+        const cls = b.plus_rapide ? 'faster' : 'slower';
+        const date = b.created_at ? new Date(b.created_at).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'}) : '';
+        const commentHtml = b.commentaire
+          ? `<div class="bilan-pinned-comment">${escapeHtmlBilan(b.commentaire)}</div>`
+          : `<div class="bilan-pinned-comment empty">Aucun commentaire</div>`;
+        return `
+          <div class="bilan-pinned-card">
+            <button type="button" class="bilan-pinned-del" onclick="event.stopPropagation();supprimerBilanPinne(${b.id})" title="Supprimer ce bilan" aria-label="Supprimer le bilan ${escapeHtmlBilan(b.nom)}">×</button>
+            <h4>${escapeHtmlBilan(b.nom)}</h4>
+            <div class="bilan-pinned-meta">Comparé au km ${b.km_commun.toFixed(1).replace('.', ',')} · ${date}</div>
+            <div class="bilan-pinned-ecart ${cls}">${fmtEcart(b.ecart_fmt)}</div>
+            ${commentHtml}
+            <button type="button" class="bilan-pinned-open" onclick="rouvrirBilan(${b.id})">Rouvrir ce bilan</button>
+            <button type="button" class="bilan-comment-edit" onclick="event.stopPropagation();editerCommentaireBilan(${b.id})">
+              ${b.commentaire ? 'Modifier' : 'Ajouter'} le commentaire
+            </button>
+          </div>`;
+      }).join('');
+      // Stocker pour réouverture
+      window._bilansPinnes = bilans;
+    } catch (e) {
+      console.warn('Erreur chargement bilans épinglés:', e);
+    }
+  }
+
+  function rouvrirBilan(id) {
+    const bilans = window._bilansPinnes || [];
+    const b = bilans.find(x => x.id === id);
+    if (!b || !b.bilan_data) return;
+    bilanData = b.bilan_data;
+    window._rouvertureEnCours = true;
+    afficherComparaison(b.bilan_data);
+    window._rouvertureEnCours = false;
+    // Pré-remplir le commentaire existant
+    const ta = document.getElementById('bilanCommentaire');
+    if (ta) ta.value = b.commentaire || '';
+    // Cacher le bouton épingler (déjà épinglé)
+    const btnPin = document.getElementById('btnPinBilan');
+    if (btnPin) { btnPin.textContent = 'Bilan déjà épinglé'; btnPin.disabled = true; }
+  }
+
+  async function editerCommentaireBilan(id) {
+    const bilans = window._bilansPinnes || [];
+    const b = bilans.find(x => x.id === id);
+    if (!b) return;
+    const nouveau = prompt('Commentaire personnel (contexte de la course) :', b.commentaire || '');
+    if (nouveau === null) return;
+    try {
+      await modifierBilan(id, { commentaire: nouveau.trim() });
+      await chargerBilansPinnes();
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+    }
+  }
+
+  async function supprimerBilanPinne(id) {
+    if (!confirm('Supprimer ce bilan épinglé ?')) return;
+    try {
+      await supprimerBilan(id);
+      await chargerBilansPinnes();
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+    }
+  }
+
+  async function pinnerCeBilan() {
+    if (!bilanData) return;
+    const nomDefaut = `${bilanData.simulation.name} vs ${bilanData.resultat.name}`;
+    const nom = prompt('Nom du bilan :', nomDefaut);
+    if (nom === null) return;
+
+    const commentaire = document.getElementById('bilanCommentaire').value.trim();
+
+    const btn = document.getElementById('btnPinBilan');
+    btn.disabled = true;
+    btn.textContent = 'Épinglage…';
+    try {
+      await epinglerBilan(
+        nom.trim() || nomDefaut,
+        bilanData.simulation.id,
+        bilanData.resultat.id,
+        bilanData,
+        commentaire
+      );
+      btn.textContent = 'Bilan épinglé';
+      await chargerBilansPinnes();
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Épingler ce bilan';
+    }
+  }
+
+  async function chargerCandidats() {
+    try {
+      const data = await getBilanCandidats();
+      currentCandidats = data;
+
+      const sims = data.simulations || [];
+      const resultats = data.resultats || [];
+
+      // Cas vide : aucune simulation OU aucun résultat
+      const emptyDiv = document.getElementById('bilanEmptyState');
+      if (sims.length === 0 || resultats.length === 0) {
+        let msg = '';
+        if (sims.length === 0 && resultats.length === 0) {
+          msg = `Le bilan compare une simulation épinglée avant ta course au GPX de ta course réelle. Il te manque les deux : épingle une simulation dans le <a href="simulateur.html">Simulateur</a>, puis importe ta course en type « Résultat de course » dans <a href="profil.html">Mon profil</a>.`;
+        } else if (sims.length === 0) {
+          msg = `Tu n'as pas encore de simulation épinglée. Dans le <a href="simulateur.html">Simulateur</a>, lance une prédiction avant ta course et épingle-la.`;
+        } else {
+          msg = `Tu n'as pas encore importé de course de type Résultat. Dans <a href="profil.html">Mon profil</a>, importe le GPX de ta course et choisis le type « Résultat de course ».`;
+        }
+        emptyDiv.innerHTML = `
+          <div class="bilan-empty">
+            <div class="bilan-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+            <h3>Pas encore de comparaison possible</h3>
+            <p>${msg}</p>
+          </div>`;
+      } else {
+        emptyDiv.innerHTML = '';
+      }
+
+      // Remplir les selects
+      const selSim = document.getElementById('selectSim');
+      const selRes = document.getElementById('selectResultat');
+      selSim.innerHTML = '<option value="">Choisir une simulation épinglée</option>' +
+        sims.map(s => `<option value="${s.id}">${escapeHtmlBilan(s.name)} · ${s.dist_km.toFixed(1).replace('.', ',')} km, ${entierB(s.dplus_m)} m D+</option>`).join('');
+      selRes.innerHTML = '<option value="">Choisir une course de type Résultat</option>' +
+        resultats.map(r => `<option value="${r.id}">${escapeHtmlBilan(r.name)} · ${r.dist_km.toFixed(1).replace('.', ',')} km, ${entierB(r.dplus_m)} m D+</option>`).join('');
+
+    } catch (e) {
+      document.getElementById('bilanEmptyState').innerHTML =
+        `<div class="bilan-empty"><h3>Chargement impossible</h3><p>${e.message}</p><div class="hero-btns"><button type="button" class="btn-ghost" onclick="chargerCandidats()">Réessayer</button></div></div>`;
+    }
+  }
+
+  function onSelectionChange() {
+    const simId = document.getElementById('selectSim').value;
+    const resId = document.getElementById('selectResultat').value;
+    document.getElementById('btnComparer').disabled = !(simId && resId);
+    // Cacher l'ancien résultat
+    document.getElementById('bilanResult').classList.remove('show');
+  }
+
+  async function lancerComparaison() {
+    const simId = document.getElementById('selectSim').value;
+    const resId = document.getElementById('selectResultat').value;
+    if (!simId || !resId) return;
+
+    const btn = document.getElementById('btnComparer');
+    btn.disabled = true;
+    btn.textContent = 'Comparaison…';
+
+    try {
+      const data = await comparerBilan(simId, resId);
+      bilanData = data;
+      afficherComparaison(data);
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Comparer';
+    }
+  }
+
+  function afficherComparaison(d) {
+    // Bandeau total
+    document.getElementById('ecartPredit').textContent = fmtT(d.simulation.temps_predit_fmt);
+    document.getElementById('ecartPreditSub').textContent = `${d.simulation.dist_km.toFixed(1).replace('.', ',')} km · ${entierB(d.simulation.dplus_m)} m D+`;
+    document.getElementById('ecartReel').textContent = fmtT(d.resultat.temps_reel_fmt);
+    document.getElementById('ecartReelSub').textContent = `${d.resultat.dist_km.toFixed(1).replace('.', ',')} km · ${entierB(d.resultat.dplus_m)} m D+`;
+
+    const delta = document.getElementById('ecartDelta');
+    const deltaPct = document.getElementById('ecartDeltaPct');
+    delta.textContent = fmtEcart(d.ecart_total_fmt);
+    delta.className = 'ecart-delta ' + (d.plus_rapide ? 'faster' : 'slower');
+    deltaPct.textContent = (d.plus_rapide ? 'Plus rapide' : 'Plus lent') + ` que prévu (${d.ecart_total_pct > 0 ? '+' : ''}${String(d.ecart_total_pct).replace('.', ',')} %)`;
+    deltaPct.style.color = d.plus_rapide ? 'var(--positive)' : 'var(--negative)';
+
+    // Avertissement distances différentes
+    const warnDiv = document.getElementById('bilanDistWarn');
+    if (d.distances_differentes) {
+      warnDiv.style.display = 'block';
+      warnDiv.innerHTML = `<strong>Distances différentes.</strong> Ta simulation fait ${d.simulation.dist_km.toFixed(1).replace('.', ',')} km et ta course réelle ${d.resultat.dist_km.toFixed(1).replace('.', ',')} km. Pour une comparaison juste, l'écart est calculé <strong>au km ${d.km_commun.toFixed(1).replace('.', ',')}</strong>, le point commun aux deux parcours. Temps prédit total : ${fmtT(d.simulation.temps_total_fmt)} · temps réel total : ${fmtT(d.resultat.temps_total_fmt)}.`;
+    } else {
+      warnDiv.style.display = 'none';
+    }
+
+    // Tableau ravitos
+    const body = document.getElementById('ravitoCompareBody');
+    if (!d.ravitos || d.ravitos.length === 0) {
+      body.innerHTML = `<tr><td colspan="5" style="color:var(--muted);padding:20px 18px;white-space:normal;">Aucun ravitaillement défini dans cette simulation.</td></tr>`;
+    } else {
+      // Écart max pour normaliser les barres
+      const maxEcart = Math.max(...d.ravitos.map(r => Math.abs(r.ecart_s)), 1);
+      body.innerHTML = d.ravitos.map(r => {
+        const cls = r.plus_rapide ? 'faster' : 'slower';
+        const barW = Math.min(Math.abs(r.ecart_s) / maxEcart * 50, 50); // % sur demi-largeur
+        const rowCls = r.is_arrivee ? ' class="rc-arrivee-row"' : '';
+        const label = r.is_arrivee
+          ? `Arrivée · ${r.km.toFixed(1).replace('.', ',')} km`
+          : `${r.km.toFixed(1).replace('.', ',')} km`;
+        return `
+          <tr${rowCls}>
+            <td>${label}</td>
+            <td class="rc-predit">${fmtT(r.temps_predit_fmt)}</td>
+            <td class="rc-reel">${fmtT(r.temps_reel_fmt)}</td>
+            <td class="rc-ecart ${cls}">${fmtEcart(r.ecart_fmt)}</td>
+            <td class="rc-bar-cell">
+              <div class="rc-bar-track">
+                <div class="rc-bar-center"></div>
+                <div class="rc-bar-fill ${cls}" style="width:${barW}%;"></div>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    // Note sur la méthode
+    const note = document.getElementById('bilanNote');
+    const methodeExacte = d.ravitos && d.ravitos.length > 0 && d.ravitos[0].methode === 'exact';
+    if (methodeExacte) {
+      note.innerHTML = `Temps de passage réels tirés directement du GPX de ta course.`;
+      note.style.display = 'block';
+    } else if (d.ravitos && d.ravitos.length > 0) {
+      note.innerHTML = `Temps de passage réels estimés par répartition proportionnelle : le GPX de ta course n'avait pas d'horodatage détaillé. Réimporte la course pour plus de précision.`;
+      note.style.display = 'block';
+    } else {
+      note.style.display = 'none';
+    }
+
+    // Calibration
+    const calib = d.calibration;
+    document.getElementById('calibActuel').textContent = calib.coef_actuel.toFixed(3).replace('.', ',');
+    document.getElementById('calibSuggere').textContent = calib.coef_suggere.toFixed(3).replace('.', ',');
+
+    const calibText = document.getElementById('calibText');
+    const diff = calib.coef_suggere - calib.coef_actuel;
+
+    // Avertissement double-effet : la course est déjà dans le profil
+    const avertDouble = calib.resultat_dans_profil
+      ? `<div class="calib-warn"><strong>Cette course nourrit déjà ton profil.</strong> En l'important comme résultat, tes vitesses de référence se sont déjà ajustées. Le coefficient ci-dessous est un réglage complémentaire et facultatif : applique-le seulement si tes prédictions restent décalées après plusieurs courses. <a href="profil.html">Voir mon profil</a></div>`
+      : '';
+
+    if (Math.abs(diff) < 0.005) {
+      calibText.innerHTML = avertDouble + `Ton modèle est <strong>déjà bien calibré</strong> pour ce type de course : l'écart entre prédit et réel est minime. Aucun ajustement nécessaire.`;
+      document.getElementById('btnAppliquer').disabled = true;
+    } else if (diff > 0) {
+      // coef augmente → on a été plus rapide que prévu
+      calibText.innerHTML = avertDouble + `Tu as été <strong>plus rapide</strong> que prévu sur cette course : ton modèle te sous-estimait. Augmenter ton coefficient course (de ${calib.coef_actuel.toFixed(3).replace('.', ',')} à ${calib.coef_suggere.toFixed(3).replace('.', ',')}) rendra tes prochaines prédictions un peu plus rapides, plus proches de ta vraie performance.`;
+      document.getElementById('btnAppliquer').disabled = false;
+    } else {
+      // coef baisse → on a été plus lent que prévu
+      calibText.innerHTML = avertDouble + `Tu as été <strong>plus lent</strong> que prévu sur cette course : ton modèle te surestimait. Baisser ton coefficient course (de ${calib.coef_actuel.toFixed(3).replace('.', ',')} à ${calib.coef_suggere.toFixed(3).replace('.', ',')}) rendra tes prochaines prédictions un peu plus prudentes, avec des temps légèrement plus longs.`;
+      document.getElementById('btnAppliquer').disabled = false;
+    }
+
+    // Réinitialiser le bouton épingler pour cette nouvelle comparaison
+    const btnPin = document.getElementById('btnPinBilan');
+    if (btnPin) { btnPin.textContent = 'Épingler ce bilan'; btnPin.disabled = false; }
+    // Vider le commentaire (sauf si on rouvre un bilan, géré dans rouvrirBilan)
+    const ta = document.getElementById('bilanCommentaire');
+    if (ta && !window._rouvertureEnCours) ta.value = '';
+
+    // Afficher
+    document.getElementById('bilanResult').classList.add('show');
+    const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('bilanResult').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  async function validerCalibration() {
+    if (!bilanData) return;
+    const calib = bilanData.calibration;
+    // Le profil_type vient de la simulation
+    const sim = currentCandidats.simulations.find(s => String(s.id) === document.getElementById('selectSim').value);
+    const profilType = sim ? sim.type_profil : 'trail';
+
+    const btn = document.getElementById('btnAppliquer');
+    btn.disabled = true;
+    btn.textContent = 'Application…';
+
+    try {
+      await appliquerCalibration(profilType, calib.coef_suggere);
+      btn.textContent = 'Ajustement appliqué';
+      const calibText = document.getElementById('calibText');
+      calibText.innerHTML = `Ton coefficient course est maintenant de <strong>${calib.coef_suggere.toFixed(3).replace('.', ',')}</strong>. Tes prochaines simulations en tiendront compte ; tu peux le vérifier dans Mon profil.`;
+      document.getElementById('calibActuel').textContent = calib.coef_suggere.toFixed(3).replace('.', ',');
+    } catch (e) {
+      alert('Erreur : ' + e.message);
+      btn.disabled = false;
+      btn.textContent = 'Appliquer cet ajustement';
+    }
+  }
+
+  function ignorerCalibration() {
+    document.getElementById('calibrationCard').style.opacity = '0.55';
+    document.getElementById('btnAppliquer').disabled = true;
+    document.getElementById('calibText').innerHTML = 'Ajustement ignoré : ton coefficient course reste inchangé.';
+  }
+
+  function escapeHtmlBilan(s) {
+    if (!s) return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Exposition window pour onclick inline
+  if (typeof window !== 'undefined') {
+    window.onSelectionChange   = onSelectionChange;
+    window.lancerComparaison   = lancerComparaison;
+    window.validerCalibration  = validerCalibration;
+    window.ignorerCalibration  = ignorerCalibration;
+    window.pinnerCeBilan       = pinnerCeBilan;
+    window.rouvrirBilan        = rouvrirBilan;
+    window.supprimerBilanPinne = supprimerBilanPinne;
+    window.editerCommentaireBilan = editerCommentaireBilan;
+    window.chargerCandidats    = chargerCandidats;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="Ton espace SUM'IT : simulations épinglées, réglages et connexion Strava.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Mon compte">
+  <meta property="og:description" content="Ton espace SUM'IT : simulations épinglées, réglages et connexion Strava.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/compte.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Mon compte">
+  <meta name="twitter:description" content="Ton espace SUM'IT : simulations épinglées, réglages et connexion Strava.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Mon compte</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
+  <style>
+    /* ── Mon compte ─────────────────────────────────────────── */
+    .compte-section { display: grid; gap: 16px; min-width: 0; }
+    .compte-section > * { min-width: 0; }
+
+    .compte-header {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 16px 20px;
+      align-items: center;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 18px 20px;
+    }
+    .compte-header-avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 700;
+      overflow: hidden;
+    }
+    .compte-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .compte-header-info { min-width: 0; }
+    .compte-header-name { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+    .compte-header-email { font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+    .compte-header-stats { display: flex; border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .compte-header-stat { padding: 8px 16px; font-size: 13px; color: var(--muted); border-left: 1px solid var(--border); min-width: 0; }
+    .compte-header-stat:first-child { border-left: 0; }
+    .compte-header-stat strong { display: block; font-size: 20px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    /* Sections en deux colonnes : intitulé à gauche, panneau à droite */
+    .compte-header + .compte-card { border-top: 0; padding-top: 8px; }
+    .compte-card { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px 32px; padding: 24px 0; border-top: 1px solid var(--border); }
+    .compte-card-intro h2 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    .compte-card-intro p { margin-top: 4px; font-size: 14px; color: var(--muted); max-width: 40ch; }
+    .compte-card-intro .count { margin-top: 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .compte-panel { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 18px 20px; min-width: 0; }
+
+    .settings-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+    .form-field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+    .form-field .field-help { margin-top: 4px; font-size: 13px; color: var(--muted); }
+    .form-row-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+    .save-feedback { font-size: 13px; font-weight: 600; color: var(--positive); opacity: 0; transition: opacity 200ms ease; }
+    .save-feedback.show { opacity: 1; }
+    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 18px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-save:active { transform: scale(0.97); }
+    .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
+    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled) { background: #2A2F37; } }
+
+    .strava-card { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+    .strava-logo { width: 40px; height: 40px; border-radius: 10px; background: var(--ground); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+    .strava-logo svg { width: 20px; height: 20px; fill: currentColor; }
+    .strava-info h3 { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .strava-info p { font-size: 14px; color: var(--muted); }
+    .strava-status-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .strava-status-badge.connected { background: var(--positive-bg); color: var(--positive-ink); }
+    .strava-status-badge.disconnected { background: var(--active); color: var(--muted); }
+    .btn-strava-action { min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; white-space: nowrap; transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-strava-connect { background: var(--ink); color: var(--paper); }
+    .btn-strava-disconnect { background: #E6E9ED; color: var(--ink); }
+    .btn-strava-action:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-strava-connect:hover { background: #2A2F37; }
+      .btn-strava-disconnect:hover { background: #DADEE3; }
+    }
+
+    /* Simulations épinglées */
+    .sims-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .sim-card { position: relative; display: grid; gap: 6px; align-content: start; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--paper); transition: border-color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .sim-card:hover { border-color: var(--control); } }
+    .sim-card-header { padding-right: 36px; }
+    .sim-card-title { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .sim-card-date { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sim-card-time { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .sim-card-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sim-card-profile-tag { justify-self: start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); }
+    .btn-open-sim { margin-top: 6px; justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-open-sim svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-open-sim:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-open-sim:hover { background: #2A2F37; } }
+    .btn-delete-sim { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    .btn-delete-sim svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    @media (hover: hover) and (pointer: fine) { .btn-delete-sim:hover { background: var(--negative-bg); color: var(--negative); } }
+    .sims-empty { grid-column: 1 / -1; padding: 18px; border: 1px dashed var(--control); border-radius: var(--radius-card); font-size: 14px; color: var(--muted); }
+    .sims-empty a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+    .danger-row { display: flex; justify-content: space-between; align-items: center; gap: 12px 16px; flex-wrap: wrap; }
+    .danger-row p { font-size: 14px; color: var(--muted); max-width: 60ch; }
+    .btn-logout { min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; color: var(--negative); background: var(--negative-bg); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-logout:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-logout:hover { background: #FFDCD6; } }
+
+    @media (max-width: 860px) {
+      .compte-card { grid-template-columns: 1fr; gap: 12px; padding: 20px 0; }
+      .compte-header { grid-template-columns: 56px minmax(0, 1fr); }
+      .compte-header-stats { grid-column: 1 / -1; }
+    }
+    @media (max-width: 560px) {
+      .compte-header { grid-template-columns: 44px minmax(0, 1fr); padding: 16px; }
+      .compte-header-avatar { width: 44px; height: 44px; font-size: 18px; }
+      .compte-header-stats { width: 100%; }
+      .compte-header-stat { flex: 1; padding: 8px 10px; }
+      .compte-header-stat strong { font-size: 18px; }
+      .settings-form { grid-template-columns: 1fr; }
+      .strava-card { grid-template-columns: 40px minmax(0, 1fr); }
+      .strava-card > div:last-child { grid-column: 1 / -1; }
+      .strava-card .btn-strava-action { width: 100%; }
+    }
+  </style>
+</head>
+<body data-page="compte">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link active" aria-current="page">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Mon compte</h1>
+      <p>Tes simulations épinglées, tes réglages et tes connexions.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="compte-section" id="compteSection"></div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+  <script>
+
+    let currentUser = null;
+    let currentSimulations = [];
+
+    // ── Init ────────────────────────────────────────────────────
+    (async function init() {
+      const section = document.getElementById('compteSection');
+
+      if (!isLoggedIn()) {
+        section.innerHTML = `
+          <div class="gate">
+            <div>
+              <h2>Ton espace SUM'IT</h2>
+              <p class="gate-lede">Connecte-toi avec Google pour retrouver tes simulations et tes réglages sur tous tes appareils.</p>
+              <ul class="gate-points">
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Jusqu'à 20 simulations épinglées,</b> <span>à rouvrir et recalculer quand ton profil progresse.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>La connexion Strava,</b> <span>pour importer tes activités sans fichier.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Tes réglages,</b> <span>ton prénom sur le roadbook et ta FC max.</span></div></li>
+              </ul>
+              <div class="hero-btns">
+                <button type="button" class="btn-primary" onclick="loginGoogle()">Se connecter avec Google</button>
+                <a class="btn-ghost" href="simulateur.html?demo=ccc">Voir la démo CCC</a>
+              </div>
+            </div>
+            <figure class="gate-preview" aria-label="Aperçu">
+              <img class="gate-bg" src="../assets/photos/ravito-flasques-960.webp" srcset="../assets/photos/ravito-flasques-600.webp 600w, ../assets/photos/ravito-flasques-960.webp 960w" sizes="(max-width: 900px) 100vw, 560px" width="960" height="1200" alt="Des mains remplissent des flasques souples au ravito." loading="lazy" style="object-position: 50% 45%">
+              <div class="gp-card">
+                <div class="gp-sim">
+                  <b>CCC — UTMB (démo)</b>
+                  <small>98,4 km · 5 742 m D+ · Trail</small>
+                  <strong>24 h 53</strong>
+                  <a href="simulateur.html?demo=ccc">Ouvrir dans le simulateur</a>
+                </div>
+                <div class="gp-row"><span>Strava</span><span>Non lié</span></div>
+                <div class="gp-row"><span>FC max</span><span>188 battements par minute</span></div>
+              </div>
+              <figcaption class="gate-cap">Exemple : la simulation de la démo CCC, telle qu'elle apparaît une fois épinglée.</figcaption>
+            </figure>
+          </div>
+        `;
+        return;
+      }
+
+      // Vérifier les retours OAuth Strava
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('strava_connected') === '1') {
+        setTimeout(() => alert('Compte Strava connecté.'), 200);
+        cleanURL(['strava_connected']);
+      }
+      const stravaError = params.get('strava_error');
+      if (stravaError) {
+        setTimeout(() => alert(`Erreur Strava : ${stravaError}`), 200);
+        cleanURL(['strava_error']);
+      }
+
+      try {
+        currentUser = await fetchMe();
+        await refreshSimulations();
+        renderUI();
+      } catch (e) {
+        section.innerHTML = `<div class="login-required"><h2>Impossible de charger ton compte</h2><p>${escapeHTML(e.message)}</p><button type="button" class="btn-primary" onclick="location.reload()">Réessayer</button></div>`;
+      }
+    })();
+
+    function cleanURL(paramsToRemove) {
+      const url = new URL(window.location);
+      paramsToRemove.forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // ── Render UI ──────────────────────────────────────────────
+    function renderUI() {
+      const section = document.getElementById('compteSection');
+      const prenom = currentUser.prenom || currentUser.name?.split(' ')[0] || 'Coureur';
+      const initiale = prenom[0]?.toUpperCase() || 'C';
+
+      const profilTrail = currentUser.profiles.find(p => p.type === 'trail');
+      const profilRando = currentUser.profiles.find(p => p.type === 'rando');
+      const nbActivitesTrail = profilTrail?.nb_traces || 0;
+      const nbActivitesRando = profilRando?.nb_traces || 0;
+      const totalActivites = nbActivitesTrail + nbActivitesRando;
+
+      const entier = n => Math.round(Number(n) || 0).toLocaleString('fr-FR');
+      section.innerHTML = `
+        <div class="compte-header">
+          <div class="compte-header-avatar">
+            ${currentUser.picture ? `<img src="${escapeHTML(currentUser.picture)}" alt="" referrerpolicy="no-referrer">` : escapeHTML(initiale)}
+          </div>
+          <div class="compte-header-info">
+            <div class="compte-header-name">${escapeHTML(prenom)}</div>
+            <div class="compte-header-email">${escapeHTML(currentUser.email)}</div>
+          </div>
+          <div class="compte-header-stats">
+              <div class="compte-header-stat"><strong>${entier(totalActivites)}</strong>activité${totalActivites>1?'s':''}</div>
+              <div class="compte-header-stat"><strong>${currentUser.profiles.length}</strong>profil${currentUser.profiles.length>1?'s':''} actif${currentUser.profiles.length>1?'s':''}</div>
+              <div class="compte-header-stat"><strong>${currentSimulations.length}</strong>simulation${currentSimulations.length>1?'s':''} épinglée${currentSimulations.length>1?'s':''}</div>
+          </div>
+        </div>
+
+        <section class="compte-card" aria-labelledby="titreSims">
+          <div class="compte-card-intro">
+            <h2 id="titreSims">Simulations épinglées</h2>
+            <p>Rouvre une simulation pour la recalculer avec ton profil à jour, ou compare-la à ta course réelle dans le Bilan.</p>
+            <div class="count">${currentSimulations.length} sur 20</div>
+          </div>
+          <div class="compte-panel">
+            <div id="simsContainer" class="sims-grid">
+              ${renderSimulations()}
+            </div>
+          </div>
+        </section>
+
+        <section class="compte-card" aria-labelledby="titreReglages">
+          <div class="compte-card-intro">
+            <h2 id="titreReglages">Réglages</h2>
+            <p>Ton prénom apparaît sur tes roadbooks PDF. Ta FC max sert à estimer ta fréquence cardiaque pendant la course.</p>
+          </div>
+          <div class="compte-panel">
+            <form class="settings-form" onsubmit="event.preventDefault(); sauvegarderReglages();">
+              <div class="form-field">
+                <label for="setPrenom">Prénom</label>
+                <input type="text" id="setPrenom" value="${escapeHTML(currentUser.prenom || '')}" maxlength="50" autocomplete="given-name">
+              </div>
+              <div class="form-field">
+                <label for="setFcmax">FC max (battements par minute)</label>
+                <input type="number" id="setFcmax" value="${currentUser.fcmax}" min="100" max="250" inputmode="numeric" aria-describedby="fcHelp">
+                <div class="field-help" id="fcHelp">Entre 100 et 250.</div>
+              </div>
+              <div class="form-row-actions">
+                <span class="save-feedback" id="saveFeedback" role="status">Enregistré</span>
+                <button type="submit" class="btn-save" id="btnSave">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="compte-card" aria-labelledby="titreConnexions">
+          <div class="compte-card-intro">
+            <h2 id="titreConnexions">Connexions</h2>
+            <p>Lie ton compte Strava pour importer tes activités sans passer par les fichiers GPX.</p>
+          </div>
+          <div class="compte-panel">
+            <div class="strava-card">
+              <div class="strava-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M10 2 4 14h3.6l2.4-4.8L12.4 14H16zM16 14l-1.8 3.6L12.4 14H9.8l4.4 8.8 4.4-8.8z"/></svg>
+              </div>
+              <div class="strava-info">
+                <h3>Strava <span class="strava-status-badge ${currentUser.strava_connected?'connected':'disconnected'}">${currentUser.strava_connected ? 'Connecté' : 'Non lié'}</span></h3>
+                <p>${currentUser.strava_connected
+                  ? 'Choisis tes activités Strava depuis la page Mon profil.'
+                  : 'Connecte ton compte pour importer tes activités en un clic.'}</p>
+              </div>
+              <div>
+                ${currentUser.strava_connected
+                  ? `<button type="button" class="btn-strava-action btn-strava-disconnect" onclick="deconnecterStravaAction()">Déconnecter</button>`
+                  : `<button type="button" class="btn-strava-action btn-strava-connect" onclick="loginStrava()">Connecter Strava</button>`}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="compte-card" aria-labelledby="titreSession">
+          <div class="compte-card-intro">
+            <h2 id="titreSession">Session</h2>
+            <p>Tes données restent enregistrées quand tu te déconnectes.</p>
+          </div>
+          <div class="compte-panel">
+            <div class="danger-row">
+              <p>Déconnecte-toi de cet appareil. Pour supprimer ton compte et tes données, écris-nous depuis la page d'accueil.</p>
+              <button type="button" class="btn-logout" onclick="logout()">Se déconnecter</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    // ── Simulations épinglées ──────────────────────────────────
+    async function refreshSimulations() {
+      try {
+        const res = await listerSimulations();
+        currentSimulations = res.simulations || [];
+      } catch (e) {
+        console.warn('Impossible de charger les simulations:', e);
+        currentSimulations = [];
+      }
+    }
+
+    function renderSimulations() {
+      if (currentSimulations.length === 0) {
+        return `<div class="sims-empty">
+          Aucune simulation épinglée pour l'instant. Dans le <a href="simulateur.html">Simulateur</a>, lance une prédiction et épingle-la pour la retrouver ici.
+        </div>`;
+      }
+
+      return currentSimulations.map(s => {
+        const date = new Date(s.created_at).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'});
+        const totalMin = Math.round((Number(s.duree_s) || 0) / 60);
+        const dureeFmt = `${Math.floor(totalMin / 60)} h ${String(totalMin % 60).padStart(2,'0')}`;
+        const profilType = s.type_profil || 'trail';
+        return `
+          <div class="sim-card">
+            <button type="button" class="btn-delete-sim" onclick="deleteSimulation(${s.id})" title="Supprimer" aria-label="Supprimer la simulation ${escapeHTML(s.name)}">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+            <div class="sim-card-header">
+              <div class="sim-card-title" title="${escapeHTML(s.name)}">${escapeHTML(s.name)}</div>
+              <div class="sim-card-date">Épinglée le ${date}</div>
+            </div>
+            <div class="sim-card-time">${dureeFmt}</div>
+            <div class="sim-card-meta">
+              <span>${(Number(s.dist_km) || 0).toFixed(1).replace('.', ',')} km</span>
+              <span>·</span>
+              <span>${Math.round(s.dplus_m).toLocaleString('fr-FR')} m D+</span>
+            </div>
+            <span class="sim-card-profile-tag ${profilType}">${profilType==='trail' ? 'Trail' : 'Rando'}</span>
+            <button type="button" class="btn-open-sim" onclick="ouvrirSimulation(${s.id})">
+              Ouvrir dans le simulateur
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function ouvrirSimulation(id) {
+      window.location.href = `simulateur.html?sim_id=${id}`;
+    }
+
+    async function deleteSimulation(id) {
+      if (!confirm('Supprimer cette simulation épinglée ?')) return;
+      try {
+        await supprimerSimulation(id);
+        await refreshSimulations();
+        renderUI();
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      }
+    }
+
+    // ── Réglages ───────────────────────────────────────────────
+    async function sauvegarderReglages() {
+      const btn = document.getElementById('btnSave');
+      const feedback = document.getElementById('saveFeedback');
+      const prenom = document.getElementById('setPrenom').value.trim();
+      const fcmax  = parseInt(document.getElementById('setFcmax').value);
+
+      if (!prenom) {
+        alert('Indique ton prénom.');
+        return;
+      }
+      if (!fcmax || fcmax < 100 || fcmax > 250) {
+        alert('La FC max doit être comprise entre 100 et 250 battements par minute.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement…';
+
+      try {
+        await updateSettings({ prenom, fcmax });
+        currentUser.prenom = prenom;
+        currentUser.fcmax = fcmax;
+        setCachedUser(currentUser);
+
+        feedback.classList.add('show');
+        setTimeout(() => feedback.classList.remove('show'), 2000);
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enregistrer';
+      }
+    }
+
+    // ── Strava déconnexion ────────────────────────────────────
+    async function deconnecterStravaAction() {
+      if (!confirm('Déconnecter ton compte Strava ? Tes activités déjà importées seront conservées.')) return;
+      try {
+        await deconnecterStrava();
+        currentUser.strava_connected = false;
+        renderUI();
+        alert('Strava déconnecté. Tes activités déjà importées sont conservées.');
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      }
+    }
+
+    function escapeHTML(s) {
+      return String(s || '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#F2F4F7">
+  <meta name="description" content="Ton profil de coureur SUM'IT : vitesse équivalente plat sur sept pentes, archétype, évolution. Construit automatiquement depuis tes sorties GPX et Strava.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Mon profil de coureur">
+  <meta property="og:description" content="Ton profil de coureur SUM'IT : vitesse équivalente plat sur sept pentes, archétype, évolution. Construit automatiquement depuis tes sorties GPX et Strava.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/profil.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Mon profil de coureur">
+  <meta name="twitter:description" content="Ton profil de coureur SUM'IT : vitesse équivalente plat sur sept pentes, archétype, évolution. Construit automatiquement depuis tes sorties GPX et Strava.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Mon profil</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261026">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <style>
+    /* ── Mon profil ─────────────────────────────────────────── */
+    .profil-section { display: grid; gap: 16px; min-width: 0; }
+    .profil-section > *, .profil-grid > *, .profil-data > * { min-width: 0; }
+
+    /* Trail / Randonnée : contrôle segmenté */
+    .profil-tabs {
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 3px;
+      padding: 3px;
+      background: var(--active);
+      border-radius: 8px;
+      justify-self: start;
+    }
+    .profil-tab {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: color var(--t-hover) ease, background-color var(--t-hover) ease;
+    }
+    .profil-tab.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    @media (hover: hover) and (pointer: fine) { .profil-tab:not(.active):hover { color: var(--ink); } }
+
+    /* KPI : un seul conteneur, quatre cellules */
+    .profil-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+    .profil-kpi-card { padding: 18px 20px; border-left: 1px solid var(--border); min-width: 0; }
+    .profil-kpi-card:first-child { border-left: 0; }
+    .pk-label { font-size: 14px; color: var(--muted); display: flex; align-items: center; }
+    .pk-val { margin-top: 6px; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .pk-val.gradient { font-size: 30px; color: var(--data); }
+    .pk-sub { margin-top: 2px; font-size: 13px; color: var(--muted); }
+
+    .profil-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+
+    /* Archétype */
+    .archetype-section {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 18px;
+      align-items: start;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+    }
+    .archetype-icon { width: 64px; height: 64px; border-radius: 12px; background: var(--ground); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+    .archetype-icon svg { width: 44px; height: 44px; }
+    .archetype-info h3 { font-size: 14px; font-weight: 500; color: var(--muted); display: flex; align-items: center; }
+    .archetype-name { margin-top: 2px; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+    .archetype-desc { margin-top: 8px; font-size: 15px; color: var(--ink); line-height: 1.55; }
+    .btn-voir-archetypes {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      background: #E6E9ED;
+      border-radius: var(--radius-control);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-voir-archetypes:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .btn-voir-archetypes:hover { background: #DADEE3; } }
+
+    /* Score de pente */
+    .terrain-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; }
+    .terrain-section h3, .evolution-section h3, .import-section h3, .activites-header h3 {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .terrain-section h3 { justify-content: flex-start; }
+    .terrain-section .desc, .evolution-section .desc, .import-section .desc { margin: 4px 0 16px; font-size: 14px; color: var(--muted); max-width: 70ch; }
+    .btn-recalc {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      background: #E6E9ED;
+      border-radius: var(--radius-control);
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-recalc svg { width: 14px; height: 14px; }
+    .btn-recalc:active { transform: scale(0.97); }
+    .btn-recalc:disabled { opacity: 0.55; cursor: default; }
+    @media (hover: hover) and (pointer: fine) { .btn-recalc:hover:not(:disabled) { background: #DADEE3; } }
+    .score-scale { display: grid; grid-template-columns: 150px 1fr 64px; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+    .score-scale span:nth-child(2) { display: flex; justify-content: space-between; }
+    .score-scale i { font-style: normal; font-variant-numeric: tabular-nums; }
+    .archetype-forces-label { margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .archetype-forces { margin: 4px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.65; }
+    .archetype-conseil { margin-top: 12px; padding: 10px 12px; background: var(--raised); border-radius: 6px; font-size: 14px; line-height: 1.5; }
+    .archetype-conseil b { font-weight: 600; }
+
+    /* Évolution */
+    .evolution-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; }
+    .evolution-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .evolution-tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--active); border-radius: 8px; overflow-x: auto; max-width: 100%; }
+    .ev-metric-btn {
+      min-height: 30px;
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      border-radius: 6px;
+      white-space: nowrap;
+      transition: color var(--t-hover) ease, background-color var(--t-hover) ease;
+    }
+    .ev-metric-btn.active { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.08); }
+    @media (hover: hover) and (pointer: fine) { .ev-metric-btn:not(.active):hover { color: var(--ink); } }
+    .evolution-chart-container { position: relative; min-height: 220px; }
+    .evolution-chart-svg { width: 100%; height: 280px; display: block; overflow: visible; }
+    .ev-line { fill: none; stroke: var(--data); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ev-point { fill: var(--paper); stroke: var(--data); stroke-width: 2; cursor: pointer; transition: r 120ms ease; }
+    .ev-point:hover { r: 7; }
+    .ev-axis-line { stroke: var(--border); stroke-width: 1; }
+    .ev-axis-text { fill: var(--muted); font-family: var(--font); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .ev-grid-line { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; }
+    .ev-tooltip {
+      position: absolute;
+      z-index: 3000;
+      padding: 8px 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--paper);
+      background: var(--ink);
+      border-radius: 6px;
+      box-shadow: var(--shadow-float);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .ev-tooltip-title { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .ev-tooltip-meta { color: #C9CED6; font-size: 12px; }
+    .evolution-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+    .ev-legend-item { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
+    .ev-legend-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--data); background: var(--paper); }
+    .evolution-legend .btn-ghost { margin-left: auto; min-height: 32px; font-size: 13px; }
+    .evolution-empty { display: flex; align-items: center; justify-content: center; min-height: 200px; padding: 24px; text-align: center; font-size: 14px; color: var(--muted); border: 1px dashed var(--control); border-radius: var(--radius-card); }
+
+    /* Import */
+    .profil-data { display: grid; gap: 16px; }
+    .import-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px; }
+    .import-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .import-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 14px;
+      align-items: center;
+      min-height: 84px;
+      padding: 16px 18px;
+      border-radius: var(--radius-card);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .import-card.gpx { border: 1.5px dashed var(--control); background: var(--raised); }
+    .import-card.strava { border: 1px solid var(--border); background: var(--paper); }
+    .import-card:active { transform: scale(0.99); }
+    .import-card.dragover { border-color: var(--data); background: var(--data-soft); }
+    .import-card .icon { grid-row: span 3; width: 40px; height: 40px; border-radius: 10px; background: var(--paper); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--ink); }
+    .import-card.strava .icon { background: var(--ground); }
+    .import-card .icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .import-card h4 { font-size: 15px; font-weight: 600; }
+    .import-card p { font-size: 13px; color: var(--muted); }
+    @media (hover: hover) and (pointer: fine) {
+      .import-card.gpx:hover { border-color: var(--ink); background: var(--paper); }
+      .import-card.strava:hover { border-color: var(--control); }
+    }
+    .strava-status { display: none !important; }
+    .strava-status.connected { display: inline-flex !important; align-items: center; gap: 4px; margin-top: 4px; height: 20px; padding: 0 7px; width: fit-content; border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--positive-ink); background: var(--positive-bg); }
+    .import-trust { margin-top: 14px; font-size: 13px; color: var(--muted); max-width: 90ch; }
+
+    /* Activités */
+    .activites-section { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 20px 20px 8px; }
+    .activites-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+    .activites-count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .activites-cols, .activite-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) 112px 72px 80px 64px 76px;
+      align-items: center;
+      gap: 12px;
+    }
+    .activites-cols { padding: 8px 0; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+    .activites-cols span:nth-child(n+4) { text-align: right; }
+    .activite-row {
+      min-height: 56px;
+      padding: 8px 12px;
+      margin: 0 -12px;
+      border-bottom: 1px solid var(--rule);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color var(--t-hover) ease;
+    }
+    .activite-row:last-child { border-bottom: 0; }
+    @media (hover: hover) and (pointer: fine) { .activite-row:hover { background: var(--raised); } }
+    .source-badge { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: var(--ground); color: var(--ink); }
+    .source-badge svg { width: 15px; height: 15px; }
+    .activite-name-cell { min-width: 0; }
+    .activite-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .activite-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .activite-type-tag { justify-self: start; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); white-space: nowrap; }
+    .activite-type-tag.course { background: var(--data-soft); color: #123E8E; }
+    .activite-type-tag.resultat { background: var(--notice-bg); color: var(--notice-ink); }
+    .activite-meta { font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .activite-actions { display: flex; justify-content: flex-end; gap: 4px; }
+    .btn-rename, .btn-delete { width: 34px; height: 34px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+    .btn-rename svg, .btn-delete svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    @media (hover: hover) and (pointer: fine) {
+      .btn-rename:hover { background: var(--active); color: var(--ink); }
+      .btn-delete:hover { background: var(--negative-bg); color: var(--negative); }
+    }
+    .activites-empty { padding: 28px 8px; font-size: 14px; color: var(--muted); }
+    .profil-empty { background: var(--paper); border: 1px dashed var(--control); border-radius: var(--radius-card); padding: 20px; font-size: 14px; color: var(--muted); }
+
+    /* ── Fenêtre : les 8 archétypes ───────────────────────────── */
+    .archetypes-modal-content { width: 100%; max-width: 980px; background: var(--paper); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-float); }
+    .archetypes-modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+    .archetypes-modal-header h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .archetypes-modal-header p { margin-top: 4px; font-size: 14px; color: var(--muted); }
+    .archetypes-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .archetype-card { position: relative; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius-card); }
+    .archetype-card.is-mine { border: 2px solid var(--ink); padding: 15px 17px; }
+    .archetype-card-badge { position: absolute; top: 14px; right: 14px; height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--ink); color: var(--paper); }
+    .archetype-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; padding-right: 90px; }
+    .archetype-card-icon { width: 40px; height: 40px; flex-shrink: 0; color: var(--ink); }
+    .archetype-card-icon svg { width: 40px; height: 40px; }
+    .archetype-card-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+    .archetype-card-desc { font-size: 14px; line-height: 1.55; }
+    .archetype-card-forces-label { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .archetype-card-forces { margin: 4px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; }
+    .archetype-card-conseil { margin-top: 10px; padding: 10px 12px; background: var(--raised); border-radius: 6px; font-size: 13px; line-height: 1.5; }
+    .archetype-card-conseil b { font-weight: 600; }
+
+    /* ── Fenêtre : détail d'une activité ──────────────────────── */
+    .detail-modal-content { width: 100%; max-width: 900px; background: var(--paper); border-radius: 12px; padding: 24px; box-shadow: var(--shadow-float); }
+    .detail-modal-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 18px; }
+    .detail-modal-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--active); color: var(--ink); }
+    .detail-modal-tag.strava { background: #FFF1E8; color: #8A3A08; }
+    .detail-modal-content h2 { margin-top: 8px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }
+    .detail-modal-date { margin-top: 2px; font-size: 14px; color: var(--muted); }
+    .detail-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: var(--radius-card); margin-bottom: 18px; }
+    .detail-kpi { padding: 12px 14px; border-left: 1px solid var(--border); min-width: 0; }
+    .detail-kpi:first-child { border-left: 0; }
+    .detail-kpi-label { font-size: 13px; color: var(--muted); }
+    .detail-kpi-val { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+    .detail-kpi-val.gradient { color: var(--data); }
+    .detail-kpi-sub { font-size: 12px; color: var(--muted); }
+    .detail-section-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .detail-map-section { margin-bottom: 18px; }
+    .detail-map-section .detail-map { height: 340px; border-radius: var(--radius-card); overflow: hidden; border: 1px solid var(--border); background: var(--raised); }
+    .detail-alti { border: 1px solid var(--border); border-radius: var(--radius-card); padding: 8px 4px 4px; }
+    .detail-alti svg { width: 100%; height: 200px; display: block; }
+    .detail-alti .alti-fill { fill: var(--data-soft); stroke: none; }
+    .detail-alti .alti-line { fill: none; stroke: var(--data); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .detail-alti .alti-axis { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .detail-alti .alti-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+    .detail-alti .alti-text { fill: var(--muted); font-family: var(--font); font-size: 11px; }
+    .leaflet-container { font-family: var(--font); }
+
+    /* ── Fenêtre : import Strava ──────────────────────────────── */
+    .strava-search { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .strava-search .filter-group { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+    .strava-search .filter-label { font-size: 13px; color: var(--muted); }
+    .strava-search input.filter-num { width: 72px; }
+    .strava-search select { width: 120px; }
+    .strava-search-count { grid-column: 1 / -1; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .strava-batch-actions { display: flex; justify-content: space-between; gap: 8px; margin: 4px 0 12px; position: sticky; top: 0; background: var(--paper); padding: 8px 0; z-index: 1; }
+    .btn-import-sa { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-import-sa:active { transform: scale(0.97); }
+    .btn-import-sa:disabled { opacity: 0.4; cursor: not-allowed; }
+    .strava-activity-checkable { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-card); margin-bottom: 8px; cursor: pointer; transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease; }
+    .strava-activity-checkable.is-selected { border-color: var(--ink); background: var(--raised); }
+    .strava-activity-checkable.is-imported { opacity: 0.6; cursor: default; }
+    .strava-check { width: 18px; height: 18px; margin-top: 2px; cursor: pointer; }
+    .strava-act-info { min-width: 0; }
+    .sa-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sa-meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .sa-imported-tag { height: 22px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: var(--positive-bg); color: var(--positive-ink); white-space: nowrap; }
+    .strava-type-picker { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .strava-type-label { font-size: 13px; color: var(--muted); }
+    .strava-type-select { width: auto; min-height: 34px; font-size: 14px; padding-top: 4px; padding-bottom: 4px; }
+    @media (hover: hover) and (pointer: fine) { .strava-activity-checkable:not(.is-imported):hover { border-color: var(--control); } }
+
+    /* ── Fenêtres : type de sortie, modification ──────────────── */
+    .type-modal { max-width: 520px; }
+    .type-options { display: grid; gap: 8px; margin-bottom: 16px; }
+    .type-option { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); cursor: pointer; transition: border-color var(--t-hover) ease, background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .type-option:active { transform: scale(0.99); }
+    .type-option.selected { border: 2px solid var(--ink); padding: 11px 13px; background: var(--raised); }
+    .type-option-name { font-size: 15px; font-weight: 600; }
+    .type-option-desc { font-size: 13px; color: var(--muted); }
+    @media (hover: hover) and (pointer: fine) { .type-option:hover { border-color: var(--control); background: var(--raised); } }
+    .field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .field-help { margin-top: 4px; font-size: 13px; color: var(--muted); }
+    .modal-actions { display: flex; gap: 8px; }
+    .modal-actions > * { flex: 1; }
+    .btn-save { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius-control); font-size: 14px; font-weight: 600; background: var(--ink); color: var(--paper); transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .btn-save:active { transform: scale(0.97); }
+    .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
+    @media (hover: hover) and (pointer: fine) { .btn-save:hover:not(:disabled), .btn-import-sa:hover:not(:disabled) { background: #2A2F37; } }
+
+    /* ── Tablette et téléphone ────────────────────────────────── */
+    @media (max-width: 1000px) {
+      .profil-grid { grid-template-columns: 1fr; }
+      .detail-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .detail-kpi:nth-child(4) { border-left: 0; }
+      .detail-kpi:nth-child(n+4) { border-top: 1px solid var(--border); }
+    }
+    @media (max-width: 760px) {
+      .profil-kpis { grid-template-columns: 1fr 1fr; }
+      .profil-kpi-card:nth-child(3) { border-left: 0; }
+      .profil-kpi-card:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .import-grid { grid-template-columns: 1fr; }
+      .activites-cols { display: none; }
+      .activite-row {
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        grid-template-areas: "src name act" "src meta act";
+        row-gap: 2px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      .activite-row .source-badge { grid-area: src; align-self: start; }
+      .activite-row .activite-name-cell { grid-area: name; }
+      .activite-row .activite-actions { grid-area: act; }
+      .activite-row .activite-type-tag, .activite-row .activite-meta { display: none; }
+      .activite-row .activite-mobile { grid-area: meta; display: block; }
+      .archetypes-grid { grid-template-columns: 1fr; }
+      .strava-search { grid-template-columns: 1fr 1fr; }
+      .strava-search input.search-name { grid-column: 1 / -1; }
+      .detail-map-section .detail-map { height: 260px; }
+    }
+    .activite-mobile { display: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    @media (max-width: 480px) {
+      .archetype-section { grid-template-columns: 48px 1fr; gap: 14px; }
+      .archetype-icon { width: 48px; height: 48px; }
+      .archetype-icon svg { width: 34px; height: 34px; }
+      .pk-val { font-size: 20px; }
+      .pk-val.gradient { font-size: 24px; }
+      .score-scale { grid-template-columns: 104px 1fr 68px; gap: 8px; }
+    }
+  </style>
+</head>
+<body data-page="profil">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link active" aria-current="page">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Mon profil</h1>
+      <p>Construit à partir de tes sorties GPX et Strava, recalculé à chaque import.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="profil-section" id="profilSection" aria-label="Profil de coureur"></section>
+  </main>
+
+  <!-- Fenêtre : import Strava -->
+  <div class="modal-overlay" id="modalStrava" onclick="if(event.target===this) fermerModalStrava()">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="stravaTitle" style="max-width:720px;">
+      <div class="modal-header">
+        <h3 id="stravaTitle">Importer depuis Strava</h3>
+        <button type="button" class="modal-close" onclick="fermerModalStrava()" aria-label="Fermer">×</button>
+      </div>
+      <div class="modal-body" id="stravaActivitiesList">
+        <p style="padding:24px 0;color:var(--muted)">Chargement des activités…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre : les 8 archétypes -->
+  <div class="modal-overlay" id="modalArchetypes" onclick="if(event.target===this) fermerModalArchetypes()">
+    <div class="archetypes-modal-content" role="dialog" aria-modal="true" aria-labelledby="archTitle">
+      <div class="archetypes-modal-header">
+        <div>
+          <h2 id="archTitle">Les 8 archétypes SUM'IT</h2>
+          <p>Ta signature de coureur, déterminée par tes forces selon le terrain.</p>
+        </div>
+        <button type="button" class="modal-close" onclick="fermerModalArchetypes()" aria-label="Fermer">×</button>
+      </div>
+      <div class="archetypes-grid" id="archetypesGrid"></div>
+    </div>
+  </div>
+
+  <!-- Fenêtre : détail d'une activité -->
+  <div class="modal-overlay" id="modalDetailActivite" onclick="if(event.target===this) fermerDetailActivite()">
+    <div class="detail-modal-content" role="dialog" aria-modal="true" aria-labelledby="detailActNom">
+      <div class="detail-modal-header">
+        <div>
+          <div class="detail-modal-tag" id="detailActSource">GPX</div>
+          <h2 id="detailActNom">Activité</h2>
+          <div class="detail-modal-date" id="detailActDate">—</div>
+        </div>
+        <button type="button" class="modal-close" onclick="fermerDetailActivite()" aria-label="Fermer">×</button>
+      </div>
+      <div class="detail-kpis" id="detailKpis"></div>
+      <div class="detail-map-section">
+        <div class="detail-section-title">Tracé GPS</div>
+        <div id="detailMap" class="detail-map"></div>
+      </div>
+      <div class="detail-alti-section">
+        <div class="detail-section-title">Altimétrie</div>
+        <div id="detailAlti" class="detail-alti"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre : modifier une activité -->
+  <div class="modal-overlay" id="modalEditActivite" onclick="if(event.target===this) fermerEditActivite()">
+    <div class="modal-content type-modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <div class="modal-header">
+        <h3 id="editTitle">Modifier l'activité</h3>
+        <button type="button" class="modal-close" onclick="fermerEditActivite()" aria-label="Fermer">×</button>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="field-label" for="editActNom">Nom de l'activité</label>
+        <input type="text" id="editActNom" maxlength="200">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label class="field-label" for="editActDate">Date de la sortie</label>
+        <input type="date" id="editActDate" aria-describedby="editDateHelp">
+        <div class="field-help" id="editDateHelp">Elle place la sortie au bon endroit dans ton évolution.</div>
+      </div>
+      <div id="editTypeBlock">
+        <span class="field-label">Type de sortie</span>
+        <div class="type-options">
+          <div class="type-option" data-type="course" role="button" tabindex="0" onclick="selectionnerTypeEdit('course')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectionnerTypeEdit('course');}">
+            <div><div class="type-option-name">Course</div><div class="type-option-desc">Compétition, poids ×1,0</div></div>
+            <span class="tag tag-cyan">Intensité maximale</span>
+          </div>
+          <div class="type-option" data-type="resultat" role="button" tabindex="0" onclick="selectionnerTypeEdit('resultat')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectionnerTypeEdit('resultat');}">
+            <div><div class="type-option-name">Résultat de course</div><div class="type-option-desc">Course réelle, à comparer à une simulation, poids ×1,0</div></div>
+            <span class="tag tag-sun">Bilan</span>
+          </div>
+          <div class="type-option" data-type="entrainement" role="button" tabindex="0" onclick="selectionnerTypeEdit('entrainement')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectionnerTypeEdit('entrainement');}">
+            <div><div class="type-option-name">Entraînement</div><div class="type-option-desc">Sortie tempo ou fractionné, poids ×0,7</div></div>
+            <span class="tag">Régulière</span>
+          </div>
+          <div class="type-option" data-type="sortie" role="button" tabindex="0" onclick="selectionnerTypeEdit('sortie')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectionnerTypeEdit('sortie');}">
+            <div><div class="type-option-name">Sortie</div><div class="type-option-desc">Footing tranquille ou balade, poids ×0,4</div></div>
+            <span class="tag">Détendue</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="fermerEditActivite()">Annuler</button>
+        <button type="button" class="btn-save" id="btnValiderEdit" onclick="validerEditActivite()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fenêtre : type de sortie à l'import -->
+  <div class="modal-overlay" id="modalTypeSortie" onclick="if(event.target===this) annulerTypeSortie()">
+    <div class="modal-content type-modal" role="dialog" aria-modal="true" aria-labelledby="typeTitle">
+      <h3 id="typeTitle">Quel type de sortie ?</h3>
+      <p>Cette info pondère ta performance : une course compte plus qu'un entraînement.</p>
+      <div class="type-options">
+        <div class="type-option" role="button" tabindex="0" onclick="confirmerTypeSortie('course')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmerTypeSortie('course');}">
+          <div><div class="type-option-name">Course</div><div class="type-option-desc">Compétition, poids ×1,0</div></div>
+          <span class="tag tag-cyan">Intensité maximale</span>
+        </div>
+        <div class="type-option" role="button" tabindex="0" onclick="confirmerTypeSortie('resultat')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmerTypeSortie('resultat');}">
+          <div><div class="type-option-name">Résultat de course</div><div class="type-option-desc">Course réelle, à comparer à une simulation, poids ×1,0</div></div>
+          <span class="tag tag-sun">Bilan</span>
+        </div>
+        <div class="type-option" role="button" tabindex="0" onclick="confirmerTypeSortie('entrainement')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmerTypeSortie('entrainement');}">
+          <div><div class="type-option-name">Entraînement</div><div class="type-option-desc">Sortie tempo ou fractionné, poids ×0,7</div></div>
+          <span class="tag">Régulière</span>
+        </div>
+        <div class="type-option" role="button" tabindex="0" onclick="confirmerTypeSortie('sortie')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();confirmerTypeSortie('sortie');}">
+          <div><div class="type-option-name">Sortie</div><div class="type-option-desc">Footing tranquille ou balade, poids ×0,4</div></div>
+          <span class="tag">Détendue</span>
+        </div>
+      </div>
+      <button type="button" class="btn-ghost" onclick="annulerTypeSortie()" style="width:100%;">Annuler</button>
+    </div>
+  </div>
+
+  <!-- Chargement -->
+  <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Analyse en cours…</div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261026"></script>
+  <script src="../js/api-client.js?v=20261026"></script>
+  <script src="../js/nav-user.js?v=20261026"></script>
+  <script src="../js/onboarding.js?v=20261026"></script>
+  <script src="../js/pictos.js?v=20261026"></script>
+  <script>
+
+    let currentProfilType = 'trail';
+    let currentUser       = null;
+    let currentProfile    = null;
+    let currentActivites  = [];
+    let pendingUpload     = null;
+
+    const TYPE_LABELS = {
+      course:       'Course',
+      resultat:     'Résultat',
+      rando:        'Rando',
+      entrainement: 'Entraînement',
+      sortie:       'Sortie',
+    };
+    let stravaActivitiesCache = []; // cache pour filtrer sans refetch
+
+    // Pictogramme d'un archétype (dessin de pente, voir js/pictos.js),
+    // insensible au préfixe "Le "/"L'"/"La "
+    function iconeArchetype(nom) {
+      return (typeof pictoArchetype === 'function') ? pictoArchetype(nom) : '';
+    }
+
+    const ICONE_GPX = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5h6.5L13 5v9.5H3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9.5 1.5V5H13" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+    const ICONE_STRAVA = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.6 1 2.5 9h2.4l1.7-3.3L8.3 9h2.4zM10.7 9l-1.2 2.4L8.3 9H6.5l3 6 3-6z" fill="currentColor"/></svg>';
+    // Nombres à la française : virgule décimale, espace des milliers
+    const dec = (v, n) => (Number(v) || 0).toFixed(n).replace('.', ',');
+    const entier = (v) => Math.round(Number(v) || 0).toLocaleString('fr-FR').replace(/ | /g, ' ');
+    const ICONE_RECALC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    // ── Init ─────────────────────────────────────────────────────
+    (async function init() {
+      const section = document.getElementById('profilSection');
+      try { if (new URLSearchParams(window.location.search).get('type') === 'rando') currentProfilType = 'rando'; } catch (e) {}
+
+      if (!isLoggedIn()) {
+        section.innerHTML = `
+          <div class="gate">
+            <div>
+              <h2>Ton profil de coureur, tiré de tes propres traces</h2>
+              <p class="gate-lede">Importe tes sorties GPX ou Strava : SUM'IT mesure ton allure sur chaque type de pente et en tire ton profil.</p>
+              <ul class="gate-points">
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Ta VEP,</b> <span>ta vitesse équivalente plat, la base de toutes tes prédictions.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Ton archétype,</b> <span>parmi huit profils, et ce qu'il dit de tes points forts.</span></div></li>
+                <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><div><b>Ton score de pente,</b> <span>terrain par terrain, recalculé à chaque import.</span></div></li>
+              </ul>
+              <div class="hero-btns">
+                <button type="button" class="btn-primary" onclick="loginGoogle()">Se connecter avec Google</button>
+                <a class="btn-ghost" href="simulateur.html?demo=ccc">Voir la démo CCC</a>
+              </div>
+            </div>
+            <figure class="gate-preview" aria-label="Aperçu">
+              <img class="gate-bg" src="../assets/photos/gel-gilet-960.webp" srcset="../assets/photos/gel-gilet-600.webp 600w, ../assets/photos/gel-gilet-960.webp 960w" sizes="(max-width: 900px) 100vw, 560px" width="960" height="1200" alt="Un traileur en mouvement, gilet chargé de flasques et de gels." loading="lazy" style="object-position: 50% 30%">
+              <div class="gp-card">
+                <div class="gp-head">${window.pictoArchetype ? pictoArchetype('Le Grimpeur') : ''}<div><small>Archétype</small><b>Le Grimpeur</b></div></div>
+                <dl class="gp-kpis">
+                  <div><dt>VEP globale</dt><dd class="is-data">8,6 km/h</dd></div>
+                  <div><dt>Coefficient</dt><dd>×1,12</dd></div>
+                  <div><dt>Sorties</dt><dd>12</dd></div>
+                </dl>
+                <div class="gp-bars">
+<div class="gp-bar"><span>Montée raide</span><span class="gp-track"><i style="width:22.1%"></i></span><span>−22,1 %</span></div>
+<div class="gp-bar"><span>Montée soutenue</span><span class="gp-track"><i style="width:16.8%"></i></span><span>−16,8 %</span></div>
+<div class="gp-bar"><span>Montée douce</span><span class="gp-track"><i style="width:9.5%"></i></span><span>−9,5 %</span></div>
+<div class="gp-bar"><span>Plat</span><span class="gp-track"><i style="width:0.0%"></i></span><span>0,0 %</span></div>
+<div class="gp-bar"><span>Descente douce</span><span class="gp-track"><i style="width:3.2%"></i></span><span>−3,2 %</span></div>
+<div class="gp-bar"><span>Descente soutenue</span><span class="gp-track"><i style="width:14.7%"></i></span><span>−14,7 %</span></div>
+<div class="gp-bar"><span>Descente raide</span><span class="gp-track"><i style="width:26.3%"></i></span><span>−26,3 %</span></div>
+                </div>
+              </div>
+              <figcaption class="gate-cap">Exemple : le profil du coureur de la démo CCC, construit sur 12 sorties.</figcaption>
+            </figure>
+          </div>
+        `;
+        return;
+      }
+
+      // Gérer retour Strava
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('strava_connected') === '1') {
+        setTimeout(() => alert('Compte Strava connecté.'), 200);
+        cleanURL(['strava_connected']);
+      }
+      const stravaError = params.get('strava_error');
+      if (stravaError) {
+        setTimeout(() => alert(`Erreur Strava : ${stravaError}`), 200);
+        cleanURL(['strava_error']);
+      }
+
+      try {
+        currentUser = await fetchMe();
+        renderUI();
+        await refreshActivites();
+        await refreshEvolution();
+      } catch (e) {
+        section.innerHTML = `<div class="login-required"><h2>Impossible de charger ton profil</h2><p>${e.message}</p><button type="button" class="btn-primary" onclick="location.reload()">Réessayer</button></div>`;
+      }
+    })();
+
+    function cleanURL(paramsToRemove) {
+      const url = new URL(window.location);
+      paramsToRemove.forEach(p => url.searchParams.delete(p));
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // ── Render principal ────────────────────────────────────────
+    function renderUI() {
+      const profileTrail = currentUser.profiles.find(p => p.type === 'trail');
+      const profileRando = currentUser.profiles.find(p => p.type === 'rando');
+      currentProfile = currentProfilType === 'trail' ? profileTrail : profileRando;
+      const libelle = currentProfilType === 'trail' ? 'trail' : 'randonnée';
+
+      const blocImport = `
+        <div class="import-section">
+          <h3>Ajouter une activité ${currentProfilType==='trail' ? 'trail' : 'de randonnée'}</h3>
+          <p class="desc">Chaque ajout met à jour ton profil. Tu peux supprimer une activité à tout moment.</p>
+          <div class="import-grid">
+            <div class="import-card gpx" id="gpxDropzone" role="button" tabindex="0" onclick="document.getElementById('gpxFileInput').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('gpxFileInput').click();}">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              </div>
+              <h4>Importer un fichier GPX</h4>
+              <p>Glisse-le ici ou clique pour le choisir</p>
+              <input type="file" id="gpxFileInput" accept=".gpx" style="display:none" onchange="handleGPXSelected(event)">
+            </div>
+            <div class="import-card strava" role="button" tabindex="0" onclick="handleStravaClick()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleStravaClick();}">
+              <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M10 2 4 14h3.6l2.4-4.8L12.4 14H16zM16 14l-1.8 3.6L12.4 14H9.8l4.4 8.8 4.4-8.8z" fill="currentColor" stroke="none"/></svg>
+              </div>
+              <h4>Importer depuis Strava</h4>
+              <p>${currentUser.strava_connected ? 'Choisis parmi tes activités Strava' : 'Connecte ton compte Strava'}</p>
+              <p class="strava-status ${currentUser.strava_connected?'connected':''}">Strava connecté</p>
+            </div>
+          </div>
+          <p class="import-trust">Tes données restent privées : SUM'IT lit tes activités uniquement pour construire ton profil de coureur. Rien n'est revendu ni partagé, et tu peux supprimer une activité ou déconnecter Strava à tout moment.</p>
+        </div>`;
+
+      const blocActivites = `
+        <div class="activites-section">
+          <div class="activites-header">
+            <h3>Mes activités ${libelle}</h3>
+            <span class="activites-count" id="activitesCount">— activités</span>
+          </div>
+          <div class="activites-cols" aria-hidden="true">
+            <span></span><span>Activité</span><span>Type</span><span>Distance</span><span>D+</span><span>Durée</span><span></span>
+          </div>
+          <div id="activitesContainer">
+            <div class="activites-empty">Chargement…</div>
+          </div>
+        </div>`;
+
+      const section = document.getElementById('profilSection');
+      section.innerHTML = `
+        <div class="profil-tabs" role="tablist" aria-label="Type de profil">
+          <div class="profil-tab ${currentProfilType==='trail'?'active':''}" role="tab" tabindex="0" aria-selected="${currentProfilType==='trail'}" onclick="switchTab('trail')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('trail');}">Trail</div>
+          <div class="profil-tab ${currentProfilType==='rando'?'active':''}" role="tab" tabindex="0" aria-selected="${currentProfilType==='rando'}" onclick="switchTab('rando')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('rando');}">Randonnée</div>
+        </div>
+        ${currentProfile ? `
+          ${renderProfileDetails()}
+          <div class="profil-data">${blocImport}${blocActivites}</div>
+        ` : `
+          <div class="profil-data">${blocImport}</div>
+          <div class="profil-empty">Ton profil ${libelle} se construira dès ton premier import : vitesse par pente, archétype et évolution. En attendant, <a href="simulateur.html?demo=ccc" style="color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:3px;">vois une simulation complète sur la CCC</a>.</div>
+          ${blocActivites}
+        `}
+      `;
+
+      // Glisser-déposer sur la zone d'import
+      attachDragDrop();
+    }
+
+    function renderProfileDetails() {
+      const p = currentProfile;
+      const arch = p.archetype || {};
+      const archIcon = iconeArchetype(arch.nom);
+      const profilData = p.profil_data || {};
+      const archData = (typeof ARCHETYPES_DATA !== 'undefined')
+        ? ARCHETYPES_DATA.find(a => normalizeArchetype(a.nom) === normalizeArchetype(arch.nom)) : null;
+
+      return `
+        <div class="profil-kpis">
+          <div class="profil-kpi-card">
+            <div class="pk-label">VEP globale<span class="info-i" tabindex="0" data-tip="Vitesse équivalente plat : ta vitesse ramenée à du plat, dénivelé neutralisé. C'est l'indicateur clé de ta forme, indépendant du parcours."></span></div>
+            <div class="pk-val gradient">${dec(p.vep_globale, 1)}</div>
+            <div class="pk-sub">km/h équivalent plat</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Drain d'énergie</div>
+            <div class="pk-val">${dec(p.drain_moy_h*100, 1)}</div>
+            <div class="pk-sub">% de batterie par heure</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Activités</div>
+            <div class="pk-val">${p.nb_traces}</div>
+            <div class="pk-sub">analysées</div>
+          </div>
+          <div class="profil-kpi-card">
+            <div class="pk-label">Coefficient course</div>
+            <div class="pk-val">×${dec(p.coefficient_course, 2)}</div>
+            <div class="pk-sub">en course contre entraînement</div>
+          </div>
+        </div>
+
+        <div class="profil-grid">
+          <div class="archetype-section">
+            <div class="archetype-icon">${archIcon}</div>
+            <div class="archetype-info">
+              <h3>Ton archétype <span class="info-i" tabindex="0" data-tip="Ton archétype résume ta signature de coureur : les terrains où tu es le plus efficace. Il est recalculé à chaque import et peut évoluer avec ta forme."></span></h3>
+              <div class="archetype-name">${arch.nom || 'Combattant'}</div>
+              <div class="archetype-desc">${arch.desc || 'Polyvalent, régulier sur tous les terrains.'}</div>
+              ${archData ? `
+                <div class="archetype-forces-label">Tes points forts</div>
+                <ul class="archetype-forces">${archData.forces.map(f => `<li>${f}</li>`).join('')}</ul>
+                <div class="archetype-conseil"><b>Pour progresser :</b> ${archData.conseil}</div>` : ''}
+              <button type="button" class="btn-voir-archetypes" onclick="ouvrirModalArchetypes()">Voir les 8 archétypes</button>
+            </div>
+          </div>
+
+          <div class="terrain-section">
+            <h3>Score de pente <span class="info-i tip-left" tabindex="0" data-tip="Pour chaque type de terrain, on calcule ta vitesse équivalente plat. L'écart est exprimé en % de ton allure sur le plat (référence 0 %). Positif : tu es plus efficace que sur le plat ; négatif : moins. Les terrains marqués « estimé » manquent de données mesurées et sont déduits de ton niveau global."></span><button type="button" class="btn-recalc" onclick="forcerRecalcul()" title="Recalcule ton profil avec la dernière version de l'algorithme">${ICONE_RECALC}<span>Recalculer</span></button></h3>
+            <p class="desc">Écart de performance par terrain, comparé à ton allure sur le plat.</p>
+            ${renderScorePente(profilData)}
+          </div>
+        </div>
+
+        <div class="evolution-section">
+          <div class="evolution-head">
+            <h3>Mon évolution</h3>
+            <div class="evolution-tabs" role="group" aria-label="Indicateur affiché">
+              <button type="button" class="ev-metric-btn active" data-metric="vep_globale"        onclick="switchEvolutionMetric('vep_globale')">VEP</button>
+              <button type="button" class="ev-metric-btn"        data-metric="coefficient_course" onclick="switchEvolutionMetric('coefficient_course')">Coefficient</button>
+              <button type="button" class="ev-metric-btn"        data-metric="score_montee"       onclick="switchEvolutionMetric('score_montee')">Montée</button>
+              <button type="button" class="ev-metric-btn"        data-metric="score_descente"     onclick="switchEvolutionMetric('score_descente')">Descente</button>
+              <button type="button" class="ev-metric-btn"        data-metric="dist_moy_km"        onclick="switchEvolutionMetric('dist_moy_km')">Distance moy.</button>
+            </div>
+          </div>
+          <p class="desc">Un point par import : l'indicateur choisi, recalculé avec toutes tes activités à cette date.</p>
+          <div id="evolutionChart" class="evolution-chart-container">
+            <div class="evolution-empty">Chargement de l'historique…</div>
+          </div>
+          <div class="evolution-legend" id="evolutionLegend"></div>
+        </div>
+      `;
+    }
+
+    function renderScorePente(profilData) {
+      const ordreT = ['montee_raide','montee_soutenue','montee_douce','plat','descente_douce','descente_soutenue','descente_raide'];
+      const labels = {
+        montee_raide: 'Montée raide',
+        montee_soutenue: 'Montée soutenue',
+        montee_douce: 'Montée douce',
+        plat: 'Plat (référence)',
+        descente_douce: 'Descente douce',
+        descente_soutenue: 'Descente soutenue',
+        descente_raide: 'Descente raide',
+      };
+
+      let html = '';
+      ordreT.forEach(t => {
+        const data = profilData[t];
+        if (!data) return;
+        const ecart = data.ecart_plat_pct || 0;
+        const isPlat = (t === 'plat');
+        const estime = data.estime === true;
+        const widthPct = Math.min(50, Math.abs(ecart));
+
+        let fillClass = 'positive';
+        let valClass = 'positive';
+        if (isPlat) { valClass = 'neutral'; }
+        else if (ecart < 0) { fillClass = 'negative'; valClass = 'negative'; }
+
+        const display = isPlat ? '0 %' : `${ecart > 0 ? '+' : (ecart < 0 ? '−' : '')}${Math.abs(ecart).toFixed(1).replace('.', ',')} %`;
+        const labelExtra = estime
+          ? ` <span class="score-estime" title="Estimé : pas assez de données mesurées sur ce terrain. Importe une sortie avec ce type de pente pour affiner.">estimé</span>`
+          : '';
+
+        html += `
+          <div class="score-bar${estime ? ' is-estime' : ''}">
+            <div class="score-label">${labels[t]}${labelExtra}</div>
+            <div class="score-track">
+              ${isPlat ? '' : `<div class="score-fill ${fillClass}" style="width:${widthPct}%;"></div>`}
+            </div>
+            <div class="score-val ${valClass}">${display}</div>
+          </div>
+        `;
+      });
+      if (html) html += `<div class="score-scale" aria-hidden="true"><span></span><span><i>−50 %</i><i>0</i><i>+50 %</i></span><span></span></div>`;
+      return html;
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────
+    async function forcerRecalcul() {
+      const btn = document.querySelector('.btn-recalc');
+      const libelleRecalc = (t) => { if (btn) btn.innerHTML = `${ICONE_RECALC}<span>${t}</span>`; };
+      if (btn) { btn.disabled = true; libelleRecalc('Recalcul…'); }
+      try {
+        await recalculerProfil(currentProfilType);
+        // Refetch les données utilisateur (le profil a changé côté serveur)
+        currentUser = await fetchMe();
+        renderUI();
+        await refreshActivites();
+        await refreshEvolution();
+        const b2 = document.querySelector('.btn-recalc');
+        if (b2) { b2.disabled = true; b2.innerHTML = `${ICONE_RECALC}<span>À jour</span>`; setTimeout(() => { b2.innerHTML = `${ICONE_RECALC}<span>Recalculer</span>`; b2.disabled = false; }, 2000); }
+      } catch (e) {
+        alert('Erreur lors du recalcul : ' + e.message);
+        if (btn) { libelleRecalc('Recalculer'); btn.disabled = false; }
+      }
+    }
+
+    async function switchTab(type) {
+      currentProfilType = type;
+      renderUI();
+      await refreshActivites();
+      await refreshEvolution();
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  ÉVOLUTION DU COUREUR — réécriture propre
+    // ════════════════════════════════════════════════════════════
+
+    // Couleurs par archétype (insensible aux préfixes "Le ", "L'", "La ")
+    const ARCHETYPE_COLORS = {
+      'Grimpeur':   '#FFC857',  // jaune  - montée générale
+      'Cabri':      '#A8E063',  // vert clair - pente raide
+      'Équilibré':  '#6BB36B',  // vert   - polyvalent
+      'Diesel':     '#8B6F47',  // marron - endurance
+      'Descendeur': '#4FA3D9',  // bleu   - descente générale
+      'Funambule':  '#9B7BE0',  // violet pâle - descente technique
+      'Tenace':     '#F39237',  // orange - mental
+      'Rouleur':    '#E55B5B',  // rouge  - plat
+      'Combattant': '#B388EB',  // violet - défaut
+    };
+
+    function normalizeArchetype(nom) {
+      if (!nom) return '';
+      return nom.replace(/^L'/i, '').replace(/^Le\s+/i, '').replace(/^La\s+/i, '').trim();
+    }
+
+    function getArchetypeColor(nom) {
+      return ARCHETYPE_COLORS[normalizeArchetype(nom)] || '#FFC857';
+    }
+
+    // ── Données des 8 archétypes (cohérent backend) ─────────────
+    const ARCHETYPES_DATA = [
+      { nom: 'Le Cabri', color: '#A8E063',
+        desc: "Tu attaques les pentes raides comme un cabri. Plus ça monte fort, plus tu accélères.",
+        forces: ['Pentes raides courtes', 'Explosivité musculaire', 'Sections techniques montantes'],
+        conseil: "Travaille des montées longues à allure constante pour ajouter du diesel à ton explosivité." },
+      { nom: 'Le Grimpeur', color: '#FFC857',
+        desc: "Tu avales les D+ comme personne. Les longues montées sont ton terrain de jeu.",
+        forces: ['Montées soutenues et longues', "Résistance à l'accumulation de D+", "Économie d'énergie en côte"],
+        conseil: "Travaille tes descentes en fractionné technique pour ne pas perdre ce que tu gagnes en montée." },
+      { nom: 'Le Funambule', color: '#9B7BE0',
+        desc: "Tu danses sur les descentes techniques. Plus ça plonge et c'est cassant, plus tu vas vite.",
+        forces: ['Descentes raides et techniques', 'Pieds véloces', 'Lecture du terrain'],
+        conseil: "Renforce le travail spécifique en côte pour équilibrer ton profil." },
+      { nom: 'Le Descendeur', color: '#4FA3D9',
+        desc: "Tu récupères dans les descentes ce que tu perds à la montée. Fluide et rapide en descente.",
+        forces: ['Descentes rapides et fluides', 'Technique sur terrain varié', 'Gestion des impacts'],
+        conseil: "Intègre des montées spécifiques (côtes courtes intenses) à tes entraînements." },
+      { nom: "L'Équilibré", color: '#6BB36B',
+        desc: "Profil homogène sur tous les terrains. Pas de point faible, pas de point fort dominant.",
+        forces: ['Polyvalence', "Régularité de l'allure", 'Adaptable à tous parcours'],
+        conseil: "Choisis des parcours variés. Travaille un point fort pour te démarquer." },
+      { nom: 'Le Diesel', color: '#8B6F47',
+        desc: "Tu démarres calmement et tu finis fort. Ton truc, c'est la durée et la régularité.",
+        forces: ['Endurance sur très longue distance', 'Régularité', 'Gestion énergétique'],
+        conseil: "Ajoute des séances de seuil pour gagner en puissance maximale." },
+      { nom: 'Le Rouleur', color: '#E55B5B',
+        desc: "Tu es à l'aise sur le plat et les sections roulantes. Le relief marqué te freine.",
+        forces: ['Sections rapides', 'Vitesse de base élevée', 'Plat et faux-plat'],
+        conseil: "Développe ta puissance en côte avec du fractionné montée 1'/1'." },
+      { nom: 'Le Tenace', color: '#F39237',
+        desc: "Tu ne lâches jamais. Ta force, c'est le mental et la régularité dans la durée.",
+        forces: ["Gestion de l'effort", 'Mental et régularité', 'Constance sur ultra'],
+        conseil: "Fais-toi plaisir sur les ultras. Pour les courses courtes, travaille la VMA." },
+    ];
+
+    function ouvrirModalArchetypes() {
+      const grid = document.getElementById('archetypesGrid');
+      const monArch = (currentProfile && currentProfile.archetype && currentProfile.archetype.nom)
+        ? normalizeArchetype(currentProfile.archetype.nom) : null;
+      grid.innerHTML = ARCHETYPES_DATA.map(a => {
+        const estLeMien = normalizeArchetype(a.nom) === monArch;
+        return `
+          <div class="archetype-card ${estLeMien ? 'is-mine' : ''}">
+            ${estLeMien ? '<div class="archetype-card-badge">Ton profil</div>' : ''}
+            <div class="archetype-card-head">
+              <span class="archetype-card-icon">${iconeArchetype(a.nom)}</span>
+              <span class="archetype-card-name">${a.nom}</span>
+            </div>
+            <div class="archetype-card-desc">${a.desc}</div>
+            <div class="archetype-card-forces-label">Points forts</div>
+            <ul class="archetype-card-forces">
+              ${a.forces.map(f => `<li>${f}</li>`).join('')}
+            </ul>
+            <div class="archetype-card-conseil"><b>Conseil :</b> ${a.conseil}</div>
+          </div>`;
+      }).join('');
+      document.getElementById('modalArchetypes').classList.add('active');
+    }
+
+    function fermerModalArchetypes() {
+      document.getElementById('modalArchetypes').classList.remove('active');
+    }
+
+    let evolutionData = [];
+    let currentEvolutionMetric = 'vep_globale';
+
+    const METRIC_CONFIG = {
+      vep_globale:        { label: 'VEP globale',        unit: 'km/h', fmt: v => dec(v, 1) },
+      coefficient_course: { label: 'Coefficient course', unit: '×',    fmt: v => dec(v, 2) },
+      score_montee:       { label: 'Score montée',       unit: '%',    fmt: v => (v>0?'+':(v<0?'−':''))+dec(Math.abs(v), 1) },
+      score_descente:     { label: 'Score descente',     unit: '%',    fmt: v => (v>0?'+':(v<0?'−':''))+dec(Math.abs(v), 1) },
+      dist_moy_km:        { label: 'Distance moyenne',   unit: 'km',   fmt: v => dec(v, 1) },
+    };
+
+    // ── Chargement des données ──────────────────────────────────
+    async function refreshEvolution() {
+      const cont = document.getElementById('evolutionChart');
+      if (!cont) return;
+      cont.innerHTML = `<div class="evolution-empty">Chargement…</div>`;
+      try {
+        const res = await getEvolution(currentProfilType);
+        evolutionData = trierSnapshots(res.snapshots || []);
+        dessinerEvolutionChart();
+      } catch (e) {
+        cont.innerHTML = `<div class="evolution-empty">Erreur : ${e.message}</div>`;
+      }
+    }
+
+    // Tri chronologique par date d'activité (fallback created_at)
+    function trierSnapshots(snaps) {
+      return snaps.slice().sort((a, b) => {
+        const da = new Date(a.date_activity || a.created_at).getTime();
+        const db = new Date(b.date_activity || b.created_at).getTime();
+        return da - db;
+      });
+    }
+
+    // ── Bouton "Rafraîchir" : reconstruit côté backend ──────────
+    async function rafraichirEvolution() {
+      const cont = document.getElementById('evolutionChart');
+      if (!cont) return;
+      cont.innerHTML = `<div class="evolution-empty">Reconstruction en cours…</div>`;
+      try {
+        await rebuildEvolution(currentProfilType);
+        const res = await getEvolution(currentProfilType);
+        evolutionData = trierSnapshots(res.snapshots || []);
+        dessinerEvolutionChart();
+      } catch (e) {
+        cont.innerHTML = `<div class="evolution-empty">Erreur lors de la reconstruction : ${e.message}</div>`;
+      }
+    }
+
+    // ── Changement de métrique affichée ─────────────────────────
+    function switchEvolutionMetric(metric) {
+      currentEvolutionMetric = metric;
+      document.querySelectorAll('.ev-metric-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.metric === metric);
+      });
+      dessinerEvolutionChart();
+    }
+
+    // ── Dessin du graphique ─────────────────────────────────────
+    function dessinerEvolutionChart() {
+      const cont = document.getElementById('evolutionChart');
+      const legend = document.getElementById('evolutionLegend');
+      if (!cont) return;
+
+      if (!evolutionData || evolutionData.length < 2) {
+        const n = evolutionData ? evolutionData.length : 0;
+        cont.innerHTML = `<div class="evolution-empty">
+          Importe au moins 2 activités pour voir ton évolution (${n} point${n>1?'s':''} pour l'instant).
+        </div>`;
+        if (legend) legend.innerHTML = '';
+        return;
+      }
+
+      const config = METRIC_CONFIG[currentEvolutionMetric] || METRIC_CONFIG.vep_globale;
+      const W = cont.clientWidth || 700;
+      const H = 260;
+      const M = { top: 16, right: 16, bottom: 32, left: 52 };
+      const innerW = W - M.left - M.right;
+      const innerH = H - M.top - M.bottom;
+
+      // Valeurs Y
+      const values = evolutionData.map(s => Number(s[currentEvolutionMetric]) || 0);
+      let yMin = Math.min(...values);
+      let yMax = Math.max(...values);
+      if (yMin === yMax) { yMin -= 1; yMax += 1; }   // évite division par zéro
+      const pad = (yMax - yMin) * 0.12;
+      yMin -= pad; yMax += pad;
+
+      // Axe X : proportionnel aux dates réelles
+      const times = evolutionData.map(s => new Date(s.date_activity || s.created_at).getTime());
+      let tMin = Math.min(...times);
+      let tMax = Math.max(...times);
+      const memeDate = (tMax - tMin) < 1000; // toutes les dates identiques (ex: pas de date GPX)
+
+      const xAt = i => {
+        if (memeDate) {
+          // Réparti uniformément si toutes les dates sont identiques
+          return M.left + (innerW * i / (evolutionData.length - 1));
+        }
+        return M.left + (innerW * (times[i] - tMin) / (tMax - tMin));
+      };
+      const yAt = v => M.top + innerH - ((v - yMin) / (yMax - yMin)) * innerH;
+
+      // Grille horizontale + labels Y
+      let grid = '';
+      for (let k = 0; k <= 4; k++) {
+        const v = yMin + (yMax - yMin) * k / 4;
+        const y = yAt(v);
+        grid += `<line class="ev-grid-line" x1="${M.left}" y1="${y}" x2="${M.left+innerW}" y2="${y}"/>`;
+        grid += `<text class="ev-axis-text" x="${M.left-10}" y="${y+4}" text-anchor="end">${config.fmt(v)}</text>`;
+      }
+
+      // Une seule teinte : la ligne de l'indicateur ; l'archétype est donné dans l'infobulle
+      let lineD = '';
+      evolutionData.forEach((s, i) => { lineD += `${i ? 'L' : 'M'}${xAt(i).toFixed(1)} ${yAt(values[i]).toFixed(1)} `; });
+      const defs = '';
+      const lines = `<path class="ev-line" d="${lineD}"/>`;
+
+      // Points (cibles larges pour le doigt)
+      let pts = '';
+      evolutionData.forEach((s, i) => {
+        pts += `<circle class="ev-point" cx="${xAt(i)}" cy="${yAt(values[i])}" r="5" tabindex="0"
+          onmouseenter="showEvTooltip(event, ${i})" onmouseleave="hideEvTooltip()"
+          onfocus="showEvTooltip(event, ${i})" onblur="hideEvTooltip()" onclick="showEvTooltip(event, ${i})"/>`;
+      });
+
+      // Labels X : 2 à 5 dates réparties
+      let xlabels = '';
+      const nb = Math.min(5, evolutionData.length);
+      const seen = new Set();
+      for (let k = 0; k < nb; k++) {
+        const idx = Math.round((evolutionData.length - 1) * k / (nb - 1));
+        if (seen.has(idx)) continue;
+        seen.add(idx);
+        const s = evolutionData[idx];
+        const d = new Date(s.date_activity || s.created_at);
+        const txt = isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+        const anchor = k === 0 ? 'start' : (k === nb - 1 ? 'end' : 'middle');
+        xlabels += `<text class="ev-axis-text" x="${xAt(idx)}" y="${M.top+innerH+20}" text-anchor="${anchor}">${txt}</text>`;
+      }
+
+      cont.innerHTML = `
+        <svg class="evolution-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${config.label} au fil de tes imports">
+          <defs>${defs}</defs>
+          ${grid}
+          <line class="ev-axis-line" x1="${M.left}" y1="${M.top+innerH}" x2="${M.left+innerW}" y2="${M.top+innerH}"/>
+          ${lines}
+          ${pts}
+          ${xlabels}
+        </svg>`;
+
+      // Légende : les archétypes traversés, dans l'ordre, et le bouton de reconstruction
+      const present = [];
+      evolutionData.forEach(s => {
+        const n = normalizeArchetype(s.archetype_nom);
+        if (n && present[present.length - 1] !== n) present.push(n);
+      });
+      if (legend) {
+        legend.innerHTML =
+          `<span>${evolutionData.length} activités · ${config.label} (${config.unit})</span>` +
+          (present.length ? `<span class="ev-legend-item"><span class="ev-legend-dot"></span>Archétype : ${present.join(' → ')}</span>` : '') +
+          `<button type="button" class="btn-ghost" onclick="rafraichirEvolution()">Rafraîchir l'historique</button>`;
+      }
+    }
+
+    // ── Tooltip ─────────────────────────────────────────────────
+    function showEvTooltip(event, idx) {
+      hideEvTooltip();
+      const s = evolutionData[idx];
+      if (!s) return;
+      const config = METRIC_CONFIG[currentEvolutionMetric];
+      const d = new Date(s.date_activity || s.created_at);
+      const dateStr = isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'numeric'});
+      const arch = normalizeArchetype(s.archetype_nom) || '—';
+      const tt = document.createElement('div');
+      tt.className = 'ev-tooltip';
+      tt.id = 'ev-tooltip-active';
+      tt.innerHTML = `
+        <div class="ev-tooltip-title">${config.fmt(Number(s[currentEvolutionMetric])||0)} ${config.unit}</div>
+        <div>${arch} · ${s.nb_traces} activité${s.nb_traces>1?'s':''}</div>
+        <div class="ev-tooltip-meta">${dateStr}</div>`;
+      document.body.appendChild(tt);
+      const r = event.target.getBoundingClientRect();
+      const w = tt.offsetWidth;
+      const left = Math.min(window.scrollX + document.documentElement.clientWidth - w - 8, r.left + window.scrollX + 14);
+      tt.style.left = `${Math.max(8, left)}px`;
+      tt.style.top  = `${r.top + window.scrollY - tt.offsetHeight - 8}px`;
+    }
+
+    function hideEvTooltip() {
+      const tt = document.getElementById('ev-tooltip-active');
+      if (tt) tt.remove();
+    }
+
+    // ── Activités : chargement & affichage ──────────────────────
+    async function refreshActivites() {
+      try {
+        const res = await listerActivites(currentProfilType);
+        currentActivites = res.activities || [];
+        renderActivites();
+      } catch (e) {
+        document.getElementById('activitesContainer').innerHTML =
+          `<div class="activites-empty">Erreur : ${e.message}</div>`;
+      }
+    }
+
+    function renderActivites() {
+      const cont = document.getElementById('activitesContainer');
+      const count = document.getElementById('activitesCount');
+      if (count) count.textContent = `${currentActivites.length} activité${currentActivites.length>1?'s':''}`;
+      if (!cont) return;
+
+      if (currentActivites.length === 0) {
+        cont.innerHTML = `<div class="activites-empty">Aucune activité pour ce profil. Importe ta première sortie avec le bloc d'import.</div>`;
+        return;
+      }
+
+      cont.innerHTML = currentActivites.map(a => {
+        const dureeMin = Math.round(a.duree_s / 60);
+        const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)} h ${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin} min`;
+        const date = a.date ? new Date(a.date).toLocaleDateString('fr-FR', {day:'numeric', month:'short', year:'numeric'}) : '—';
+        const typeTxt = currentProfilType === 'rando' ? 'Rando' : (TYPE_LABELS[a.type_sortie] || a.type_sortie);
+        return `
+          <div class="activite-row" data-id="${a.id}" role="button" tabindex="0" onclick="ouvrirDetailActivite(${a.id}, event)" onkeydown="if((event.key==='Enter'||event.key===' ')&&event.target===this){event.preventDefault();ouvrirDetailActivite(${a.id}, event);}">
+            <div class="source-badge ${a.source}" title="${a.source === 'strava' ? 'Importée depuis Strava' : 'Import manuel GPX'}">
+              ${a.source === 'strava' ? ICONE_STRAVA : ICONE_GPX}
+            </div>
+            <div class="activite-name-cell">
+              <div class="activite-name" title="${escapeHTML(a.name || 'Sans nom')}">${escapeHTML(a.name || 'Sans nom')}</div>
+              <div class="activite-date">${date}</div>
+            </div>
+            ${currentProfilType === 'rando' ? '<span></span>' : `<span class="activite-type-tag ${a.type_sortie}">${typeTxt}</span>`}
+            <div class="activite-meta">${dec(a.dist_km, 1)} km</div>
+            <div class="activite-meta">${entier(a.dplus_m)} m</div>
+            <div class="activite-meta">${dureeFmt}</div>
+            <div class="activite-actions">
+              <button type="button" class="btn-rename" onclick="event.stopPropagation();lancerRenommage(${a.id})" title="Modifier" aria-label="Modifier ${escapeHTML(a.name || 'l\'activité')}">
+                <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button type="button" class="btn-delete" onclick="event.stopPropagation();deleteActivite(${a.id})" title="Supprimer" aria-label="Supprimer ${escapeHTML(a.name || 'l\'activité')}">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+            <div class="activite-mobile">${typeTxt} · <span class="nobr">${dec(a.dist_km, 1)}&nbsp;km</span> · <span class="nobr">${entier(a.dplus_m)}&nbsp;m&nbsp;D+</span> · <span class="nobr">${dureeFmt}</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHTML(s) {
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    // ── Renommage d'une activité ────────────────────────────────
+    // ── Modale détail activité (Leaflet + altimétrie) ──────────
+    let detailMapInstance = null;
+
+    function ouvrirDetailActivite(id, event) {
+      // Si on a cliqué sur un bouton (crayon, supprimer) on n'ouvre pas la modale
+      if (event && event.target && event.target.closest && event.target.closest('.btn-rename, .btn-delete, .activite-name-input')) {
+        return;
+      }
+
+      const modal = document.getElementById('modalDetailActivite');
+      modal.classList.add('active');
+      // Loading state
+      document.getElementById('detailActNom').textContent = 'Chargement...';
+      document.getElementById('detailActDate').textContent = '';
+      document.getElementById('detailKpis').innerHTML = '';
+      document.getElementById('detailAlti').innerHTML = '';
+      const mapDiv = document.getElementById('detailMap');
+      mapDiv.innerHTML = '';
+
+      // Nettoyer l'ancienne instance de carte
+      if (detailMapInstance) {
+        detailMapInstance.remove();
+        detailMapInstance = null;
+      }
+
+      getActiviteDetail(id)
+        .then(detail => afficherDetailActivite(detail))
+        .catch(e => {
+          document.getElementById('detailActNom').textContent = `Erreur : ${e.message}`;
+        });
+    }
+
+    function fermerDetailActivite() {
+      document.getElementById('modalDetailActivite').classList.remove('active');
+      if (detailMapInstance) {
+        detailMapInstance.remove();
+        detailMapInstance = null;
+      }
+    }
+
+    function afficherDetailActivite(d) {
+      // Header
+      document.getElementById('detailActNom').textContent = d.name || 'Sans nom';
+      const date = d.date ? new Date(d.date).toLocaleDateString('fr-FR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'}) : '—';
+      document.getElementById('detailActDate').textContent = date;
+
+      const sourceTag = document.getElementById('detailActSource');
+      if (d.source === 'strava') {
+        sourceTag.textContent = 'Importée depuis Strava';
+        sourceTag.className = 'detail-modal-tag strava';
+      } else {
+        sourceTag.textContent = 'Import manuel GPX';
+        sourceTag.className = 'detail-modal-tag';
+      }
+
+      // KPIs
+      const h = Math.floor(d.duree_s / 3600);
+      const m = Math.floor((d.duree_s % 3600) / 60);
+      const dureeFmt = `${h} h ${String(m).padStart(2,'0')}`;
+      const allure = d.allure_moy_kmh || 0;
+
+      document.getElementById('detailKpis').innerHTML = `
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Distance</div>
+          <div class="detail-kpi-val gradient">${d.dist_km.toFixed(1).replace('.', ',')}</div>
+          <div class="detail-kpi-sub">km</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">D+</div>
+          <div class="detail-kpi-val">${entier(d.dplus_m)}</div>
+          <div class="detail-kpi-sub">m</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">D−</div>
+          <div class="detail-kpi-val">${entier(d.dmoins_m)}</div>
+          <div class="detail-kpi-sub">m</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Durée</div>
+          <div class="detail-kpi-val">${dureeFmt}</div>
+          <div class="detail-kpi-sub">mouv.</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">Allure</div>
+          <div class="detail-kpi-val">${allure.toFixed(1).replace('.', ',')}</div>
+          <div class="detail-kpi-sub">km/h</div>
+        </div>
+        <div class="detail-kpi">
+          <div class="detail-kpi-label">VEP</div>
+          <div class="detail-kpi-val">${(d.vep_globale || 0).toFixed(1).replace('.', ',')}</div>
+          <div class="detail-kpi-sub">km/h éq. plat</div>
+        </div>
+      `;
+
+      // Carte Leaflet
+      const pts = d.trackpoints || [];
+      if (pts.length > 1) {
+        // Délai pour que le div soit visible (sinon Leaflet calcule mal la taille)
+        setTimeout(() => initLeafletMap(pts), 100);
+        // Altimétrie
+        dessinerAltimetrie(pts, d.alt_min, d.alt_max);
+      } else {
+        document.getElementById('detailMap').innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;color:var(--muted);font-size:14px;">
+            Trace GPS non disponible (activité importée avant cette fonctionnalité).<br>
+            Re-importe l'activité pour la voir sur la carte.
+          </div>`;
+        document.getElementById('detailAlti').innerHTML = `
+          <div style="text-align:center;color:var(--muted);padding:30px;font-size:14px;">Altimétrie non disponible.</div>`;
+      }
+    }
+
+    function initLeafletMap(pts) {
+      const mapDiv = document.getElementById('detailMap');
+      mapDiv.innerHTML = '';
+
+      detailMapInstance = L.map(mapDiv, {
+        zoomControl: true,
+        scrollWheelZoom: true,
+      });
+
+      // Tuiles claires, cohérentes avec les écrans
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap · © CARTO',
+        maxZoom: 19,
+        subdomains: 'abcd',
+      }).addTo(detailMapInstance);
+
+      // Polyline du tracé
+      const latlngs = pts.map(p => [p.lat, p.lon]);
+      const polyline = L.polyline(latlngs, {
+        color: '#1E5FD8',
+        weight: 3.5,
+        opacity: 1,
+      }).addTo(detailMapInstance);
+
+      // Marqueurs start (vert) et end (rouge)
+      const start = pts[0];
+      const end = pts[pts.length - 1];
+      L.circleMarker([start.lat, start.lon], {
+        radius: 7, color: '#0E1116', fillColor: '#FFFFFF', fillOpacity: 1, weight: 3
+      }).bindTooltip('Départ', { permanent: false }).addTo(detailMapInstance);
+      L.circleMarker([end.lat, end.lon], {
+        radius: 7, color: '#FFFFFF', fillColor: '#0E1116', fillOpacity: 1, weight: 2
+      }).bindTooltip('Arrivée', { permanent: false }).addTo(detailMapInstance);
+
+      // Fit aux bornes du tracé
+      detailMapInstance.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+    }
+
+    function dessinerAltimetrie(pts, altMin, altMax) {
+      const cont = document.getElementById('detailAlti');
+      const W = cont.clientWidth || 800;
+      const H = 200;
+      const M = { top: 16, right: 12, bottom: 28, left: 58 };
+      const innerW = W - M.left - M.right;
+      const innerH = H - M.top - M.bottom;
+
+      const dists = pts.map(p => p.dist);
+      const alts  = pts.map(p => p.alt);
+      const distMax = Math.max(...dists);
+      let aMin = altMin !== undefined ? altMin : Math.min(...alts);
+      let aMax = altMax !== undefined ? altMax : Math.max(...alts);
+      const range = Math.max(aMax - aMin, 10);
+      aMin -= range * 0.05;
+      aMax += range * 0.05;
+
+      const xScale = d => M.left + (innerW * d / Math.max(distMax, 0.001));
+      const yScale = a => M.top + innerH - ((a - aMin) / Math.max(aMax - aMin, 0.001)) * innerH;
+
+      // Path remplissage + ligne
+      let linePath = `M ${xScale(dists[0])} ${yScale(alts[0])}`;
+      let fillPath = `M ${xScale(dists[0])} ${M.top + innerH} L ${xScale(dists[0])} ${yScale(alts[0])}`;
+      for (let i = 1; i < pts.length; i++) {
+        const x = xScale(dists[i]);
+        const y = yScale(alts[i]);
+        linePath += ` L ${x} ${y}`;
+        fillPath += ` L ${x} ${y}`;
+      }
+      fillPath += ` L ${xScale(dists[dists.length-1])} ${M.top + innerH} Z`;
+
+      // Grille Y
+      let gridLines = '';
+      let yLabels = '';
+      for (let i = 0; i <= 4; i++) {
+        const v = aMin + (aMax - aMin) * (i / 4);
+        const y = yScale(v);
+        gridLines += `<line class="alti-grid" x1="${M.left}" y1="${y}" x2="${M.left + innerW}" y2="${y}"/>`;
+        yLabels += `<text class="alti-text" x="${M.left - 8}" y="${y + 4}" text-anchor="end">${entier(v)} m</text>`;
+      }
+
+      // Labels X (5 valeurs)
+      let xLabels = '';
+      for (let i = 0; i <= 4; i++) {
+        const d = distMax * i / 4;
+        const x = xScale(d);
+        const ancre = i === 0 ? 'start' : (i === 4 ? 'end' : 'middle');
+        xLabels += `<text class="alti-text" x="${x}" y="${M.top + innerH + 18}" text-anchor="${ancre}">${d.toFixed(1).replace('.', ',')} km</text>`;
+      }
+
+      cont.innerHTML = `
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+          ${gridLines}
+          <path class="alti-fill" d="${fillPath}"/>
+          <path class="alti-line" d="${linePath}"/>
+          <line class="alti-axis" x1="${M.left}" y1="${M.top}" x2="${M.left}" y2="${M.top + innerH}"/>
+          <line class="alti-axis" x1="${M.left}" y1="${M.top + innerH}" x2="${M.left + innerW}" y2="${M.top + innerH}"/>
+          ${yLabels}
+          ${xLabels}
+        </svg>
+      `;
+    }
+
+    function lancerRenommage(id) {
+      // Ouvre la modale d'édition complète (nom + type + date)
+      const activite = currentActivites.find(a => a.id === id);
+      if (!activite) return;
+
+      const modal = document.getElementById('modalEditActivite');
+      document.getElementById('editActNom').value = activite.name || '';
+
+      // Pré-remplir la date (YYYY-MM-DD)
+      const dateInput = document.getElementById('editActDate');
+      if (activite.date) {
+        try {
+          const d = new Date(activite.date);
+          if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            dateInput.value = `${y}-${m}-${day}`;
+          } else {
+            dateInput.value = '';
+          }
+        } catch { dateInput.value = ''; }
+      } else {
+        dateInput.value = '';
+      }
+
+      // Type actif
+      document.querySelectorAll('#modalEditActivite .type-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.type === activite.type_sortie);
+      });
+      // Masquer le choix de type pour le profil rando (un seul type)
+      const typeBlock = document.getElementById('editTypeBlock');
+      if (typeBlock) typeBlock.style.display = (currentProfilType === 'rando') ? 'none' : 'block';
+      window.editActiviteId = id;
+      modal.classList.add('active');
+      setTimeout(() => document.getElementById('editActNom').focus(), 50);
+    }
+
+    function fermerEditActivite() {
+      document.getElementById('modalEditActivite').classList.remove('active');
+      window.editActiviteId = null;
+    }
+
+    function selectionnerTypeEdit(type) {
+      document.querySelectorAll('#modalEditActivite .type-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.type === type);
+      });
+    }
+
+    async function validerEditActivite() {
+      const id = window.editActiviteId;
+      if (!id) return;
+      const nom = document.getElementById('editActNom').value.trim();
+      const dateValue = document.getElementById('editActDate').value;
+      const typeEl = document.querySelector('#modalEditActivite .type-option.selected');
+      // En rando, on ne touche pas au type (un seul type)
+      const type_sortie = (currentProfilType === 'rando') ? undefined : (typeEl ? typeEl.dataset.type : null);
+
+      if (!nom) {
+        alert('Le nom ne peut pas être vide');
+        return;
+      }
+
+      const btn = document.getElementById('btnValiderEdit');
+      btn.disabled = true;
+      btn.textContent = 'Enregistrement…';
+
+      try {
+        await modifierActivite(id, { nom, typeSortie: type_sortie, dateActivity: dateValue || undefined });
+        fermerEditActivite();
+        await rechargerProfilEtActivites();
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Enregistrer';
+      }
+    }
+
+    async function deleteActivite(id) {
+      if (!confirm('Supprimer cette activité ? Ton profil sera recalculé automatiquement.')) return;
+      showLoading('Recalcul de ton profil…');
+      try {
+        await supprimerActivite(id);
+        await rechargerProfilEtActivites();
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    // ── Drag & Drop GPX ─────────────────────────────────────────
+    function attachDragDrop() {
+      const dz = document.getElementById('gpxDropzone');
+      if (!dz) return;
+      ['dragenter','dragover'].forEach(evt => {
+        dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.add('dragover'); });
+      });
+      ['dragleave','drop'].forEach(evt => {
+        dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.remove('dragover'); });
+      });
+      dz.addEventListener('drop', e => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.toLowerCase().endsWith('.gpx')) {
+          ouvrirModalTypeSortie({ source: 'gpx', file: files[0] });
+        }
+      });
+    }
+
+    function handleGPXSelected(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      ouvrirModalTypeSortie({ source: 'gpx', file });
+      event.target.value = '';  // reset input
+    }
+
+    // ── Type sortie (modale) ────────────────────────────────────
+    function ouvrirModalTypeSortie(upload) {
+      pendingUpload = upload;
+      // Pour le profil "rando", pas de distinction de type d'effort :
+      // on importe directement avec un type unique, sans demander.
+      if (currentProfilType === 'rando') {
+        confirmerTypeSortie('rando');
+        return;
+      }
+      document.getElementById('modalTypeSortie').classList.add('active');
+    }
+
+    function annulerTypeSortie() {
+      pendingUpload = null;
+      document.getElementById('modalTypeSortie').classList.remove('active');
+    }
+
+    async function confirmerTypeSortie(typeSortie) {
+      document.getElementById('modalTypeSortie').classList.remove('active');
+      if (!pendingUpload) return;
+
+      try {
+        if (pendingUpload.source === 'gpx') {
+          showLoading('Analyse de ta sortie, ne quitte pas la page…');
+          await ajouterActiviteGPX(pendingUpload.file, typeSortie, currentProfilType);
+          await rechargerProfilEtActivites();
+
+        } else if (pendingUpload.source === 'strava') {
+          showLoading('Analyse de ton activité Strava…');
+          const acts = window.allStravaActivities || [];
+          const a = acts.find(x => String(x.id) === String(pendingUpload.stravaId));
+          const nom = a ? a.name : '';
+          await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType, nom);
+          await rechargerProfilEtActivites();
+        }
+
+      } catch (e) {
+        alert('Erreur : ' + e.message);
+      } finally {
+        pendingUpload = null;
+        hideLoading();
+      }
+    }
+
+    async function rechargerProfilEtActivites() {
+      currentUser = await fetchMe();
+      renderUI();
+      await refreshActivites();
+      await refreshEvolution();
+    }
+
+    // ── Strava ──────────────────────────────────────────────────
+    async function handleStravaClick() {
+      if (!currentUser.strava_connected) {
+        if (confirm("Tu vas être redirigé vers Strava pour autoriser SUM'IT à lire tes activités. Continuer ?")) {
+          loginStrava();
+        }
+        return;
+      }
+      await ouvrirModalStrava();
+    }
+
+    async function ouvrirModalStrava() {
+      document.getElementById('modalStrava').classList.add('active');
+      const list = document.getElementById('stravaActivitiesList');
+      list.innerHTML = `<p style="padding:24px 0;color:var(--muted)">Chargement des activités Strava…</p>`;
+
+      // Reset sélection
+      window.stravaSelected = new Set();
+
+      try {
+        const res = await listerActivitesStrava(100);
+        const activities = res.activities || [];
+
+        if (activities.length === 0) {
+          list.innerHTML = `<p style="padding:24px 0;color:var(--muted)">Aucune activité de course ou de randonnée trouvée sur Strava.</p>`;
+          return;
+        }
+
+        window.allStravaActivities = activities;
+        window.dejaImportesStrava = new Set(currentActivites.filter(a => a.source === 'strava').map(a => a.external_id));
+
+        list.innerHTML = `
+          <div class="strava-search">
+            <input type="text" class="search-name" id="stravaSearchName"
+                   placeholder="Rechercher par nom" aria-label="Rechercher par nom"
+                   oninput="filtrerActivitesStrava()">
+            <div class="filter-group">
+              <span class="filter-label">Distance</span>
+              <input type="number" class="filter-num" id="stravaDistMin" placeholder="min" aria-label="Distance minimale (km)" oninput="filtrerActivitesStrava()">
+              <span>–</span>
+              <input type="number" class="filter-num" id="stravaDistMax" placeholder="max" aria-label="Distance maximale (km)" oninput="filtrerActivitesStrava()">
+              <span class="filter-label">km</span>
+            </div>
+            <div class="filter-group">
+              <span class="filter-label">Période</span>
+              <select id="stravaPeriode" onchange="filtrerActivitesStrava()" aria-label="Période">
+                <option value="all">Tout</option>
+                <option value="3m">3 mois</option>
+                <option value="6m">6 mois</option>
+                <option value="1y">1 an</option>
+                <option value="2y">2 ans</option>
+              </select>
+            </div>
+            <button type="button" class="btn-ghost" onclick="resetFiltresStrava()">Effacer</button>
+            <div class="strava-search-count" id="stravaFilterCount"></div>
+          </div>
+          <div class="strava-batch-actions">
+            <button type="button" class="btn-ghost" id="stravaSelectAll" onclick="toggleStravaSelectAll()">
+              Tout sélectionner
+            </button>
+            <button type="button" class="btn-import-sa" id="stravaImportSelected" onclick="lancerImportSelectionStrava()" disabled>
+              Importer la sélection
+            </button>
+          </div>
+          <div id="stravaActivitiesItems"></div>
+        `;
+
+        filtrerActivitesStrava();
+      } catch (e) {
+        list.innerHTML = `<p style="padding:24px 0;color:var(--negative)">Erreur : ${e.message}</p>`;
+      }
+    }
+
+    function filtrerActivitesStrava() {
+      const acts = window.allStravaActivities || [];
+      const dejaImportes = window.dejaImportesStrava || new Set();
+
+      const nameQ = (document.getElementById('stravaSearchName')?.value || '').toLowerCase().trim();
+      const distMin = parseFloat(document.getElementById('stravaDistMin')?.value);
+      const distMax = parseFloat(document.getElementById('stravaDistMax')?.value);
+      const periode = document.getElementById('stravaPeriode')?.value || 'all';
+
+      let dateMin = null;
+      if (periode !== 'all') {
+        const now = new Date();
+        const map = { '3m': 3, '6m': 6, '1y': 12, '2y': 24 };
+        const months = map[periode] || 0;
+        dateMin = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+      }
+
+      const filtered = acts.filter(a => {
+        if (nameQ && !a.name.toLowerCase().includes(nameQ)) return false;
+        if (!isNaN(distMin) && a.distance_km < distMin) return false;
+        if (!isNaN(distMax) && a.distance_km > distMax) return false;
+        if (dateMin && new Date(a.date) < dateMin) return false;
+        return true;
+      });
+
+      const items = document.getElementById('stravaActivitiesItems');
+      const countEl = document.getElementById('stravaFilterCount');
+      const selectedCount = window.stravaSelected ? window.stravaSelected.size : 0;
+
+      if (countEl) {
+        countEl.textContent = `${filtered.length} activité${filtered.length>1?'s':''} sur ${acts.length} · ${selectedCount} sélectionnée${selectedCount>1?'s':''}`;
+      }
+
+      // Bouton "Tout sélectionner" + "Importer la sélection"
+      const selectAllBtn = document.getElementById('stravaSelectAll');
+      const importBtn = document.getElementById('stravaImportSelected');
+      if (importBtn) {
+        importBtn.disabled = selectedCount === 0;
+        importBtn.textContent = selectedCount === 0
+          ? 'Importer la sélection'
+          : `Importer (${selectedCount})`;
+      }
+
+      if (filtered.length === 0) {
+        items.innerHTML = `<p style="padding:20px 0;color:var(--muted);">Aucune activité ne correspond à tes filtres.</p>`;
+        return;
+      }
+
+      items.innerHTML = filtered.map(a => {
+        const date = new Date(a.date).toLocaleDateString('fr-FR', {day:'2-digit', month:'short', year:'2-digit'});
+        const dureeMin = Math.round(a.duree_s / 60);
+        const dureeFmt = dureeMin >= 60 ? `${Math.floor(dureeMin/60)}h${String(dureeMin%60).padStart(2,'0')}` : `${dureeMin}min`;
+        const isImported = dejaImportes.has(String(a.id));
+        const isSelected = window.stravaSelected && window.stravaSelected.has(String(a.id));
+        const typeChoisi = (window.stravaTypeMap && window.stravaTypeMap[a.id]) || 'entrainement';
+        return `
+          <label class="strava-activity strava-activity-checkable ${isImported?'is-imported':''} ${isSelected?'is-selected':''}">
+            <input type="checkbox" class="strava-check"
+              ${isImported ? 'disabled' : ''}
+              ${isSelected ? 'checked' : ''}
+              onchange="toggleStravaSelection('${a.id}', this)">
+            <div class="strava-act-info">
+              <div class="sa-name">${escapeHTML(a.name)}</div>
+              <div class="sa-meta">${a.type} · ${date} · ${a.distance_km.toFixed(1).replace('.', ',')} km · ${Math.round(a.dplus_m)} m D+ · ${dureeFmt}</div>
+              ${isSelected && !isImported ? `
+                <div class="strava-type-picker">
+                  <span class="strava-type-label">Type</span>
+                  <select class="strava-type-select" onclick="event.preventDefault();event.stopPropagation();" onchange="setStravaType('${a.id}', this.value); event.stopPropagation();">
+                    <option value="course"        ${typeChoisi==='course'?'selected':''}>Course</option>
+                    <option value="resultat"      ${typeChoisi==='resultat'?'selected':''}>Résultat de course</option>
+                    <option value="entrainement"  ${typeChoisi==='entrainement'?'selected':''}>Entraînement</option>
+                    <option value="sortie"        ${typeChoisi==='sortie'?'selected':''}>Sortie</option>
+                  </select>
+                </div>
+              ` : ''}
+            </div>
+            ${isImported ? '<span class="sa-imported-tag">Déjà importée</span>' : ''}
+          </label>
+        `;
+      }).join('');
+    }
+
+    function setStravaType(stravaId, type) {
+      if (!window.stravaTypeMap) window.stravaTypeMap = {};
+      window.stravaTypeMap[stravaId] = type;
+    }
+
+    function toggleStravaSelection(stravaId, checkbox) {
+      if (!window.stravaSelected) window.stravaSelected = new Set();
+      if (checkbox.checked) {
+        window.stravaSelected.add(stravaId);
+      } else {
+        window.stravaSelected.delete(stravaId);
+      }
+      filtrerActivitesStrava();
+    }
+
+    function toggleStravaSelectAll() {
+      const acts = window.allStravaActivities || [];
+      const dejaImportes = window.dejaImportesStrava || new Set();
+      const visibleNotImported = acts.filter(a => !dejaImportes.has(String(a.id)));
+
+      if (!window.stravaSelected) window.stravaSelected = new Set();
+
+      // Si tout est sélectionné → désélectionner ; sinon tout sélectionner
+      const allSelected = visibleNotImported.every(a => window.stravaSelected.has(String(a.id)));
+      if (allSelected) {
+        window.stravaSelected.clear();
+      } else {
+        visibleNotImported.forEach(a => window.stravaSelected.add(String(a.id)));
+      }
+      filtrerActivitesStrava();
+    }
+
+    function resetFiltresStrava() {
+      document.getElementById('stravaSearchName').value = '';
+      document.getElementById('stravaDistMin').value = '';
+      document.getElementById('stravaDistMax').value = '';
+      document.getElementById('stravaPeriode').value = 'all';
+      filtrerActivitesStrava();
+    }
+
+    function fermerModalStrava() {
+      document.getElementById('modalStrava').classList.remove('active');
+      window.stravaSelected = new Set();
+    }
+
+    // Lancer l'import direct : chaque activité utilise son type choisi
+    async function lancerImportSelectionStrava() {
+      const ids = Array.from(window.stravaSelected || []);
+      if (ids.length === 0) return;
+
+      fermerModalStrava();
+      showLoading(`Import 0 sur ${ids.length}…`);
+
+      const acts = window.allStravaActivities || [];
+      const typeMap = window.stravaTypeMap || {};
+      let ok = 0, fail = 0;
+      for (let i = 0; i < ids.length; i++) {
+        const sid = ids[i];
+        const a = acts.find(x => String(x.id) === String(sid));
+        const nom = a ? a.name : '';
+        const typeSortie = typeMap[sid] || 'entrainement';
+        showLoading(`Import ${i + 1} sur ${ids.length}… (${ok} réussi${ok>1?'s':''}${fail>0 ? ` · ${fail} erreur${fail>1?'s':''}` : ''})`);
+        try {
+          await ajouterActiviteStrava(sid, typeSortie, currentProfilType, nom);
+          ok++;
+        } catch (e) {
+          console.warn(`Erreur import Strava ${sid} :`, e.message);
+          fail++;
+        }
+      }
+      await rechargerProfilEtActivites();
+      hideLoading();
+      if (fail > 0) {
+        alert(`Import terminé : ${ok} activités importées, ${fail} en erreur.`);
+      }
+    }
+
+    // ── Loading overlay ────────────────────────────────────────
+    function showLoading(text) {
+      document.getElementById('loadingText').textContent = text || 'Chargement…';
+      document.getElementById('loadingOverlay').classList.add('active');
+    }
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // ── Exposition explicite des fonctions sur window ─────────
+    // Garantit que les onclick inline du HTML peuvent les appeler
+    if (typeof window !== 'undefined') {
+      window.refreshEvolution        = refreshEvolution;
+      window.rafraichirEvolution     = rafraichirEvolution;
+      window.switchEvolutionMetric   = switchEvolutionMetric;
+      window.showEvTooltip           = showEvTooltip;
+      window.hideEvTooltip           = hideEvTooltip;
+      window.lancerRenommage         = lancerRenommage;
+      window.deleteActivite          = deleteActivite;
+      window.ouvrirDetailActivite    = ouvrirDetailActivite;
+      window.ouvrirModalArchetypes   = ouvrirModalArchetypes;
+      window.forcerRecalcul          = forcerRecalcul;
+      window.fermerModalArchetypes   = fermerModalArchetypes;
+      window.fermerDetailActivite    = fermerDetailActivite;
+      window.fermerEditActivite      = fermerEditActivite;
+      window.selectionnerTypeEdit    = selectionnerTypeEdit;
+      window.validerEditActivite     = validerEditActivite;
+      window.switchTab               = switchTab;
+      window.handleStravaClick       = handleStravaClick;
+      window.handleGPXSelected       = handleGPXSelected;
+      window.confirmerTypeSortie     = confirmerTypeSortie;
+      window.annulerTypeSortie       = annulerTypeSortie;
+      window.fermerModalStrava       = fermerModalStrava;
+      window.filtrerActivitesStrava  = filtrerActivitesStrava;
+      window.resetFiltresStrava      = resetFiltresStrava;
+      window.toggleStravaSelection   = toggleStravaSelection;
+      window.toggleStravaSelectAll   = toggleStravaSelectAll;
+      window.setStravaType           = setStravaType;
+      window.lancerImportSelectionStrava = lancerImportSelectionStrava;
+    }
+
+  
+    // Échap ferme la fenêtre ouverte
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const ouverte = document.querySelector('.modal-overlay.active');
+      if (!ouverte) return;
+      const fermetures = { modalStrava: fermerModalStrava, modalArchetypes: fermerModalArchetypes, modalDetailActivite: fermerDetailActivite, modalEditActivite: fermerEditActivite, modalTypeSortie: annulerTypeSortie };
+      const f = fermetures[ouverte.id];
+      if (f) f();
+    });
+</script>
+</body>
+</html>
