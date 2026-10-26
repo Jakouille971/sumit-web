@@ -316,14 +316,14 @@ Pour chaque segment GPS du parcours cible :
 
 ### 6.1 Graphique altimétrique coloré
 
-SVG dessiné à la largeur réelle de l'écran, **une seule teinte bleue** dont l'intensité suit l'allure prédite (lissage sur 5 points) :
+SVG dessiné à la largeur réelle de l'écran, **une seule teinte « bleu lac »** dont l'intensité suit l'allure prédite (lissage sur 5 points) :
 
 | Allure       | Teinte      |
 |--------------|-------------|
-| < 10'/km     | `#9DBEF2`   |
-| 10-13'/km    | `#5C8FE6`   |
-| 13-18'/km    | `#1E5FD8`   |
-| > 18'/km     | `#0E3A8C`   |
+| < 10'/km     | `#A9C9DB`   |
+| 10-13'/km    | `#6B9EBE`   |
+| 13-18'/km    | `#2B6A8C`   |
+| > 18'/km     | `#163F57`   |
 
 Courbe d'allure en surimpression, FC estimée en pointillés, repères de ravitos avec kilomètre, infobulle au survol et au toucher.
 
@@ -338,13 +338,16 @@ Génération entièrement côté client via **jsPDF + html2canvas** :
 - Roadbook A4 blanc : temps, allure, profil de coureur utilisé, profil de course, scores de pente, répartition par terrain, tableau des passages (heures comprises si une heure de départ est saisie)
 - Le profil de coureur imprimé est celui qui a calculé la simulation (enregistré avec la simulation épinglée)
 
-### 6.4 Interface (refonte V2)
+### 6.4 Interface (refonte V2, design unifié)
 
-- **Accueil** : construit autour des photos de Jess Meniere. Le titre « Prédis / ta course » reste en place pendant qu'une bande de photos défile entre ses deux moitiés ; quatre verbes plein écran (Importe, Simule, Cours, Compare) ; les huit archétypes en cartes sur une photo tenue ; l'horaire de la CCC réglable (heure de départ, pause aux ravitos) ; questions fréquentes, grand bouton « Simule », contact. Palette tirée des photos : vert bouteille `#133621`, or `#F4D96C`, blanc de brouillard `#EEF0EA`.
-- **Photos** : `assets/photos/`, en WebP (600, 960, 1440 px, 2 400 px pour la photo paysage), chargées à la demande. Crédit « Photos : Jess Meniere » dans le pied de toutes les pages.
-- **Écrans de l'application** (profil, simulateur, bilan, compte, à venir) : système sobre, une police (Sora), encre `#0E1116`, bleu de données `#1E5FD8`, vert et rouge réservés aux écarts.
+- **Un seul site, un seul système** : la même barre de navigation verte sur toutes les pages (Accueil, Mon profil, Simulateur, Bilan, Mon compte, À venir, Tutoriel, connexion), le même pied de page et les mêmes marges. Palette tirée des photos : vert bouteille `#133621` (barre, bandeaux, boutons), or `#F4D96C` (texte sur vert, actions), fond brouillard `#EEF0EA`, encre `#0F2418`, bleu lac `#2B6A8C` pour les données ; vert `#2E7D46` et rouge `#B3261E` réservés aux écarts. Une police : Sora.
+- **Accueil** : construit autour des photos de Jess Meniere. Le titre « Prédis / ta course » reste en place pendant qu'une bande de photos défile entre ses deux moitiés ; quatre verbes plein écran (Importe, Simule, Cours, Compare) ; les huit archétypes en cartes sur une photo tenue ; questions fréquentes, grand bouton « Simule », contact.
+- **La CCC, heure par heure** (accueil) : le profil de la course dessiné en SVG, avec les heures de passage aux 8 points (départ, ravitos, arrivée) posées sur le profil, la nuit (21 h → 6 h) en bande verte, et 4 chiffres clés (arrivée, temps de course et fourchette, portion de nuit, dénivelé). Heure de départ et pause aux ravitos réglables ; tout tient sur un écran d'ordinateur portable (testé 1366 × 768 et 1440 × 900).
+- **Écrans de l'application** (profil, simulateur, bilan, compte) : bandeau vert avec titre or et photo à droite (masquée sur téléphone), contenu sur fond brouillard, boutons vert et or.
+- **À venir** : la feuille de route dessinée comme une ascension (V1 → V4, « Tu es ici »), une section par version avec sa photo, inscription aux nouveautés par e-mail.
+- **Photos** : `assets/Photos/` (P majuscule : Vercel distingue les majuscules), en WebP (600, 960, 1440 px, 2 400 px pour la photo paysage), chargées à la demande. Crédit « Photos : Jess Meniere » dans le pied de toutes les pages.
 - **Pages réservées** : un visiteur non connecté voit ce que la page lui apportera, avec un aperçu construit sur les vraies données de la démo CCC.
-- **Accessibilité et mobile** : navigation au clavier, focus visibles, champs à 16 px (pas de zoom iOS), zones sûres des écrans à encoche, mouvement réduit respecté.
+- **Accessibilité et mobile** : navigation au clavier, focus visibles, champs à 16 px (pas de zoom iOS), zones sûres des écrans à encoche, mouvement réduit respecté ; aucun contenu ne reste caché si le script ne se charge pas.
 - **Tutoriel** en 7 étapes, non bloquant, qui suit le visiteur de page en page.
 
 ---
@@ -486,7 +489,7 @@ sumit-web/
 ├── og-image.png            # Image d'aperçu des liens (1200 × 630)
 ├── fonts/                  # Sora (woff2, latin et latin étendu) + licence OFL
 ├── assets/
-│   ├── photos/             # Photos de Jess Meniere (WebP, plusieurs tailles)
+│   ├── Photos/             # Photos de Jess Meniere (WebP, plusieurs tailles)
 │   ├── ccc-utmb.gpx        # Trace de la démo CCC
 │   └── profil-demo.json    # Profil de coureur d'exemple (Grimpeur, 12 sorties)
 ├── css/

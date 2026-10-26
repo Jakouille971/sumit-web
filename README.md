@@ -28,6 +28,8 @@ Site disponible sur http://localhost:3000
 
 ## Déploiement
 
-Pousser l'ensemble des fichiers, y compris `fonts/`, `assets/photos/`, `js/pictos.js`, `favicon.svg` et `og-image.png`.
+Pousser l'ensemble des fichiers, y compris `fonts/`, `assets/Photos/`, `js/pictos.js`, `favicon.svg` et `og-image.png`.
 
-Photos : Jess Meniere. Le crédit figure dans le pied de chaque page. Les fichiers CSS et JS sont versionnés par `?v=20261026` : changer ce numéro à chaque mise en production force le rechargement chez les visiteurs.
+Photos : Jess Meniere. Le crédit figure dans le pied de chaque page.
+
+Les fichiers CSS et JS sont versionnés par `?v=20261028` : changer ce numéro à chaque mise en production force le rechargement chez les visiteurs.
