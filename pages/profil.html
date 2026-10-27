@@ -17,11 +17,10 @@
   <meta name="twitter:description" content="Ton profil de coureur SUM'IT : vitesse équivalente plat sur sept pentes, archétype, évolution. Construit automatiquement depuis tes sorties GPX et Strava.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Mon profil</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/profil.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261028">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
   <style>
     /* ── Mon profil ─────────────────────────────────────────── */
     .profil-section { display: grid; gap: 16px; min-width: 0; }
@@ -556,15 +555,17 @@
     <div class="footer-links">
       <a href="avenir.html">À venir</a>
       <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
       <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261028"></script>
-  <script src="../js/api-client.js?v=20261028"></script>
-  <script src="../js/nav-user.js?v=20261028"></script>
-  <script src="../js/onboarding.js?v=20261028"></script>
-  <script src="../js/pictos.js?v=20261028"></script>
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
+  <script src="../js/pictos.js?v=20261029"></script>
   <script>
 
     let currentProfilType = 'trail';
@@ -645,12 +646,12 @@
       // Gérer retour Strava
       const params = new URLSearchParams(window.location.search);
       if (params.get('strava_connected') === '1') {
-        setTimeout(() => alert('Compte Strava connecté.'), 200);
+        setTimeout(() => sumitMessage('Compte Strava connecté. Choisis les activités à importer.', { type: 'succes' }), 200);
         cleanURL(['strava_connected']);
       }
       const stravaError = params.get('strava_error');
       if (stravaError) {
-        setTimeout(() => alert(`Erreur Strava : ${stravaError}`), 200);
+        setTimeout(() => sumitMessage(`La connexion à Strava n'a pas abouti : ${stravaError}`, { type: 'erreur' }), 200);
         cleanURL(['strava_error']);
       }
 
@@ -870,7 +871,7 @@
         const b2 = document.querySelector('.btn-recalc');
         if (b2) { b2.disabled = true; b2.innerHTML = `${ICONE_RECALC}<span>À jour</span>`; setTimeout(() => { b2.innerHTML = `${ICONE_RECALC}<span>Recalculer</span>`; b2.disabled = false; }, 2000); }
       } catch (e) {
-        alert('Erreur lors du recalcul : ' + e.message);
+        sumitMessage('Le recalcul n\'a pas abouti : ' + e.message, { type: 'erreur' });
         if (btn) { libelleRecalc('Recalculer'); btn.disabled = false; }
       }
     }
@@ -1328,7 +1329,11 @@
       const pts = d.trackpoints || [];
       if (pts.length > 1) {
         // Délai pour que le div soit visible (sinon Leaflet calcule mal la taille)
-        setTimeout(() => initLeafletMap(pts), 100);
+        chargerLeaflet()
+          .then(() => setTimeout(() => initLeafletMap(pts), 100))
+          .catch(() => {
+            document.getElementById('detailMap').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;padding:24px;text-align:center;color:var(--muted);font-size:14px;">La carte n\'a pas pu se charger.</div>';
+          });
         // Altimétrie
         dessinerAltimetrie(pts, d.alt_min, d.alt_max);
       } else {
@@ -1502,7 +1507,8 @@
       const type_sortie = (currentProfilType === 'rando') ? undefined : (typeEl ? typeEl.dataset.type : null);
 
       if (!nom) {
-        alert('Le nom ne peut pas être vide');
+        sumitMessage('Donne un nom à cette activité.', { type: 'erreur', pres: '#editActNom' });
+        document.getElementById('editActNom').focus();
         return;
       }
 
@@ -1515,7 +1521,7 @@
         fermerEditActivite();
         await rechargerProfilEtActivites();
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
         btn.disabled = false;
         btn.textContent = 'Enregistrer';
       }
@@ -1528,7 +1534,7 @@
         await supprimerActivite(id);
         await rechargerProfilEtActivites();
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
       } finally {
         hideLoading();
       }
@@ -1584,6 +1590,7 @@
         if (pendingUpload.source === 'gpx') {
           showLoading('Analyse de ta sortie, ne quitte pas la page…');
           await ajouterActiviteGPX(pendingUpload.file, typeSortie, currentProfilType);
+          if (window.sumitMesure) sumitMesure('import_activite', { source_profil: 'gpx', nb: 1 });
           await rechargerProfilEtActivites();
 
         } else if (pendingUpload.source === 'strava') {
@@ -1592,11 +1599,12 @@
           const a = acts.find(x => String(x.id) === String(pendingUpload.stravaId));
           const nom = a ? a.name : '';
           await ajouterActiviteStrava(pendingUpload.stravaId, typeSortie, currentProfilType, nom);
+          if (window.sumitMesure) sumitMesure('import_activite', { source_profil: 'strava', nb: 1 });
           await rechargerProfilEtActivites();
         }
 
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
       } finally {
         pendingUpload = null;
         hideLoading();
@@ -1835,10 +1843,11 @@
           fail++;
         }
       }
+      if (ok && window.sumitMesure) sumitMesure('import_activite', { source_profil: 'strava', nb: ok });
       await rechargerProfilEtActivites();
       hideLoading();
       if (fail > 0) {
-        alert(`Import terminé : ${ok} activités importées, ${fail} en erreur.`);
+        sumitMessage(`Import terminé : ${ok} activité${ok > 1 ? 's' : ''} importée${ok > 1 ? 's' : ''}, ${fail} en erreur.`, { type: fail && !ok ? 'erreur' : 'info' });
       }
     }
 

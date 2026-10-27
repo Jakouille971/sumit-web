@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#133621">
+  <meta name="description" content="Politique de confidentialité de SUM'IT : données traitées, finalités, durées, mesure d'audience anonyme et droits.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Confidentialité">
+  <meta property="og:description" content="Politique de confidentialité de SUM'IT : données traitées, finalités, durées, mesure d'audience anonyme et droits.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/confidentialite.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Confidentialité">
+  <meta name="twitter:description" content="Politique de confidentialité de SUM'IT : données traitées, finalités, durées, mesure d'audience anonyme et droits.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Confidentialité</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/confidentialite.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
+  <style>
+    .legal { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px 48px; align-items: start; }
+    .legal-toc { position: sticky; top: calc(var(--nav-h) + 24px); }
+    .legal-toc p { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .legal-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+    .legal-toc a { display: block; padding: 7px 10px; border-radius: var(--radius-control); font-size: 14px; color: var(--ink); transition: background-color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .legal-toc a:hover { background: var(--active); } }
+    .legal-doc { min-width: 0; padding: 32px 40px 40px; border-radius: var(--radius-card); background: var(--paper); }
+    .legal-doc > section > p, .legal-doc > section > ul, .legal-doc > section > h2, .legal-doc > p, .legal-doc .optout, .legal-doc .legal-adresse { max-width: 72ch; }
+    .legal-doc > section:first-of-type { margin-top: 20px; }
+    .legal-doc section + section { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--rule); }
+    .legal-doc h2 { font-size: 22px; line-height: 1.2; letter-spacing: -0.02em; scroll-margin-top: calc(var(--nav-h) + 20px); }
+    .legal-doc h3 { margin-top: 20px; font-size: 16px; }
+    .legal-doc p, .legal-doc li { font-size: 16px; line-height: 1.6; color: var(--ink); }
+    .legal-doc p { margin-top: 10px; }
+    .legal-doc ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+    .legal-doc a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+    .legal-doc a span { white-space: nowrap; }
+    .legal-maj { margin-top: 0 !important; font-size: 14px !important; color: var(--muted) !important; }
+    .legal-adresse { margin-top: 10px; padding: 14px 16px; border-radius: var(--radius-control); background: var(--raised); font-size: 15px; line-height: 1.55; }
+    .legal-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 15px; }
+    .legal-table th, .legal-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; line-height: 1.5; }
+    .legal-table th { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .legal-table th:nth-child(1) { width: 24%; } .legal-table th:nth-child(2) { width: 56%; }
+    .legal-table td:first-child { font-weight: 600; white-space: nowrap; }
+    .optout { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px; border-radius: var(--radius-control); background: var(--raised); }
+    .optout p { flex: 1 1 260px; margin: 0 !important; font-size: 15px !important; }
+    .optout button { min-height: 44px; padding: 0 16px; border-radius: var(--radius-control); background: var(--action); color: var(--action-ink); font-size: 15px; font-weight: 600; transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease; }
+    .optout button:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .optout button:hover { background: var(--action-hover); } }
+    @media (max-width: 900px) {
+      .legal { grid-template-columns: 1fr; gap: 20px; }
+      .legal-toc { position: static; }
+      .legal-toc ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .legal-doc { padding: 24px 20px 28px; }
+      .legal-table td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body data-page="legal">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <img class="app-head-photo" src="../assets/Photos/pente-brume-960.webp" srcset="../assets/Photos/pente-brume-960.webp 960w, ../assets/Photos/pente-brume-1440.webp 1440w" sizes="38vw" width="960" height="1279" alt="Une pente d'herbe qui se perd dans la brume." style="object-position: 50% 45%">
+    <div>
+      <h1>Confidentialité</h1>
+      <p>Ce que SUM'IT fait de tes données, et rien de plus.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="legal">
+      <nav class="legal-toc" aria-label="Sommaire">
+        <p>Sur cette page</p>
+        <ol>
+          <li><a href="#resume">En bref</a></li>
+          <li><a href="#responsable">Responsable du traitement</a></li>
+          <li><a href="#donnees">Données traitées et finalités</a></li>
+          <li><a href="#audience">Mesure d'audience</a></li>
+          <li><a href="#destinataires">Destinataires et hébergement</a></li>
+          <li><a href="#duree">Durées de conservation</a></li>
+          <li><a href="#stockage">Stockage dans ton navigateur</a></li>
+          <li><a href="#droits">Tes droits</a></li>
+        </ol>
+      </nav>
+      <article class="legal-doc">
+        <p class="legal-maj">Dernière mise à jour : 27 octobre 2026</p>
+      <section aria-labelledby="resume">
+        <h2 id="resume">En bref</h2>
+        <ul>
+          <li>SUM'IT utilise tes traces et tes chiffres pour calculer ton profil de coureur et tes temps de course. Rien d'autre.</li>
+          <li>Rien n'est vendu, loué ni partagé à des fins commerciales ou publicitaires.</li>
+          <li>Pas de cookie publicitaire, pas de traceur tiers. La mesure d'audience est anonyme et désactivable plus bas.</li>
+          <li>Sans compte, ce que tu envoies pour une simulation ou une prédiction express sert au calcul puis n'est pas conservé.</li>
+          <li>Tu peux supprimer chaque activité toi-même, et tout ton compte sur simple demande.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="responsable">
+        <h2 id="responsable">Responsable du traitement</h2>
+        <p>Le responsable du traitement est l'éditeur de SUM'IT (voir les <a href="mentions-legales.html">mentions légales</a>), joignable à <a href="mailto:sup.sumit@outlook.com"><span>sup.sumit@</span><span>outlook.com</span></a>.</p>
+      </section>
+      <section aria-labelledby="donnees">
+        <h2 id="donnees">Données traitées et finalités</h2>
+        <table class="legal-table">
+          <thead><tr><th scope="col">Données</th><th scope="col">Pourquoi</th><th scope="col">Base légale</th></tr></thead>
+          <tbody>
+            <tr><td>Compte Google</td><td>Identifiant Google, adresse e-mail, nom et photo de profil, prénom affiché, FC max, dates de création et de dernière connexion : pour te connecter et retrouver tes données.</td><td>Exécution du service</td></tr>
+            <tr><td>Activités importées</td><td>Nom, date, distance, dénivelé, durée, 200 points GPS (latitude, longitude, altitude, heure) pour la carte et la comparaison, et un résumé de ta fréquence cardiaque (moyenne, temps par zone) : pour calculer ton profil.</td><td>Exécution du service</td></tr>
+            <tr><td>Strava, si tu le relies</td><td>Identifiant d'athlète et jetons d'accès : pour lister et importer les seules activités que tu choisis. Ces données ne sont affichées qu'à toi et ne servent jamais à entraîner un modèle.</td><td>Exécution du service</td></tr>
+            <tr><td>Simulations et bilans épinglés</td><td>Nom et trace GPX de la course, ravitos, résultats, comparaison avec ta course réelle et ton commentaire : pour les rouvrir et recalibrer ton profil.</td><td>Exécution du service</td></tr>
+            <tr><td>Simulation sans compte, prédiction express</td><td>Trace de la course et chrono de référence : envoyés au serveur pour le calcul, puis non conservés.</td><td>Exécution du service</td></tr>
+            <tr><td>Formulaires</td><td>Avis, questionnaire bêta, demande d'être prévenu : prénom ou pseudo, niveau, réponses, e-mail si tu le donnes. Pour améliorer SUM'IT et te répondre.</td><td>Consentement</td></tr>
+            <tr><td>Mesure d'audience</td><td>Voir la section dédiée ci-dessous.</td><td>Intérêt légitime</td></tr>
+          </tbody>
+        </table>
+        <p>Les points GPS de tes sorties peuvent révéler des lieux que tu fréquentes, comme ton domicile s'il est au départ. Tu peux supprimer une activité à tout moment depuis Mon profil.</p>
+      </section>
+      <section aria-labelledby="audience">
+        <h2 id="audience">Mesure d'audience</h2>
+        <p>Pour savoir quelles pages servent et quelles fonctions sont utilisées, SUM'IT compte les visites avec son propre outil, sans cookie et sans service tiers. Pour chaque page vue ou action clé (démo lancée, simulation, épinglage…), il enregistre :</p>
+        <ul>
+          <li>la page ou le nom de l'action, et quelques valeurs arrondies (distance et dénivelé d'une simulation, par exemple) ;</li>
+          <li>un numéro de visite tiré au hasard, effacé à la fermeture de l'onglet ;</li>
+          <li>le site d'où tu viens ou la campagne, le type d'appareil (téléphone, tablette, ordinateur), et si tu es connecté.</li>
+        </ul>
+        <p>Il n'enregistre ni ton adresse IP, ni ton navigateur, ni ton identité, et ne relie jamais ces chiffres à ton compte. Les données servent uniquement à des statistiques anonymes pour l'éditeur et sont supprimées après 25 mois. Ce dispositif respecte les conditions d'exemption de consentement définies par la CNIL.</p>
+        <div class="optout">
+          <p id="optoutEtat">Mesure d'audience : active sur cet appareil.</p>
+          <button type="button" id="optoutBtn" aria-describedby="optoutEtat">Ne plus compter mes visites</button>
+        </div>
+      </section>
+      <section aria-labelledby="destinataires">
+        <h2 id="destinataires">Destinataires et hébergement</h2>
+        <p>Seul l'éditeur accède à tes données. Elles sont traitées par les prestataires techniques suivants, pour son compte :</p>
+        <ul>
+          <li>Vercel (hébergement du site), Render (serveur de calcul), Neon (base de données) ;</li>
+          <li>Google (connexion) et Strava (si tu le relies) ;</li>
+          <li>EmailJS et Microsoft Outlook (envoi et réception des formulaires) ;</li>
+          <li>OpenStreetMap, via le service Overpass : reçoit seulement la zone géographique d'un parcours, pour reconnaître routes et sentiers ; ce résultat est gardé en cache, sans lien avec qui l'a simulé ;</li>
+          <li>CARTO (fonds de carte) et les serveurs unpkg, cdnjs et jsDelivr (bibliothèques carte, PDF et e-mail), chargés seulement quand tu utilises ces fonctions : ils voient l'adresse IP de ton appareil, comme pour toute page web.</li>
+        </ul>
+        <p>Plusieurs de ces prestataires sont établis aux États-Unis. Les transferts hors de l'Union européenne sont encadrés par les garanties prévues par le RGPD : décision d'adéquation de la Commission européenne ou clauses contractuelles types.</p>
+      </section>
+      <section aria-labelledby="duree">
+        <h2 id="duree">Durées de conservation</h2>
+        <ul>
+          <li>Compte, activités, simulations et bilans : tant que ton compte existe. Une activité supprimée l'est immédiatement.</li>
+          <li>Jetons Strava : jusqu'à ce que tu déconnectes Strava dans Mon compte.</li>
+          <li>Mesure d'audience : 25 mois.</li>
+          <li>Messages des formulaires : le temps de te répondre, et au plus 3 ans après le dernier échange.</li>
+        </ul>
+      </section>
+      <section aria-labelledby="stockage">
+        <h2 id="stockage">Stockage dans ton navigateur</h2>
+        <p>SUM'IT n'utilise pas de cookie. Il garde dans ton navigateur ton jeton de connexion, tes réglages (tutoriel déjà vu, mesure d'audience désactivée) et, le temps de l'onglet, le profil utilisé par le simulateur et le numéro de visite. Ces éléments sont nécessaires au fonctionnement du site ou à la mesure d'audience exemptée ; tu peux les effacer depuis les réglages de ton navigateur.</p>
+      </section>
+      <section aria-labelledby="droits">
+        <h2 id="droits">Tes droits</h2>
+        <p>Tu peux accéder à tes données, les corriger, les faire effacer, en limiter l'usage, t'opposer à leur traitement et en recevoir une copie dans un format lisible. Écris à <a href="mailto:sup.sumit@outlook.com"><span>sup.sumit@</span><span>outlook.com</span></a> ; la réponse arrive sous un mois.</p>
+        <p>Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la <a href="https://www.cnil.fr/fr/plaintes">CNIL</a>.</p>
+      </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
+  <script>
+    (function () {
+      const etat = document.getElementById('optoutEtat');
+      const btn = document.getElementById('optoutBtn');
+      if (!etat || !btn) return;
+      function lire() { try { return localStorage.getItem('sumit_mesure_off') === '1'; } catch (e) { return false; } }
+      function maj() {
+        const off = lire();
+        const gpc = navigator.globalPrivacyControl === true;
+        etat.textContent = off ? "Mesure d'audience : désactivée sur cet appareil."
+          : gpc ? "Mesure d'audience : désactivée par le réglage de confidentialité de ton navigateur."
+          : "Mesure d'audience : active sur cet appareil.";
+        btn.textContent = off ? 'Compter à nouveau mes visites' : 'Ne plus compter mes visites';
+        btn.hidden = gpc && !off;
+      }
+      btn.addEventListener('click', () => {
+        try {
+          if (lire()) localStorage.removeItem('sumit_mesure_off');
+          else localStorage.setItem('sumit_mesure_off', '1');
+        } catch (e) {}
+        maj();
+        if (window.sumitMessage) sumitMessage(lire() ? "C'est noté : tes visites ne sont plus comptées." : 'Tes visites sont à nouveau comptées, anonymement.', { type: 'succes' });
+      });
+      maj();
+    })();
+  </script>
+</body>
+</html>

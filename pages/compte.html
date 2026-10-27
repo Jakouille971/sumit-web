@@ -17,9 +17,10 @@
   <meta name="twitter:description" content="Ton espace SUM'IT : simulations épinglées, réglages et connexion Strava.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Mon compte</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/compte.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261028">
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
   <style>
     /* ── Mon compte ─────────────────────────────────────────── */
     .compte-section { display: grid; gap: 16px; min-width: 0; }
@@ -170,14 +171,16 @@
     <div class="footer-links">
       <a href="avenir.html">À venir</a>
       <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
       <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261028"></script>
-  <script src="../js/api-client.js?v=20261028"></script>
-  <script src="../js/nav-user.js?v=20261028"></script>
-  <script src="../js/onboarding.js?v=20261028"></script>
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
   <script>
 
     let currentUser = null;
@@ -225,12 +228,12 @@
       // Vérifier les retours OAuth Strava
       const params = new URLSearchParams(window.location.search);
       if (params.get('strava_connected') === '1') {
-        setTimeout(() => alert('Compte Strava connecté.'), 200);
+        setTimeout(() => sumitMessage('Compte Strava connecté. Tu peux importer tes activités depuis Mon profil.', { type: 'succes' }), 200);
         cleanURL(['strava_connected']);
       }
       const stravaError = params.get('strava_error');
       if (stravaError) {
-        setTimeout(() => alert(`Erreur Strava : ${stravaError}`), 200);
+        setTimeout(() => sumitMessage(`La connexion à Strava n'a pas abouti : ${stravaError}`, { type: 'erreur' }), 200);
         cleanURL(['strava_error']);
       }
 
@@ -414,7 +417,7 @@
         await refreshSimulations();
         renderUI();
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
       }
     }
 
@@ -426,11 +429,13 @@
       const fcmax  = parseInt(document.getElementById('setFcmax').value);
 
       if (!prenom) {
-        alert('Indique ton prénom.');
+        sumitMessage('Indique ton prénom.', { type: 'erreur', pres: '#setPrenom' });
+        document.getElementById('setPrenom').focus();
         return;
       }
       if (!fcmax || fcmax < 100 || fcmax > 250) {
-        alert('La FC max doit être comprise entre 100 et 250 battements par minute.');
+        sumitMessage('La FC max doit être comprise entre 100 et 250 battements par minute.', { type: 'erreur', pres: '#setFcmax' });
+        document.getElementById('setFcmax').focus();
         return;
       }
 
@@ -446,7 +451,7 @@
         feedback.classList.add('show');
         setTimeout(() => feedback.classList.remove('show'), 2000);
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
       } finally {
         btn.disabled = false;
         btn.textContent = 'Enregistrer';
@@ -460,9 +465,9 @@
         await deconnecterStrava();
         currentUser.strava_connected = false;
         renderUI();
-        alert('Strava déconnecté. Tes activités déjà importées sont conservées.');
+        sumitMessage('Strava déconnecté. Tes activités déjà importées sont conservées.', { type: 'succes' });
       } catch (e) {
-        alert('Erreur : ' + e.message);
+        sumitMessage(e.message, { type: 'erreur' });
       }
     }
 

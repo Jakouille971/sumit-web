@@ -17,14 +17,10 @@
   <meta name="twitter:description" content="Simule ton temps sur n'importe quelle course de trail ou de randonnée : importe le GPX, ajoute tes ravitaillements et obtiens ton temps et tes heures de passage à chaque point.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Simulateur de course</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/simulateur.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261028">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
   <style>
     /* ── Simulateur ─────────────────────────────────────────── */
     .sim-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -350,6 +346,35 @@
       .ravito-card .data-table td:first-child, .ravito-card .data-table th:first-child { position: sticky; left: 0; background: var(--paper); z-index: 1; min-width: 130px; }
     }
     .no-clock th:nth-child(4), .no-clock td:nth-child(4) { display: none; }
+
+    /* ── v4 : prédiction express, carte indisponible ─────────────── */
+    .ref-rows[hidden] { display: none; }
+    .express { margin-top: 14px; }
+    .express[hidden], #expressForm[hidden], #expressResume[hidden] { display: none; }
+    .express-titre { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--ink); }
+    .express-champs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .express-champ label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+    .express-champ label small { font-size: 12px; font-weight: 400; color: var(--muted); }
+    .express-champ input { width: 100%; min-height: 44px; padding: 0 10px; font-size: 16px; font-variant-numeric: tabular-nums; }
+    .express-type { margin-top: 10px; }
+    .btn-express {
+      width: 100%; min-height: 44px; margin-top: 10px; border-radius: var(--radius-control);
+      background: var(--action); color: var(--action-ink); font-size: 15px; font-weight: 600;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-express:active { transform: scale(0.98); }
+    .btn-express:disabled { opacity: 0.6; }
+    @media (hover: hover) and (pointer: fine) { .btn-express:hover:not(:disabled) { background: var(--action-hover); } }
+    .express-note { margin: 10px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+    .express-note a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .express-modifier {
+      min-height: 40px; margin-top: 12px; padding: 0 14px; border-radius: var(--radius-control);
+      background: #E2E6DD; color: var(--ink); font-size: 14px; font-weight: 600;
+      transition: background-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .express-modifier:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .express-modifier:hover { background: #D5DBCE; } }
+    .map-indispo { margin: 0; padding: 32px 20px; text-align: center; font-size: 14px; color: var(--muted); }
   </style>
 </head>
 <body data-page="simulateur">
@@ -465,7 +490,35 @@
           <div class="ref-row"><span>Drain d'énergie<span class="info-i tip-left" tabindex="0" data-tip="La vitesse à laquelle tu vides ta batterie d'énergie, estimée depuis ta fréquence cardiaque. Plus il est élevé, plus la fatigue arrive vite sur la durée."></span></span><span id="profilDrain">—</span></div>
           <div class="ref-row"><span>Coefficient course</span><span id="profilCoeff">—</span></div>
         </div>
-        <p class="ref-note">Pas encore de profil ? <a href="profil.html">Analyse tes sorties</a></p>
+        <div class="express" id="expressBloc">
+          <form id="expressForm" onsubmit="event.preventDefault(); estimerProfilExpress();" novalidate>
+            <p class="express-titre">Pas encore de profil ? Donne un chrono récent.</p>
+            <div class="express-champs" id="expressChamps">
+              <div class="express-champ">
+                <label for="exDist">Distance <small>km</small></label>
+                <input type="text" id="exDist" inputmode="decimal" placeholder="42" autocomplete="off">
+              </div>
+              <div class="express-champ">
+                <label for="exDplus">D+ <small>m</small></label>
+                <input type="text" id="exDplus" inputmode="numeric" placeholder="2400" autocomplete="off">
+              </div>
+              <div class="express-champ">
+                <label for="exTemps">Temps <small>h:min</small></label>
+                <input type="text" id="exTemps" inputmode="numeric" placeholder="6:15" autocomplete="off" aria-describedby="expressAide">
+              </div>
+            </div>
+            <div class="profil-toggle-row express-type" id="expressType" role="group" aria-label="Type de sortie du chrono">
+              <button type="button" class="profil-toggle-btn active" data-type="trail" aria-pressed="true" onclick="choisirTypeExpress('trail')">Trail</button>
+              <button type="button" class="profil-toggle-btn" data-type="rando" aria-pressed="false" onclick="choisirTypeExpress('rando')">Rando</button>
+            </div>
+            <button type="submit" class="btn-express" id="btnExpress">Estimer mon profil</button>
+            <p class="express-note" id="expressAide">Ton temps officiel, arrêts compris. Sans compte, rien n'est enregistré. Pour un profil complet, <a href="profil.html">analyse tes sorties</a>.</p>
+          </form>
+          <div id="expressResume" hidden>
+            <button type="button" class="express-modifier" onclick="modifierProfilExpress()">Changer de chrono de référence</button>
+            <p class="express-note">Une estimation à partir d'un seul chrono. Pour un profil vraiment personnel, <a href="profil.html">analyse tes sorties</a>.</p>
+          </div>
+        </div>
       </div>
 
       <button type="button" class="btn-simulate" id="btnSimuler" onclick="lancerSimulation()" disabled>Lancer la simulation</button>
@@ -476,7 +529,7 @@
       <div class="empty-state" id="emptyStateSim">
         <div class="empty-copy">
           <div class="empty-title">Ta simulation s'affichera ici</div>
-          <div class="empty-sub">Importe la trace GPX de ta course, place tes ravitos et lance la simulation. Pas de fichier sous la main ? Essaie la CCC : 98,4 km, une nuit en montagne, et chaque heure de passage.</div>
+          <div class="empty-sub">Importe la trace GPX de ta course : les ravitos du fichier se placent seuls, et un chrono récent suffit si tu n'as pas encore de profil. Pas de fichier sous la main ? Essaie la CCC : 98,4 km, une nuit en montagne, et chaque heure de passage.</div>
           <button type="button" class="btn-primary" id="btnDemoVide" onclick="lancerDemoCCC()">Lancer la démo sur la CCC</button>
         </div>
         <figure class="empty-preview" aria-label="Aperçu d'un résultat">
@@ -673,25 +726,35 @@
     <div class="footer-links">
       <a href="avenir.html">À venir</a>
       <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
       <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261028"></script>
-  <script src="../js/api-client.js?v=20261028"></script>
-  <script src="../js/nav-user.js?v=20261028"></script>
-  <script src="../js/onboarding.js?v=20261028"></script>
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
   <script>
-// Garde-fou : si le CDN d'EmailJS est bloqué (bloqueur de pub, réseau filtré),
-// le reste de la page doit continuer à fonctionner.
-if (window.emailjs) emailjs.init('rc324sv1XWdtOjTM6');
+// EmailJS, Leaflet et jsPDF sont chargés à l'usage (js/main.js)
 
 // Variables globales
 let gpxFile = null;
 
-// ══ DÉMO : CCC de l'UTMB ══════════════════════════════════════
-// Profil de coureur d'exemple (intermédiaire-confirmé, légèrement grimpeur)
-// Permet de lancer une simulation complète sans compte ni import.
+// ══ DÉMO : la CCC de l'UTMB, résultat précalculé ══════════════════
+// La démo s'affiche sans attendre le serveur : le résultat est servi en fichier
+// statique (assets/demo-ccc.json, régénéré par gen_demo.py). Le GPX (1,2 Mo)
+// n'est téléchargé que si l'on relance le calcul ou si l'on épingle la démo.
+let demoActive = false;
+
+async function assurerGpxDemo() {
+  if (gpxFile || !demoActive) return;
+  const res = await fetch('../assets/ccc-utmb.gpx');
+  if (!res.ok) throw new Error('trace de la CCC introuvable');
+  gpxFile = new File([await res.text()], 'CCC-UTMB.gpx', { type: 'application/gpx+xml' });
+}
+
 async function lancerDemoCCC() {
   const btn = document.querySelector('.btn-demo-ccc');
   const btnVide = document.getElementById('btnDemoVide');
@@ -701,69 +764,55 @@ async function lancerDemoCCC() {
   if (btnVide) btnVide.disabled = true;
 
   try {
-    // 1) Récupérer le GPX d'exemple et le transformer en File
-    const resGpx = await fetch('../assets/ccc-utmb.gpx');
-    if (!resGpx.ok) throw new Error('GPX CCC introuvable');
-    const gpxText = await resGpx.text();
-    gpxFile = new File([gpxText], 'CCC-UTMB.gpx', { type: 'application/gpx+xml' });
+    const res = await fetch('../assets/demo-ccc.json?v=1');
+    if (!res.ok) throw new Error('fichier de démonstration introuvable');
+    const demo = await res.json();
 
-    // 2) Charger le profil de coureur d'exemple dans la session
-    const resProfil = await fetch('../assets/profil-demo.json');
-    if (!resProfil.ok) throw new Error('Profil démo introuvable');
-    const profilDemo = await resProfil.json();
-    sessionStorage.setItem('sumit_profil', JSON.stringify({
-      profil:      profilDemo.profil,
-      drain_moy_h: profilDemo.drain_moy_h,
-      coefficient: profilDemo.coefficient,
-      archetype:   profilDemo.archetype,
-      fcmax:       profilDemo.fcmax,
-      prenom:      profilDemo.prenom,
-      nb_traces:   profilDemo.nb_traces,
-      vep_globale: profilDemo.vep_globale,
-      profil_type: profilDemo.profil_type,
-      is_demo:     true,
-      timestamp:   Date.now(),
-    }));
+    // 1) Profil de coureur d'exemple, gardé pour la session
+    sessionStorage.setItem('sumit_profil', JSON.stringify({ ...demo.profil, is_demo: true, timestamp: Date.now() }));
 
-    // 3) Afficher l'aperçu fichier + le profil dans la colonne de saisie
+    // 2) Trace : téléchargée seulement si nécessaire (relance, épinglage)
+    gpxFile = null;
+    demoActive = true;
+    trackPoints = demo.carte || [];
+
+    const f = demo.fichier || {};
     if (document.getElementById('fileInfo')) {
       document.getElementById('fileInfo').classList.add('show');
-      document.getElementById('fileName').textContent = 'CCC 2025 — UTMB';
-      document.getElementById('fileDist').textContent  = '98,4 km';
-      document.getElementById('fileDplus').textContent = '5 742 m';
-      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = 'Ultra';
+      document.getElementById('fileName').textContent  = f.nom || 'CCC — UTMB';
+      document.getElementById('fileDist').textContent  = f.distance || '98,4 km';
+      document.getElementById('fileDplus').textContent = f.dplus || '5 742 m';
+      if (document.getElementById('fileCat')) document.getElementById('fileCat').textContent = f.categorie || 'Ultra';
     }
+    document.getElementById('btnSimuler').disabled = false;
     afficherProfilSidebar();
 
-    // 4) Ravitos officiels de la CCC, placés au kilomètre où la trace les traverse
-    const ravitosCCC = [
-      [14.1, 'Refuge Bertone'],
-      [25.8, 'Arnouvaz'],
-      [39.8, 'La Fouly'],
-      [55.4, 'Champex-Lac'],
-      [69.6, 'Trient'],
-      [80.1, 'Vallorcine'],
-    ];
+    // 3) Ravitos officiels, nom de course, heure de départ
     const list = document.getElementById('ravitosList');
     if (list) {
       list.innerHTML = '';
-      ravitosCCC.forEach(([km, nom]) => list.appendChild(creerLigneRavito(km, nom, '')));
+      (demo.ravitos || []).forEach(([km, nom]) => list.appendChild(creerLigneRavito(km, nom, '')));
       syncRavitos();
     }
-
-    // 5) Nom de course et heure de départ (la CCC part à 9 h 00 de Courmayeur)
-    if (document.getElementById('nomCourse')) {
-      document.getElementById('nomCourse').value = 'CCC — UTMB (démo)';
-    }
+    if (document.getElementById('nomCourse')) document.getElementById('nomCourse').value = demo.nom_course || 'CCC — UTMB (démo)';
     const hd = document.getElementById('heureDepart');
-    if (hd) hd.value = '09:00';
+    if (hd) hd.value = (demo.resultat && demo.resultat.heure_depart) || '09:00';
 
-    // 6) Lancer la simulation
-    if (btn) btn.querySelector('.demo-ccc-text strong').textContent = 'Simulation en cours…';
-    await lancerSimulation();
+    // 4) Résultat affiché tout de suite
+    const data = demo.resultat;
+    afficherResultats(data);
+    if (window.matchMedia('(max-width: 1000px)').matches) {
+      const reduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      setTimeout(() => document.getElementById('simResults').scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' }), 120);
+    }
+    setTimeout(() => afficherCarte(trackPoints), 200);
+    if (window.sumitMesure) sumitMesure('demo_ccc');
+
+    // 5) Terrain OpenStreetMap demandé au serveur en arrière-plan (sans effet sur les temps)
+    enrichirTerrain(data, demo.points_graphique);
 
   } catch (e) {
-    alert('Impossible de charger la démo : ' + e.message);
+    sumitMessage('La démo n\'a pas pu se charger : ' + e.message + '. Réessaie dans un instant.', { type: 'erreur' });
   } finally {
     if (btn) {
       btn.style.opacity = ''; btn.style.pointerEvents = '';
@@ -771,6 +820,25 @@ async function lancerDemoCCC() {
     }
     if (btnVide) btnVide.disabled = false;
   }
+}
+
+// Type de terrain (route, piste, sentier…) de chaque point du graphique, depuis le
+// cache du serveur. N'influence pas les temps : seulement l'infobulle du profil.
+async function enrichirTerrain(data, points) {
+  if (!data || !Array.isArray(points) || !Array.isArray(data.profil_chart) || points.length !== data.profil_chart.length) return;
+  try {
+    const r = await fetch(`${API_URL}/api/terrain`, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points }),
+    });
+    if (!r.ok) return;
+    const t = await r.json();
+    if (!t || t.source === 'aucune' || !Array.isArray(t.types) || t.types.length !== points.length) return;
+    if (window.lastSimData !== data) return;          // une autre simulation a pris la place
+    data.profil_chart.forEach((p, i) => { p.type_terrain = t.types[i]; });
+    if (document.getElementById('simResults').style.display !== 'none') dessinerProfilChart(data);
+  } catch (e) { /* serveur endormi ou hors ligne : le terrain reste neutre */ }
 }
 
 // ══ Gestion dynamique des ravitos / points d'intérêt ══════════
@@ -1049,7 +1117,7 @@ async function chargerSimulationEpinglee(simId) {
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const reconstitueFile = new File([bytes], `${sim.name}.gpx`, { type: 'application/gpx+xml' });
-      chargerFichier(reconstitueFile);
+      chargerFichier(reconstitueFile, { lireRavitos: false });
     }
 
     // Restaurer le nom de course + ravitos
@@ -1097,7 +1165,7 @@ async function chargerSimulationEpinglee(simId) {
     afficherBandeauEdition();
 
   } catch (e) {
-    alert('Impossible d\'ouvrir la simulation épinglée : ' + e.message);
+    sumitMessage('Impossible d\'ouvrir la simulation épinglée : ' + e.message, { type: 'erreur' });
   }
 }
 
@@ -1160,12 +1228,14 @@ async function switchProfilSim(type) {
 }
 
 // ── Chargement du fichier ──────────────────────────────────────────
-function chargerFichier(file) {
+function chargerFichier(file, options) {
+  options = options || {};
   if (!file.name.toLowerCase().endsWith('.gpx')) {
-    alert('Seuls les fichiers .gpx sont acceptés !');
+    sumitMessage('Seuls les fichiers GPX sont acceptés.', { type: 'erreur', pres: '#dropzoneSim' });
     return;
   }
   gpxFile = file;
+  demoActive = false;
   // Après la démo, un vrai fichier repasse sur le profil du coureur connecté
   try {
     const cur = chargerProfil();
@@ -1173,14 +1243,130 @@ function chargerFichier(file) {
       chargerProfilActuel(currentSimProfilType).then(afficherProfilSidebar).catch(() => {});
     }
   } catch (e) {}
-  // Affichage info fichier
   document.getElementById('fileName').textContent = file.name;
-  document.getElementById('fileDist').textContent = '...';
-  document.getElementById('fileDplus').textContent = '...';
+  document.getElementById('fileDist').textContent = '…';
+  document.getElementById('fileDplus').textContent = '…';
   document.getElementById('fileCat').textContent = 'Prête';
   document.getElementById('fileInfo').classList.add('show');
   document.getElementById('btnSimuler').disabled = false;
-  console.log('Fichier chargé :', file.name, file.size, 'octets');
+
+  // Lecture locale : distance, dénivelé, points de passage (aucun envoi au serveur)
+  lireGPXCourse(file).then(info => {
+    if (gpxFile !== file) return;
+    if (info.distKm > 0) {
+      document.getElementById('fileDist').textContent  = `${fmtKmS(info.distKm)} km`;
+      document.getElementById('fileDplus').textContent = `${fmtEntierS(info.dplus)} m`;
+    }
+    if (info.coords.length) trackPoints = info.coords;
+    if (options.lireRavitos !== false) proposerRavitosDuFichier(info.points);
+  }).catch(() => {});
+}
+
+// Lit un GPX de course : trace, distance, D+ (même méthode que le serveur, à peu près)
+// et points de passage (<wpt>) placés au kilomètre où la trace passe au plus près.
+function lireGPXCourse(file) {
+  return new Promise((ok, ko) => {
+    const reader = new FileReader();
+    reader.onerror = () => ko(new Error('lecture impossible'));
+    reader.onload = e => {
+      try {
+        const doc = new DOMParser().parseFromString(e.target.result, 'text/xml');
+        let noeuds = doc.getElementsByTagName('trkpt');
+        if (!noeuds.length) noeuds = doc.getElementsByTagName('rtept');
+        const lat = [], lon = [], alt = [];
+        for (const n of noeuds) {
+          const a = parseFloat(n.getAttribute('lat')), b = parseFloat(n.getAttribute('lon'));
+          if (!isFinite(a) || !isFinite(b)) continue;
+          lat.push(a); lon.push(b);
+          const el = n.getElementsByTagName('ele')[0];
+          alt.push(el ? parseFloat(el.textContent) || 0 : 0);
+        }
+        const N = lat.length;
+        const R = 6371000, rad = Math.PI / 180;
+        const cum = new Float64Array(N);
+        for (let i = 1; i < N; i++) {
+          const p1 = lat[i - 1] * rad, p2 = lat[i] * rad;
+          const dp = p2 - p1, dl = (lon[i] - lon[i - 1]) * rad;
+          const h = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+          let d = 2 * R * Math.asin(Math.sqrt(h));
+          if (d > 200) d = 0;                       // saut GPS aberrant
+          cum[i] = cum[i - 1] + d;
+        }
+        // D+ : médiane glissante sur 3 points puis hystérésis de 2 m (comme le serveur)
+        const lisse = alt.map((v, i) => {
+          const w = [alt[i - 1], v, alt[i + 1]].filter(x => x !== undefined).sort((x, y) => x - y);
+          return w[Math.floor(w.length / 2)];
+        });
+        let dplus = 0, ref = lisse[0] || 0;
+        for (let i = 1; i < N; i++) {
+          const d = lisse[i] - ref;
+          if (d >= 2) { dplus += d; ref = lisse[i]; }
+          else if (d <= -2) { ref = lisse[i]; }
+        }
+        const distKm = N ? cum[N - 1] / 1000 : 0;
+
+        // Points de passage
+        const cosLat = Math.cos((N ? lat[Math.floor(N / 2)] : 45) * rad);
+        const points = [];
+        for (const w of doc.getElementsByTagName('wpt')) {
+          const a = parseFloat(w.getAttribute('lat')), b = parseFloat(w.getAttribute('lon'));
+          if (!isFinite(a) || !isFinite(b) || !N) continue;
+          let best = -1, bestD = Infinity;
+          for (let i = 0; i < N; i++) {
+            const dy = (lat[i] - a) * 111320, dx = (lon[i] - b) * 111320 * cosLat;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < bestD) { bestD = d2; best = i; }
+          }
+          if (Math.sqrt(bestD) > 300) continue;     // trop loin de la trace
+          const km = Math.round(cum[best] / 100) / 10;
+          if (km < 0.5 || km > distKm - 0.5) continue;  // départ et arrivée
+          const txt = tag => { const t = w.getElementsByTagName(tag)[0]; return t ? t.textContent.trim() : ''; };
+          const nom = (txt('name') || txt('desc') || txt('cmt') || '').replace(/\s+/g, ' ').slice(0, 60);
+          points.push({ km, nom });
+        }
+        points.sort((x, y) => x.km - y.km);
+        const uniques = [];
+        for (const p of points) {
+          const prec = uniques[uniques.length - 1];
+          if (prec && p.km - prec.km < 0.3) continue;
+          uniques.push(p);
+        }
+        // Carte : au plus ~1 500 points
+        const pas = Math.max(1, Math.floor(N / 1500));
+        const coords = [];
+        for (let i = 0; i < N; i += pas) coords.push([lat[i], lon[i]]);
+        if (N && (N - 1) % pas) coords.push([lat[N - 1], lon[N - 1]]);
+        ok({ distKm, dplus, points: uniques.slice(0, 30), coords });
+      } catch (err) { ko(err); }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// Remplit la liste des ravitos avec les points du fichier (ou le propose si elle est déjà remplie)
+function proposerRavitosDuFichier(points) {
+  if (!points || !points.length) return;
+  const list = document.getElementById('ravitosList');
+  if (!list) return;
+  const remplis = [...list.querySelectorAll('.ravito-row')]
+    .filter(r => r.querySelector('.ravito-km-input').value.trim() !== '');
+  const n = points.length;
+  const libelle = n > 1 ? `${n} points de passage` : '1 point de passage';
+  const remplir = () => {
+    list.innerHTML = '';
+    points.forEach(p => list.appendChild(creerLigneRavito(p.km, p.nom, '')));
+    syncRavitos();
+    if (window.sumitMesure) sumitMesure('ravitos_gpx', { nb: n });
+  };
+  if (!remplis.length) {
+    remplir();
+    sumitMessage(`${libelle} lus dans le fichier. Vérifie-les et ajoute tes pauses.`, { type: 'succes', pres: list, defiler: false });
+  } else {
+    sumitMessage(`Le fichier contient ${libelle}.`, {
+      type: 'info', pres: list, defiler: false, duree: 0,
+      action: { label: 'Les utiliser', onClick: remplir },
+    });
+  }
 }
 
 // ── Profil sidebar ─────────────────────────────────────────────────
@@ -1188,21 +1374,125 @@ function afficherProfilSidebar() {
   const p = chargerProfil();
   const desc = document.getElementById('profilRefDesc');
   if (p && p.profil) {
-    // Même VEP globale que sur la page profil
     const vep = p.vep_globale ? p.vep_globale.toFixed(1).replace('.', ',') : '—';
     document.getElementById('profilVEP').textContent   = `${vep} km/h`;
     document.getElementById('profilDrain').textContent = `${(p.drain_moy_h*100).toFixed(1).replace('.', ',')} %/h`;
-    document.getElementById('profilCoeff').textContent = `×${p.coefficient.toFixed(2).replace('.', ',')}`;
+    document.getElementById('profilCoeff').textContent = `×${Number(p.coefficient).toFixed(2).replace('.', ',')}`;
     if (desc) {
+      const r = p.reference;
       desc.textContent = p.is_demo
         ? `Profil d'exemple (démo) : ${(p.archetype && p.archetype.nom) || 'coureur'}, ${p.nb_traces || 0} sorties.`
-        : 'Issu de l\'analyse de tes sorties.';
+        : (p.is_express && r)
+          ? `Profil express, estimé depuis ${fmtKmS(r.distance_km)} km et ${fmtEntierS(r.dplus_m)} m D+ en ${fmtDuree(r.temps_s)}.`
+          : 'Issu de l\'analyse de tes sorties.';
     }
   } else {
     document.getElementById('profilVEP').textContent   = '—';
     document.getElementById('profilDrain').textContent = '—';
     document.getElementById('profilCoeff').textContent = '—';
-    if (desc) desc.textContent = 'Issu de l\'analyse de tes sorties.';
+    if (desc) desc.textContent = 'Le profil de coureur qui calcule tes temps.';
+  }
+  const lignes = document.querySelector('.ref-rows');
+  if (lignes) lignes.hidden = !(p && p.profil);
+  majBlocExpress();
+}
+
+// ══ PRÉDICTION EXPRESS : un profil estimé depuis un chrono, sans compte ══
+let typeExpress = 'trail';
+
+function lireDuree(txt) {
+  const t = String(txt || '').trim().toLowerCase().replace(/\s+/g, '').replace(/min$/, '');
+  let m = t.match(/^(\d{1,3})(?:h|:)(\d{1,2})?(?:(?:m|:)(\d{1,2}))?s?$/);
+  if (m) {
+    const h = +m[1], mi = +(m[2] || 0), s = +(m[3] || 0);
+    if (mi > 59 || s > 59) return null;
+    return h * 3600 + mi * 60 + s;
+  }
+  m = t.match(/^(\d{1,3})h?$/);
+  if (m) return +m[1] * 3600;
+  return null;
+}
+
+function majBlocExpress(forcerFormulaire) {
+  const bloc = document.getElementById('expressBloc');
+  if (!bloc) return;
+  const p = chargerProfil();
+  const profilReel = p && p.profil && !p.is_demo && !p.is_express;
+  bloc.hidden = !!profilReel;
+  const resume = document.getElementById('expressResume');
+  const form = document.getElementById('expressForm');
+  const avecResume = !!(p && p.is_express && p.reference) && !forcerFormulaire;
+  resume.hidden = !avecResume;
+  form.hidden = avecResume;
+}
+
+function choisirTypeExpress(type) {
+  typeExpress = type === 'rando' ? 'rando' : 'trail';
+  document.querySelectorAll('#expressType .profil-toggle-btn').forEach(b => {
+    const actif = b.dataset.type === typeExpress;
+    b.classList.toggle('active', actif);
+    b.setAttribute('aria-pressed', actif ? 'true' : 'false');
+  });
+}
+
+function modifierProfilExpress() {
+  const p = chargerProfil();
+  const r = p && p.reference;
+  if (r) {
+    document.getElementById('exDist').value = String(r.distance_km).replace('.', ',');
+    document.getElementById('exDplus').value = r.dplus_m;
+    const h = Math.floor(r.temps_s / 3600), mi = Math.round((r.temps_s % 3600) / 60);
+    document.getElementById('exTemps').value = `${h}:${String(mi).padStart(2, '0')}`;
+    choisirTypeExpress(p.profil_type);
+  }
+  majBlocExpress(true);
+  document.getElementById('exDist').focus();
+}
+
+async function estimerProfilExpress() {
+  const champs = document.getElementById('expressChamps');
+  const dist = parseFloat(String(document.getElementById('exDist').value).replace(',', '.'));
+  const dplus = parseFloat(String(document.getElementById('exDplus').value).replace(/\s/g, '').replace(',', '.'));
+  const temps = lireDuree(document.getElementById('exTemps').value);
+  const erreur = (texte, id) => {
+    sumitMessage(texte, { type: 'erreur', pres: champs });
+    document.getElementById(id).focus();
+  };
+  if (!(dist >= 3 && dist <= 250)) return erreur('Indique une distance entre 3 et 250 km.', 'exDist');
+  if (!(dplus >= 0 && dplus <= 12000)) return erreur('Indique un dénivelé positif entre 0 et 12 000 m.', 'exDplus');
+  if (!temps) return erreur('Indique ton temps au format 6:15 (heures:minutes).', 'exTemps');
+
+  const btn = document.getElementById('btnExpress');
+  const txt = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Estimation…';
+  try {
+    const p = await profilExpressAPI(dist, dplus, temps, typeExpress);
+    sessionStorage.setItem('sumit_profil', JSON.stringify({
+      profil:      p.profil,
+      drain_moy_h: p.drain_moy_h,
+      coefficient: p.coefficient,
+      archetype:   p.archetype,
+      fcmax:       190,
+      prenom:      'Coureur',
+      nb_traces:   0,
+      vep_globale: p.vep_globale,
+      profil_type: p.profil_type,
+      reference:   p.reference,
+      is_express:  true,
+      timestamp:   Date.now(),
+    }));
+    afficherProfilSidebar();
+    const suite = gpxFile || demoActive
+      ? 'Lance la simulation.'
+      : 'Importe la trace de ta course, puis lance la simulation.';
+    sumitMessage(`Profil express prêt. ${suite}`, { type: 'succes', pres: document.getElementById('expressBloc') });
+    if (window.sumitMesure) sumitMesure('profil_express', { km: Math.round(dist), dplus: Math.round(dplus), profil: p.profil_type });
+  } catch (e) {
+    sumitMessage(e.message, { type: 'erreur', pres: champs });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = txt;
   }
 }
 
@@ -1226,11 +1516,21 @@ function profilDeLaSim() {
 }
 
 async function lancerSimulation() {
-  if (!gpxFile) { alert('Importe d\'abord la trace GPX de ta course.'); return; }
+  if (!gpxFile && demoActive) {
+    try { await assurerGpxDemo(); }
+    catch (e) { sumitMessage('La trace de la démo n\'a pas pu se charger : ' + e.message + '.', { type: 'erreur', pres: '#btnSimuler' }); return; }
+  }
+  if (!gpxFile) {
+    sumitMessage('Importe d\'abord la trace GPX de ta course.', { type: 'erreur', pres: '#dropzoneSim' });
+    return;
+  }
 
   const p = chargerProfil();
   if (!p || !p.profil) {
-    alert('Aucun profil de coureur pour l\'instant. Crée-le sur la page « Mon profil », ou lance la démo sur la CCC.');
+    majBlocExpress(true);
+    sumitMessage('Il te faut un profil de coureur : donne un chrono récent ci-dessous, ou crée ton profil à partir de tes sorties.', { type: 'info', pres: '#expressBloc' });
+    const champ = document.getElementById('exDist');
+    if (champ) champ.focus({ preventScroll: true });
     return;
   }
 
@@ -1266,11 +1566,11 @@ async function lancerSimulation() {
     // Carte après les résultats
     setTimeout(() => afficherCarte(trackPoints), 200);
 
-    envoyerMailSimulation(data);
+    envoyerMailSimulation(data, p);
 
   } catch(err) {
     console.error('Erreur simulation:', err);
-    alert(`La simulation n'a pas abouti : ${err.message}\n\nRéessaie dans un instant.`);
+    sumitMessage(`La simulation n'a pas abouti : ${err.message}. Réessaie dans un instant.`, { type: 'erreur', pres: '#btnSimuler' });
   } finally {
     btn.textContent = 'Lancer la simulation';
     btn.disabled = false;
@@ -1688,24 +1988,15 @@ function attacherTooltipGraphique() {
   hotzone.addEventListener('touchend', () => setTimeout(cacher, 1600));
 }
 
-// ── Envoi mail simulation ─────────────────────────────────────────
-function envoyerMailSimulation(data) {
-  const cat = data.categorie || {};
-  const params = {
-    to_email:   'sup.sumit@outlook.com',
-    date:       new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
-    distance:   `${data.distance_km.toFixed(1)} km`,
-    denivelé:   `${Math.round(data.dplus_m)} m D+`,
-    categorie:  `${cat.emoji || ''} ${cat.nom || '—'}`,
-    temps_estime: data.temps_fmt,
-    coeff_course: `×${data.coefficient_course}`,
-    nb_ravitos:   (data.ravitos || []).length,
-    ravitos_km:   (data.ravitos || []).map(r => `${r.km.toFixed(1)}km → ${r.temps_fmt}`).join(' | '),
-  };
-  if (!window.emailjs) return;   // envoi silencieux : rien à signaler à l'utilisateur
-  emailjs.send('sumit_outlook', 'template_6htljlf', params)
-    .then(() => console.log('Simulation envoyée'))
-    .catch(e => console.warn('EmailJS:', e));
+// ── Mesure d'une simulation (anonyme, voir js/main.js) ─────────────
+function envoyerMailSimulation(data, p) {
+  if (!window.sumitMesure || !data) return;
+  sumitMesure(p && p.is_express ? 'simulation_express' : 'simulation', {
+    km:    Math.round(Number(data.distance_km) || 0),
+    dplus: Math.round(Number(data.dplus_m) || 0),
+    cat:   (data.categorie && data.categorie.nom) || '',
+    profil: (p && p.is_demo) ? 'demo' : (p && p.is_express) ? 'express' : 'complet',
+  });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1734,8 +2025,16 @@ async function chargerTrackPoints(file) {
   });
 }
 
-function afficherCarte(coords) {
-  if (!coords || coords.length === 0 || typeof L === 'undefined') return;
+async function afficherCarte(coords) {
+  if (!coords || coords.length === 0) return;
+  const zone = document.getElementById('leafletMap');
+  if (!zone) return;
+  try {
+    await chargerLeaflet();
+  } catch (e) {
+    zone.innerHTML = '<p class="map-indispo">La carte n\'a pas pu se charger. Les temps et le profil restent valables.</p>';
+    return;
+  }
   if (leafletMap) { leafletMap.remove(); leafletMap = null; }
 
   leafletMap = L.map('leafletMap', { scrollWheelZoom: false }).setView(coords[0], 13);
@@ -1787,6 +2086,12 @@ function textePDF(s) {
 }
 
 async function genererPDF() {
+  try {
+    await chargerOutilsPDF();
+  } catch (e) {
+    sumitMessage('Le module PDF n\'a pas pu se charger. Vérifie ta connexion et réessaie.', { type: 'erreur' });
+    return;
+  }
   const { jsPDF } = window.jspdf;
   const profil = chargerProfil();
   const prenom = profil?.prenom || 'Coureur';
@@ -2076,10 +2381,11 @@ async function genererPDF() {
 
     const filename = `SUMIT_${prenom}_${nomCourse}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') + '.pdf';
     pdf.save(filename);
+    if (window.sumitMesure) sumitMesure('pdf');
 
   } catch(err) {
     console.error('Erreur PDF:', err);
-    alert('Le PDF n\'a pas pu être créé : ' + err.message);
+    sumitMessage('Le PDF n\'a pas pu être créé : ' + err.message, { type: 'erreur' });
   } finally {
     btn.innerHTML = btnHTML;
     btn.disabled = false;
@@ -2122,25 +2428,29 @@ function envoyerAvis() {
     email_testeur:   document.getElementById('modalEmail').value      || 'Non renseigné',
     date:            new Date().toLocaleDateString('fr-FR'),
   };
-  if (!window.emailjs) { alert("L'envoi est indisponible pour le moment (service de messagerie bloqué). Réessaie plus tard."); return; }
+  const bouton = document.querySelector('#formAvis .btn-primary');
+  if (bouton) { bouton.disabled = true; bouton.textContent = 'Envoi…'; }
 
-  emailjs.send('sumit_outlook', 'template_2yb8f5l', params)
+  chargerEmailJS()
+    .then(ej => ej.send('sumit_outlook', 'template_2yb8f5l', params))
     .then(() => {
       document.getElementById('formAvis').style.display    = 'none';
       document.getElementById('successAvis').style.display = 'block';
+      if (window.sumitMesure) sumitMesure('avis');
       setTimeout(fermerModal, 2500);
     })
-    .catch(err => alert("Erreur d'envoi : " + err.message));
+    .catch(err => sumitMessage("L'envoi n'est pas passé : " + ((err && (err.text || err.message)) || 'service indisponible') + '. Réessaie dans un instant.', { type: 'erreur', pres: bouton }))
+    .finally(() => { if (bouton) { bouton.disabled = false; bouton.textContent = 'Envoyer mon avis'; } });
 }
 
 // ── Épingler la simulation actuelle ──────────────────────────────
 async function epinglerSimulationActuelle() {
   if (!isLoggedIn()) {
-    alert('Connecte-toi pour épingler tes simulations.');
+    sumitMessage('Connecte-toi pour épingler tes simulations et les retrouver plus tard.', { type: 'info', action: { label: 'Se connecter', onClick: () => loginGoogle() } });
     return;
   }
   if (!window.lastSimData) {
-    alert('Lance d\'abord une simulation.');
+    sumitMessage('Lance d\'abord une simulation.', { type: 'info' });
     return;
   }
 
@@ -2158,7 +2468,7 @@ async function epinglerSimulationActuelle() {
         document.getElementById('btnPinLabel').textContent = 'Simulation à jour';
       }, 1500);
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
       btn.disabled = false;
       document.getElementById('btnPinLabel').textContent = 'Mettre à jour la simulation épinglée';
     }
@@ -2200,6 +2510,7 @@ async function epinglerSimulationActuelle() {
 
     // GPX en base64 (pour pouvoir recalculer plus tard)
     let gpxBase64 = '';
+    try { await assurerGpxDemo(); } catch (e) { /* la simulation reste épinglée, sans sa trace */ }
     if (gpxFile) {
       try {
         const arrBuf = await gpxFile.arrayBuffer();
@@ -2216,6 +2527,7 @@ async function epinglerSimulationActuelle() {
     const ravitosKm = document.getElementById('ravitos')?.value || '';
 
     const res = await epinglerSimulation(nom.trim(), currentSimProfilType, simPayload, gpxBase64, ravitosKm);
+    if (window.sumitMesure) sumitMesure('pin');
 
     // On bascule en mode édition (la sim existe maintenant)
     window.editingSimId = res.simulation_id;
@@ -2230,7 +2542,7 @@ async function epinglerSimulationActuelle() {
       btn.disabled = false;
     }, 1500);
   } catch (e) {
-    alert('Erreur : ' + e.message);
+    sumitMessage(e.message, { type: 'erreur' });
     btn.disabled = false;
     document.getElementById('btnPinLabel').textContent = 'Épingler cette simulation';
   }
@@ -2239,6 +2551,17 @@ async function epinglerSimulationActuelle() {
 // Échap ferme la fenêtre d'avis
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('modalAvis').classList.contains('active')) fermerModal();
+});
+
+// Lien direct vers la prédiction express (simulateur.html#express)
+window.addEventListener('load', () => {
+  if (location.hash !== '#express') return;
+  const b = document.getElementById('expressBloc');
+  if (!b || b.hidden) return;
+  majBlocExpress(true);
+  b.scrollIntoView({ block: 'center' });
+  const champ = document.getElementById('exDist');
+  if (champ) champ.focus({ preventScroll: true });
 });
 </script>
 </body>

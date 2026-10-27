@@ -17,11 +17,11 @@
   <meta name="twitter:description" content="La feuille de route de SUM'IT : ce qui est en ligne, ce qui arrive, et comment être prévenu.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — À venir</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/avenir.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261028">
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
   <script>document.documentElement.classList.add('js');</script>
-  <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
 
     /* ── À venir : la feuille de route est une ascension ───────── */
@@ -329,22 +329,18 @@
     <div class="footer-links">
       <a href="avenir.html">À venir</a>
       <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
       <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261028"></script>
-  <script src="../js/api-client.js?v=20261028"></script>
-  <script src="../js/nav-user.js?v=20261028"></script>
-  <script src="../js/onboarding.js?v=20261028"></script>
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
 
   <script>
-    let emailPret = false;
-    function emailDispo() {
-      if (!window.emailjs) return false;
-      if (!emailPret) { emailjs.init('rc324sv1XWdtOjTM6'); emailPret = true; }
-      return true;
-    }
     function sInscrire() {
       const input = document.getElementById('notifyEmail');
       const status = document.getElementById('notifyStatus');
@@ -358,22 +354,19 @@
         input.focus();
         return;
       }
-      if (!emailDispo()) {
-        status.className = 'notify-status err';
-        status.textContent = "L'envoi est indisponible pour le moment (service bloqué par le navigateur). Réessaie plus tard.";
-        return;
-      }
       btn.disabled = true;
       btn.textContent = 'Envoi…';
-      emailjs.send('sumit_outlook', 'template_2yb8f5l', {
-        to_email:    'sup.sumit@outlook.com',
-        email_notif: email,
-        date:        new Date().toLocaleDateString('fr-FR'),
-        source:      'Page À venir — notification roadmap',
-      })
+      chargerEmailJS()
+        .then(ej => ej.send('sumit_outlook', 'template_2yb8f5l', {
+          to_email:    'sup.sumit@outlook.com',
+          email_notif: email,
+          date:        new Date().toLocaleDateString('fr-FR'),
+          source:      'Page À venir — notification roadmap',
+        }))
         .then(() => {
           document.getElementById('notifyWrap').style.display = 'none';
           document.getElementById('notifySuccess').style.display = 'flex';
+          if (window.sumitMesure) sumitMesure('notification');
         })
         .catch(() => {
           status.className = 'notify-status err';

@@ -17,9 +17,10 @@
   <meta name="twitter:description" content="Compare ta performance réelle à ta prédiction SUM'IT : l'écart à chaque ravitaillement, et un modèle qui s'ajuste course après course.">
   <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
   <title>SUM'IT — Bilan réel contre prédit</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/bilan.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261028">
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
   <style>
     /* ── Bilan ──────────────────────────────────────────────── */
     .bilan-wrap { display: grid; gap: 16px; min-width: 0; }
@@ -369,14 +370,16 @@
     <div class="footer-links">
       <a href="avenir.html">À venir</a>
       <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
       <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261028"></script>
-  <script src="../js/api-client.js?v=20261028"></script>
-  <script src="../js/nav-user.js?v=20261028"></script>
-  <script src="../js/onboarding.js?v=20261028"></script>
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
   <script>
   let bilanData = null;        // résultat de la dernière comparaison
 
@@ -476,7 +479,7 @@
       await modifierBilan(id, { commentaire: nouveau.trim() });
       await chargerBilansPinnes();
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
     }
   }
 
@@ -486,7 +489,7 @@
       await supprimerBilan(id);
       await chargerBilansPinnes();
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
     }
   }
 
@@ -510,9 +513,10 @@
         commentaire
       );
       btn.textContent = 'Bilan épinglé';
+      if (window.sumitMesure) sumitMesure('bilan');
       await chargerBilansPinnes();
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
       btn.disabled = false;
       btn.textContent = 'Épingler ce bilan';
     }
@@ -583,7 +587,7 @@
       bilanData = data;
       afficherComparaison(data);
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
     } finally {
       btn.disabled = false;
       btn.textContent = 'Comparer';
@@ -713,7 +717,7 @@
       calibText.innerHTML = `Ton coefficient course est maintenant de <strong>${calib.coef_suggere.toFixed(3).replace('.', ',')}</strong>. Tes prochaines simulations en tiendront compte ; tu peux le vérifier dans Mon profil.`;
       document.getElementById('calibActuel').textContent = calib.coef_suggere.toFixed(3).replace('.', ',');
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      sumitMessage(e.message, { type: 'erreur' });
       btn.disabled = false;
       btn.textContent = 'Appliquer cet ajustement';
     }

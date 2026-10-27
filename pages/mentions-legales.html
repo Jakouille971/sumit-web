@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#133621">
+  <meta name="description" content="Mentions légales de SUM'IT : éditeur, hébergeurs, propriété intellectuelle et responsabilité.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Mentions légales">
+  <meta property="og:description" content="Mentions légales de SUM'IT : éditeur, hébergeurs, propriété intellectuelle et responsabilité.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/mentions-legales.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Mentions légales">
+  <meta name="twitter:description" content="Mentions légales de SUM'IT : éditeur, hébergeurs, propriété intellectuelle et responsabilité.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Mentions légales</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/mentions-legales.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
+  <style>
+    .legal { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px 48px; align-items: start; }
+    .legal-toc { position: sticky; top: calc(var(--nav-h) + 24px); }
+    .legal-toc p { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .legal-toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+    .legal-toc a { display: block; padding: 7px 10px; border-radius: var(--radius-control); font-size: 14px; color: var(--ink); transition: background-color var(--t-hover) ease; }
+    @media (hover: hover) and (pointer: fine) { .legal-toc a:hover { background: var(--active); } }
+    .legal-doc { min-width: 0; padding: 32px 40px 40px; border-radius: var(--radius-card); background: var(--paper); }
+    .legal-doc > section > p, .legal-doc > section > ul, .legal-doc > section > h2, .legal-doc > p, .legal-doc .optout, .legal-doc .legal-adresse { max-width: 72ch; }
+    .legal-doc > section:first-of-type { margin-top: 20px; }
+    .legal-doc section + section { margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--rule); }
+    .legal-doc h2 { font-size: 22px; line-height: 1.2; letter-spacing: -0.02em; scroll-margin-top: calc(var(--nav-h) + 20px); }
+    .legal-doc h3 { margin-top: 20px; font-size: 16px; }
+    .legal-doc p, .legal-doc li { font-size: 16px; line-height: 1.6; color: var(--ink); }
+    .legal-doc p { margin-top: 10px; }
+    .legal-doc ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+    .legal-doc a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+    .legal-doc a span { white-space: nowrap; }
+    .legal-maj { margin-top: 0 !important; font-size: 14px !important; color: var(--muted) !important; }
+    .legal-adresse { margin-top: 10px; padding: 14px 16px; border-radius: var(--radius-control); background: var(--raised); font-size: 15px; line-height: 1.55; }
+    .legal-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 15px; }
+    .legal-table th, .legal-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; line-height: 1.5; }
+    .legal-table th { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .legal-table th:nth-child(1) { width: 24%; } .legal-table th:nth-child(2) { width: 56%; }
+    .legal-table td:first-child { font-weight: 600; white-space: nowrap; }
+    .optout { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px; border-radius: var(--radius-control); background: var(--raised); }
+    .optout p { flex: 1 1 260px; margin: 0 !important; font-size: 15px !important; }
+    .optout button { min-height: 44px; padding: 0 16px; border-radius: var(--radius-control); background: var(--action); color: var(--action-ink); font-size: 15px; font-weight: 600; transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease; }
+    .optout button:active { transform: scale(0.97); }
+    @media (hover: hover) and (pointer: fine) { .optout button:hover { background: var(--action-hover); } }
+    @media (max-width: 900px) {
+      .legal { grid-template-columns: 1fr; gap: 20px; }
+      .legal-toc { position: static; }
+      .legal-toc ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .legal-doc { padding: 24px 20px 28px; }
+      .legal-table td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body data-page="legal">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <img class="app-head-photo" src="../assets/Photos/pente-brume-960.webp" srcset="../assets/Photos/pente-brume-960.webp 960w, ../assets/Photos/pente-brume-1440.webp 1440w" sizes="38vw" width="960" height="1279" alt="Une pente d'herbe qui se perd dans la brume." style="object-position: 50% 45%">
+    <div>
+      <h1>Mentions légales</h1>
+      <p>Qui édite SUM'IT, qui l'héberge, et à qui appartiennent textes et photos.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div class="legal">
+      <nav class="legal-toc" aria-label="Sommaire">
+        <p>Sur cette page</p>
+        <ol>
+          <li><a href="#editeur">Éditeur</a></li>
+          <li><a href="#hebergement">Hébergement</a></li>
+          <li><a href="#propriete">Propriété intellectuelle</a></li>
+          <li><a href="#responsabilite">Responsabilité</a></li>
+          <li><a href="#donnees">Données personnelles</a></li>
+          <li><a href="#droit">Droit applicable</a></li>
+        </ol>
+      </nav>
+      <article class="legal-doc">
+        <p class="legal-maj">Dernière mise à jour : 27 octobre 2026</p>
+      <section aria-labelledby="editeur">
+        <h2 id="editeur">Éditeur</h2>
+        <p>SUM'IT est un projet édité à titre non professionnel, en version bêta gratuite. Comme le permet l'article 6, III, 2 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, l'éditeur ne publie pas son nom ; ses éléments d'identification sont connus de l'hébergeur du site.</p>
+        <p class="legal-adresse">Contact : <a href="mailto:sup.sumit@outlook.com"><span>sup.sumit@</span><span>outlook.com</span></a></p>
+      </section>
+      <section aria-labelledby="hebergement">
+        <h2 id="hebergement">Hébergement</h2>
+        <p>Le site est hébergé par :</p>
+        <p class="legal-adresse">Vercel Inc.<br>440 N Barranca Ave #4133, Covina, CA 91723, États-Unis<br>+1 951 383 6898 · <a href="https://vercel.com">vercel.com</a></p>
+        <p>Les calculs (profils, simulations) et les comptes sont traités sur un serveur hébergé par :</p>
+        <p class="legal-adresse">Render Services, Inc.<br>525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis<br><a href="https://render.com">render.com</a></p>
+        <p>La base de données est fournie par Neon (<a href="https://neon.tech">neon.tech</a>).</p>
+      </section>
+      <section aria-labelledby="propriete">
+        <h2 id="propriete">Propriété intellectuelle</h2>
+        <p>Les textes, le code, le nom et le logo SUM'IT appartiennent à l'éditeur. Toute reproduction sans accord écrit est interdite.</p>
+        <p>Les photographies sont de Jess Meniere et sont reproduites avec son accord. Elles ne peuvent pas être réutilisées sans son autorisation.</p>
+        <p>Données cartographiques : © les contributeurs d'<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, sous licence ODbL. Fonds de carte : © <a href="https://carto.com/attributions">CARTO</a>.</p>
+        <p>Police de caractères : Sora, sous licence SIL Open Font License.</p>
+      </section>
+      <section aria-labelledby="responsabilite">
+        <h2 id="responsabilite">Responsabilité</h2>
+        <p>Les temps, allures et heures de passage calculés par SUM'IT sont des estimations fondées sur tes données et sur un modèle. Ils ne remplacent ni ta préparation, ni les informations officielles de l'organisateur (barrières horaires, matériel obligatoire, consignes de sécurité), ni ton jugement en montagne.</p>
+        <p>L'éditeur fait de son mieux pour que le service soit disponible et exact, sans pouvoir le garantir pendant la bêta.</p>
+      </section>
+      <section aria-labelledby="donnees">
+        <h2 id="donnees">Données personnelles</h2>
+        <p>Ce que SUM'IT collecte, pourquoi, combien de temps et comment exercer tes droits : voir la <a href="confidentialite.html">politique de confidentialité</a>.</p>
+      </section>
+      <section aria-labelledby="droit">
+        <h2 id="droit">Droit applicable</h2>
+        <p>Le site et ces mentions sont soumis au droit français.</p>
+      </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
+</body>
+</html>

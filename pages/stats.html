@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#133621">
+  <meta name="description" content="Statistiques d'usage de SUM'IT, réservées à l'éditeur.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Statistiques">
+  <meta property="og:description" content="Statistiques d'usage de SUM'IT, réservées à l'éditeur.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/stats.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Statistiques">
+  <meta name="twitter:description" content="Statistiques d'usage de SUM'IT, réservées à l'éditeur.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Statistiques</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/stats.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261029">
+  <meta name="robots" content="noindex, nofollow">
+  <script>window.SUMIT_PAS_DE_MESURE = true;</script>
+  <style>
+    .st-acces { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; padding: 20px; border-radius: var(--radius-card); background: var(--paper); }
+    .st-acces .input-group { margin: 0; flex: 1 1 260px; }
+    .st-acces label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+    .st-acces input, .st-acces select { width: 100%; min-height: 44px; font-size: 16px; }
+    .st-acces .st-periode { flex: 0 1 220px; }
+    .st-acces button { min-height: 44px; padding: 0 20px; border-radius: var(--radius-control); background: var(--action); color: var(--action-ink); font-size: 15px; font-weight: 600; transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease; }
+    .st-acces button:active { transform: scale(0.97); }
+    .st-acces button:disabled { opacity: 0.6; }
+    @media (hover: hover) and (pointer: fine) { .st-acces button:hover:not(:disabled) { background: var(--action-hover); } }
+    .st-note { margin-top: 10px; font-size: 13px; color: var(--muted); }
+    #stResultats[hidden] { display: none; }
+    .st-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; margin-top: 24px; border-radius: var(--radius-card); overflow: hidden; background: var(--border); }
+    .st-kpi { padding: 16px 18px; background: var(--paper); }
+    .st-kpi small { display: block; font-size: 13px; color: var(--muted); }
+    .st-kpi b { display: block; margin-top: 6px; font-size: 28px; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .st-kpi span { display: block; margin-top: 6px; font-size: 13px; color: var(--muted); }
+    .st-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+    .st-panneau { padding: 18px 20px 20px; border-radius: var(--radius-card); background: var(--paper); min-width: 0; }
+    .st-panneau h2 { font-size: 16px; font-weight: 700; }
+    .st-panneau p.st-sous { margin-top: 4px; font-size: 13px; color: var(--muted); }
+    .st-graph { margin-top: 14px; }
+    .st-graph svg { display: block; width: 100%; height: auto; }
+    .st-table { width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 14px; }
+    .st-table td { padding: 8px 0; border-bottom: 1px solid var(--rule); }
+    .st-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    .st-table tr:last-child td { border-bottom: 0; }
+    .st-vide { margin-top: 12px; font-size: 14px; color: var(--muted); }
+    .st-large { grid-column: 1 / -1; }
+    @media (max-width: 1100px) { .st-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 760px) {
+      .st-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .st-grille { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-page="stats">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Statistiques</h1>
+      <p>Comptes, usage et audience de SUM'IT. Page réservée à l'éditeur, absente des moteurs de recherche.</p>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <form class="st-acces" id="stForm" novalidate>
+      <div class="input-group">
+        <label for="stCle">Clé d'accès (variable ADMIN_KEY du serveur)</label>
+        <input type="password" id="stCle" autocomplete="current-password" spellcheck="false">
+      </div>
+      <div class="input-group st-periode">
+        <label for="stJours">Période</label>
+        <select id="stJours">
+          <option value="7">7 derniers jours</option>
+          <option value="30" selected>30 derniers jours</option>
+          <option value="90">90 derniers jours</option>
+          <option value="365">12 derniers mois</option>
+        </select>
+      </div>
+      <button type="submit" id="stBtn">Afficher</button>
+    </form>
+    <p class="st-note">La clé reste dans cet onglet seulement. Les chiffres d'audience sont anonymes : ni adresse IP, ni cookie, ni lien avec les comptes.</p>
+
+    <div id="stResultats" hidden>
+      <div class="st-kpis" id="stKpis"></div>
+      <div class="st-grille">
+        <section class="st-panneau st-large" aria-labelledby="tVisites">
+          <h2 id="tVisites">Visites par jour</h2>
+          <p class="st-sous" id="sVisites"></p>
+          <div class="st-graph" id="gVisites"></div>
+        </section>
+        <section class="st-panneau" aria-labelledby="tComptes">
+          <h2 id="tComptes">Nouveaux comptes par semaine</h2>
+          <p class="st-sous">12 dernières semaines</p>
+          <div class="st-graph" id="gComptes"></div>
+        </section>
+        <section class="st-panneau" aria-labelledby="tActions">
+          <h2 id="tActions">Actions</h2>
+          <p class="st-sous">Sur la période</p>
+          <div id="lActions"></div>
+        </section>
+        <section class="st-panneau" aria-labelledby="tPages">
+          <h2 id="tPages">Pages les plus vues</h2>
+          <div id="lPages"></div>
+        </section>
+        <section class="st-panneau" aria-labelledby="tSources">
+          <h2 id="tSources">D'où viennent les visiteurs</h2>
+          <p class="st-sous" id="sAppareils"></p>
+          <div id="lSources"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261029"></script>
+  <script src="../js/api-client.js?v=20261029"></script>
+  <script src="../js/nav-user.js?v=20261029"></script>
+  <script src="../js/onboarding.js?v=20261029"></script>
+  <script>
+  (function () {
+    const LIBELLES = {
+      demo_ccc: 'Démo CCC lancée', simulation: 'Simulation (profil complet ou démo)', simulation_express: 'Simulation (profil express)',
+      profil_express: 'Profil express estimé', ravitos_gpx: 'Ravitos lus dans un GPX', pin: 'Simulation épinglée',
+      bilan: 'Bilan épinglé', import_activite: 'Activité importée', pdf: 'Roadbook PDF téléchargé', avis: 'Avis envoyé',
+      notification: 'Inscription aux nouveautés', questionnaire: 'Questionnaire bêta envoyé',
+    };
+    const PAGES = { '/': 'Accueil', '/index.html': 'Accueil', '/pages/simulateur.html': 'Simulateur', '/pages/profil.html': 'Mon profil',
+      '/pages/bilan.html': 'Bilan', '/pages/compte.html': 'Mon compte', '/pages/avenir.html': 'À venir',
+      '/pages/mentions-legales.html': 'Mentions légales', '/pages/confidentialite.html': 'Confidentialité' };
+    const APPAREILS = { telephone: 'téléphone', tablette: 'tablette', ordinateur: 'ordinateur' };
+    const nf = n => Number(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' ');
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const form = document.getElementById('stForm'), cle = document.getElementById('stCle'), jours = document.getElementById('stJours'), btn = document.getElementById('stBtn');
+    try { cle.value = sessionStorage.getItem('sumit_admin_cle') || ''; } catch (e) {}
+
+    function kpi(label, valeur, sous) {
+      return `<div class="st-kpi"><small>${esc(label)}</small><b>${esc(valeur)}</b>${sous ? `<span>${esc(sous)}</span>` : ''}</div>`;
+    }
+    function table(lignes, vide) {
+      if (!lignes.length) return `<p class="st-vide">${esc(vide)}</p>`;
+      return '<table class="st-table"><tbody>' + lignes.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${nf(b)}</td></tr>`).join('') + '</tbody></table>';
+    }
+    // Barres : une seule teinte (bleu lac), valeurs au survol, étiquettes espacées
+    function barres(el, donnees, etiquette, valeur, titre) {
+      const W = Math.max(320, Math.round(el.getBoundingClientRect().width) || 600), H = 180, pl = 34, pb = 26, pt = 10;
+      const max = Math.max(1, ...donnees.map(valeur));
+      const pas = (W - pl - 8) / Math.max(1, donnees.length);
+      const y = v => pt + (H - pt - pb) * (1 - v / max);
+      const tous = Math.max(1, Math.ceil(donnees.length / Math.floor((W - pl) / 64)));
+      let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titre)}">`;
+      [0, 0.5, 1].forEach(f => { const v = Math.round(max * f); const yy = y(v);
+        s += `<line x1="${pl}" x2="${W - 4}" y1="${yy}" y2="${yy}" stroke="#E9ECE5"/><text x="${pl - 6}" y="${yy + 4}" text-anchor="end" font-size="11" fill="#4F5D53">${nf(v)}</text>`; });
+      donnees.forEach((d, i) => {
+        const v = valeur(d), x = pl + i * pas + pas * 0.15, w = Math.max(2, pas * 0.7);
+        s += `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${(H - pb - y(v)).toFixed(1)}" rx="2" fill="#2B6A8C"><title>${esc(etiquette(d))} : ${nf(v)}</title></rect>`;
+        if (i % tous === 0) s += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#4F5D53">${esc(etiquette(d))}</text>`;
+      });
+      el.innerHTML = s + '</svg>';
+    }
+    const jourCourt = j => { const [a, m, d] = j.split('-'); return `${+d}/${+m}`; };
+
+    async function charger() {
+      const k = cle.value.trim();
+      if (!k) { sumitMessage('Indique la clé d\'accès.', { type: 'erreur', pres: form }); cle.focus(); return; }
+      try { sessionStorage.setItem('sumit_admin_cle', k); } catch (e) {}
+      btn.disabled = true; btn.textContent = 'Chargement…';
+      try {
+        const d = await apiFetch(`/api/admin/stats?jours=${jours.value}`, { headers: { 'X-Admin-Key': k } });
+        afficher(d);
+      } catch (e) {
+        sumitMessage(e.message, { type: 'erreur', pres: form });
+      } finally { btn.disabled = false; btn.textContent = 'Afficher'; }
+    }
+
+    function afficher(d) {
+      document.getElementById('stResultats').hidden = false;
+      const c = d.comptes, a = d.audience, b = d.bilans, pr = b.precision;
+      const partSim = a.visites ? Math.round(a.visites_avec_simulation / a.visites * 100) : 0;
+      document.getElementById('stKpis').innerHTML = [
+        kpi('Comptes', nf(c.total), `+${nf(c.nouveaux_30j)} en 30 jours`),
+        kpi('Actifs sur 30 jours', nf(c.actifs_30j), `${nf(c.avec_activite)} avec au moins une activité`),
+        kpi('Visites', nf(a.visites), `${nf(a.pages_vues)} pages vues`),
+        kpi('Visites avec simulation', `${partSim} %`, `${nf(a.visites_avec_simulation)} visites`),
+        kpi('Simulations épinglées', nf(d.simulations_epinglees.total), `${nf(d.simulations_epinglees.periode)} sur la période`),
+        kpi('Précision des bilans', pr.ecart_median_pct == null ? '—' : `${String(pr.ecart_median_pct).replace('.', ',')} %`,
+            pr.nombre ? `écart médian sur ${nf(pr.nombre)} bilan${pr.nombre > 1 ? 's' : ''}` : 'aucun bilan épinglé'),
+      ].join('');
+      document.getElementById('sVisites').textContent = `${nf(a.visites)} visites et ${nf(a.pages_vues)} pages vues sur ${d.periode_jours} jours`;
+      barres(document.getElementById('gVisites'), a.par_jour, x => jourCourt(x.jour), x => x.visites, 'Visites par jour');
+      barres(document.getElementById('gComptes'), c.par_semaine, x => jourCourt(x.semaine), x => x.comptes, 'Nouveaux comptes par semaine');
+      document.getElementById('lActions').innerHTML = table(a.evenements.map(e => [LIBELLES[e.nom] || e.nom, e.nombre]), 'Aucune action sur la période.');
+      document.getElementById('lPages').innerHTML = table(a.pages.map(p => [PAGES[p.nom] || p.nom, p.nombre]), 'Aucune page vue sur la période.');
+      document.getElementById('lSources').innerHTML = table(a.sources.map(s => [s.nom, s.nombre]), 'Visites directes uniquement.');
+      const app = Object.entries(a.appareils || {}), tot = app.reduce((s, [, n]) => s + n, 0);
+      document.getElementById('sAppareils').textContent = tot ? app.sort((x, y) => y[1] - x[1]).map(([k, n]) => `${Math.round(n / tot * 100)} % ${APPAREILS[k] || k}`).join(' · ') : '';
+    }
+
+    form.addEventListener('submit', e => { e.preventDefault(); charger(); });
+    if (cle.value) charger();
+  })();
+  </script>
+</body>
+</html>
