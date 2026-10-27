@@ -350,6 +350,20 @@ Génération entièrement côté client via **jsPDF + html2canvas** :
 - **Accessibilité et mobile** : navigation au clavier, focus visibles, champs à 16 px (pas de zoom iOS), zones sûres des écrans à encoche, mouvement réduit respecté ; aucun contenu ne reste caché si le script ne se charge pas.
 - **Tutoriel** en 7 étapes, non bloquant, qui suit le visiteur de page en page.
 
+### 6.5 Mise à jour du 27 octobre 2026
+
+- **Démo CCC précalculée** : le simulateur affiche la démo depuis `assets/demo-ccc.json` (37 Ko) sans appeler le serveur ; le GPX de 1,2 Mo n'est téléchargé que si l'on relance le calcul ou épingle la démo. Le terrain OpenStreetMap de l'infobulle est demandé en arrière-plan (`POST /api/terrain`). Après toute modification du modèle : `python outils/generer_demo.py`.
+- **Accueil** : la CCC heure par heure suit directement le premier écran ; la bande de photos du héros avance seule (4,2 s par photo, arrêtée hors écran, onglet masqué ou mouvement réduit) au lieu d'épingler la page sur trois écrans.
+- **Prédiction express sans compte** : dans « Profil de référence », un chrono récent (distance, D+, temps arrêts compris, trail ou rando) donne un profil estimé (`POST /api/profil-express`), gardé le temps de l'onglet. Accès direct : `pages/simulateur.html#express`.
+- **Ravitos lus dans le GPX** : à l'import, les points `<wpt>` du fichier sont placés au kilomètre où la trace passe au plus près (moins de 300 m), hors départ et arrivée, doublons à moins de 300 m écartés. Distance et D+ s'affichent aussitôt (calcul local). Si la liste est déjà remplie, SUM'IT propose de la remplacer.
+- **Messages dans la page** : `sumitMessage(texte, { type, pres, action })` (js/main.js) remplace toutes les fenêtres `alert` : sous le champ concerné quand il y en a un, en bas d'écran sinon.
+- **Bibliothèques à l'usage** : Leaflet (carte), jsPDF et html2canvas (PDF), EmailJS (formulaires) sont chargés au moment où l'on s'en sert (`chargerLeaflet`, `chargerOutilsPDF`, `chargerEmailJS`). Simulateur sur téléphone (Lighthouse) : performance 40 → 89, poids 1 629 → 476 Ko.
+- **Cache du terrain OpenStreetMap** : table `terrain_cache` ; une zone déjà interrogée n'est plus redemandée à Overpass (zone arrondie au centième de degré, réutilisée pour toute trace qu'elle contient). Classement des traces denses sur 1 500 points au plus.
+- **Pages légales** : `pages/mentions-legales.html` et `pages/confidentialite.html`, liées dans le pied de toutes les pages (sources : `build_legal.py`, variable `EDITEUR`).
+- **Mesure d'audience** : maison, anonyme, sans cookie (voir 9).
+- **Statistiques** : `pages/stats.html` (non référencée), lit `GET /api/admin/stats` avec la clé `ADMIN_KEY`.
+- **Référencement** : `robots.txt`, `sitemap.xml`, adresse canonique sur chaque page, données structurées `WebApplication` et `FAQPage` sur l'accueil.
+
 ---
 
 ## 7. Endpoints API
@@ -432,6 +446,24 @@ Health check.
 }
 ```
 
+### 7.4 `POST /api/profil-express`
+
+Profil estimé sans compte à partir d'un chrono. Formulaire : `distance_km` (3–250), `dplus_m` (0–12 000), `temps_s` (15 min – 120 h), `dmoins_m` (facultatif), `profil_type` (`trail` | `rando`).
+
+Méthode : un parcours fictif reprend la distance, le dénivelé et la répartition des pentes d'un trail de montagne (`GABARIT_PENTES`, mesurée sur la CCC, le Trail EDF Val Cenis et le Mont Fourcat) ; un profil équilibré (`REF_VEP` × niveau) est ajusté par itérations jusqu'à ce que le temps simulé égale le chrono (écart < 0,2 %). Sur les trois parcours réels, le parcours fictif donne des temps de -5 % à +3 % de ceux du vrai tracé. Fourchette élargie (`f_basse` 0,10, `f_haute` 0,20). Réponse : même format que le profil de session du simulateur, avec `archetype.key = "express"` et `reference`.
+
+### 7.5 `POST /api/terrain`
+
+Corps JSON `{"points": [[lat, lon], …]}` (2 à 3 000 points). Réponse `{"types": [...], "source": "cache" | "osm" | "aucune"}`. Zone limitée à 1,5° de côté.
+
+### 7.6 `POST /api/mesure`
+
+Signal de mesure d'audience envoyé par `navigator.sendBeacon` (texte JSON, 2 Ko au plus) : `t` (`page` | `evenement`), `n` (chemin ou nom d'événement de la liste blanche `MESURE_EVENEMENTS`), `v` (numéro de visite aléatoire), `s`/`k` (source, campagne), `a` (appareil), `c` (connecté), `d` (quelques valeurs non identifiantes). Robots ignorés. Répond toujours 204. Purge au démarrage des mesures de plus de 25 mois.
+
+### 7.7 `GET /api/admin/stats?jours=30`
+
+En-tête `X-Admin-Key` égal à la variable d'environnement `ADMIN_KEY` (501 si elle n'est pas définie, 403 si la clé est fausse). Renvoie comptes (total, nouveaux, actifs, par semaine), activités, profils, simulations épinglées, bilans avec précision (écart médian réel/prédit), audience (visites, pages vues, par jour, pages, événements, sources, appareils).
+
 ---
 
 ## 8. Limites connues / pistes d'amélioration
@@ -460,9 +492,12 @@ Health check.
 - **Activités** : les données utiles au recalcul du profil (résumé et trace compactée) sont stockées et liées au compte ; chaque activité peut être supprimée par l'utilisateur, ce qui recalcule son profil.
 - **Simulations épinglées** : la trace GPX de la course est conservée avec la simulation pour pouvoir la rouvrir et la recalculer ; suppression possible depuis « Mon compte ».
 - **Strava** : lecture seule des activités, déconnexion possible à tout moment ; les activités déjà importées sont conservées.
-- **Aucun pistage** : pas de Google Analytics, pas de cookies tiers, police auto-hébergée.
-- **Tiers appelés par le navigateur** : CARTO (fonds de carte), unpkg, cdnjs et jsDelivr (bibliothèques), EmailJS (uniquement à l'envoi d'un message ou d'un questionnaire).
-- **Suppression du compte** : sur demande par le formulaire de contact (pas encore en libre-service).
+- **Mesure d'audience maison** : pas de cookie, pas d'adresse IP ni de navigateur enregistrés, aucun lien avec les comptes ; un numéro de visite aléatoire en `sessionStorage` ; conservation 25 mois ; désactivable sur la page Confidentialité (`localStorage.sumit_mesure_off`) et respect du signal Global Privacy Control. Conforme aux conditions d'exemption de consentement de la CNIL.
+- **Sans compte** : la trace et le chrono envoyés pour une simulation ou une prédiction express ne sont pas conservés. Le cache du terrain garde une zone géographique et les chemins OSM, sans lien avec un utilisateur.
+- **Aucun pistage tiers** : pas de Google Analytics, pas de cookies, police auto-hébergée.
+- **Tiers appelés par le navigateur, seulement à l'usage** : CARTO (fonds de carte), unpkg, cdnjs et jsDelivr (bibliothèques carte et PDF), EmailJS (envoi d'un formulaire).
+- **Suppression du compte** : sur demande à l'adresse de contact (pas encore en libre-service).
+- **Textes publics** : `pages/mentions-legales.html` et `pages/confidentialite.html`.
 
 ---
 

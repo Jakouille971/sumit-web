@@ -177,6 +177,47 @@ class BilanResultat(Base):
     created_at     = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class Mesure(Base):
+    """
+    Mesure d'audience anonyme (sans cookie, sans adresse IP, sans lien avec un compte).
+    Une ligne par page vue ou par événement clé (démo, simulation, bilan…).
+    Conforme aux conditions d'exemption de consentement de la CNIL :
+    statistiques anonymes pour le seul éditeur, aucun croisement, conservation 25 mois.
+    """
+    __tablename__ = "mesures"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    jour        = Column(String(10), index=True, nullable=False)   # AAAA-MM-JJ (UTC)
+    type        = Column(String(12), nullable=False)                # 'page' | 'evenement'
+    nom         = Column(String(60), index=True, nullable=False)    # chemin de page ou nom d'événement
+    visite      = Column(String(16), index=True, nullable=True)     # identifiant aléatoire d'onglet (sessionStorage)
+    source      = Column(String(80), nullable=True)                 # domaine référent ou utm_source
+    campagne    = Column(String(80), nullable=True)                 # utm_campaign
+    appareil    = Column(String(12), nullable=True)                 # 'telephone' | 'tablette' | 'ordinateur'
+    connecte    = Column(Boolean, default=False)
+    detail      = Column(JSON, nullable=True)                       # quelques valeurs non identifiantes
+    created_at  = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class TerrainCache(Base):
+    """
+    Cache des chemins OpenStreetMap (Overpass) par zone : une course déjà
+    simulée ne redemande jamais le terrain au service public Overpass.
+    `donnees` = JSON compressé (zlib + base64) : [[lat, lon, code_terrain], ...]
+    """
+    __tablename__ = "terrain_cache"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    sud         = Column(Float, index=True, nullable=False)
+    ouest       = Column(Float, index=True, nullable=False)
+    nord        = Column(Float, index=True, nullable=False)
+    est         = Column(Float, index=True, nullable=False)
+    nb_points   = Column(Integer, default=0)
+    donnees     = Column(Text, nullable=False)
+    utilisations= Column(Integer, default=0)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now())
+
+
 # ══════════════════════════════════════════════════════════════
 #  HELPERS
 # ══════════════════════════════════════════════════════════════

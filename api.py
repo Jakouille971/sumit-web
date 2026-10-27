@@ -5,19 +5,25 @@
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import gpxpy
 import pandas as pd
 import numpy as np
 import json
+import os
+import re
+import math
+import hmac
+import zlib
+import base64
 import urllib.request
 import urllib.parse
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Auth + BDD
-from db import init_db, get_db, User, Profile, Activity, ProfilSnapshot, BilanResultat
+from db import init_db, get_db, SessionLocal, User, Profile, Activity, ProfilSnapshot, BilanResultat, Mesure, TerrainCache
 from auth import (
     construire_url_google_auth,
     echanger_code_google,
@@ -896,10 +902,12 @@ def classifier_osm_way(tags):
     return 'sentier_large'
 
 
-def requeter_overpass(bbox, timeout=15):
+def requeter_overpass(bbox, timeout=20):
     """
     Récupère tous les ways de type "highway" dans la bounding box.
     bbox = (south, west, north, east)
+    Renvoie (elements, complet) : `complet` est faux si Overpass a coupé la
+    réponse (délai dépassé) ou n'a pas répondu ; on ne met alors rien en cache.
     """
     south, west, north, east = bbox
 
@@ -919,83 +927,169 @@ def requeter_overpass(bbox, timeout=15):
         req = urllib.request.Request(url, data=data, headers={'User-Agent': 'SUMIT/1.0'})
         with urllib.request.urlopen(req, timeout=timeout + 5) as response:
             result = json.loads(response.read().decode('utf-8'))
-            return result.get('elements', [])
+            # Overpass signale un délai dépassé par un champ "remark"
+            complet = 'remark' not in result
+            return result.get('elements', []), complet
     except Exception as e:
         print(f"⚠️ Overpass API erreur : {e}")
-        return []
+        return [], False
+
+
+# ── Cache du terrain OpenStreetMap ────────────────────────────────
+# Une zone déjà interrogée n'est jamais redemandée à Overpass : les chemins
+# classés (lat, lon, code terrain) sont gardés en base, compressés.
+_TERRAIN_MEMO = {}          # quelques zones décodées gardées en mémoire
+_TERRAIN_MEMO_MAX = 6
+TERRAIN_ZONE_MAX_DEG = 1.5  # au-delà, on n'interroge pas Overpass (requête trop lourde)
+
+
+def _bbox_arrondie(sud, ouest, nord, est, pas=0.01):
+    """Arrondit la zone vers l'extérieur au centième de degré : deux traces
+    d'une même course retombent sur la même zone, donc sur le même cache."""
+    return (
+        round(math.floor(sud / pas) * pas, 4),
+        round(math.floor(ouest / pas) * pas, 4),
+        round(math.ceil(nord / pas) * pas, 4),
+        round(math.ceil(est / pas) * pas, 4),
+    )
+
+
+def _encoder_points(points):
+    brut = json.dumps(points, separators=(',', ':')).encode('utf-8')
+    return base64.b64encode(zlib.compress(brut, 6)).decode('ascii')
+
+
+def _decoder_points(texte):
+    return json.loads(zlib.decompress(base64.b64decode(texte)).decode('utf-8'))
+
+
+def _terrain_depuis_cache(bbox):
+    """Cherche en base une zone déjà interrogée qui CONTIENT la zone demandée."""
+    sud, ouest, nord, est = bbox
+    eps = 1e-6
+    db = SessionLocal()
+    try:
+        row = (db.query(TerrainCache)
+               .filter(TerrainCache.sud <= sud + eps, TerrainCache.ouest <= ouest + eps,
+                       TerrainCache.nord >= nord - eps, TerrainCache.est >= est - eps)
+               .order_by((TerrainCache.nord - TerrainCache.sud) * (TerrainCache.est - TerrainCache.ouest))
+               .first())
+        if not row:
+            return None
+        pts = _TERRAIN_MEMO.get(row.id)
+        if pts is None:
+            pts = _decoder_points(row.donnees)
+            if len(_TERRAIN_MEMO) >= _TERRAIN_MEMO_MAX:
+                _TERRAIN_MEMO.pop(next(iter(_TERRAIN_MEMO)))
+            _TERRAIN_MEMO[row.id] = pts
+        row.utilisations = (row.utilisations or 0) + 1
+        db.commit()
+        return pts
+    except Exception as e:
+        db.rollback()
+        print(f"⚠️ Cache terrain illisible : {e}")
+        return None
+    finally:
+        db.close()
+
+
+def _terrain_vers_cache(bbox, points):
+    sud, ouest, nord, est = bbox
+    db = SessionLocal()
+    try:
+        db.add(TerrainCache(sud=sud, ouest=ouest, nord=nord, est=est,
+                            nb_points=len(points), donnees=_encoder_points(points)))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"⚠️ Cache terrain non enregistré : {e}")
+    finally:
+        db.close()
+
+
+def points_terrain_osm(bbox):
+    """
+    Chemins OSM classés de la zone : [[lat, lon, code], ...] où code est
+    l'indice dans ORDRE_TERRAIN_TYPES. Renvoie (points, source) avec
+    source = 'cache', 'osm' ou 'aucune'.
+    """
+    pts = _terrain_depuis_cache(bbox)
+    if pts is not None:
+        return pts, 'cache'
+    sud, ouest, nord, est = bbox
+    if (nord - sud) > TERRAIN_ZONE_MAX_DEG or (est - ouest) > TERRAIN_ZONE_MAX_DEG:
+        return [], 'aucune'
+    ways, complet = requeter_overpass(bbox)
+    if not ways:
+        return [], 'aucune'
+    points = []
+    for w in ways:
+        geom = w.get('geometry', [])
+        if len(geom) < 2:
+            continue
+        code = ORDRE_TERRAIN_TYPES.index(classifier_osm_way(w.get('tags', {})))
+        # Échantillonnage : au plus ~50 points par chemin
+        step = max(1, len(geom) // 50)
+        for pt in geom[::step]:
+            points.append([round(pt['lat'], 5), round(pt['lon'], 5), code])
+    if points and complet:
+        _terrain_vers_cache(bbox, points)
+    return points, 'osm'
+
+
+def classifier_points_osm(lats, lons, marge=0.005, max_points=1500):
+    """
+    Type de terrain OSM pour chaque point (lat, lon). Les traces denses sont
+    classées sur un échantillon de `max_points` points, puis chaque point
+    reprend le type de son échantillon : même résultat à l'affichage, calcul
+    bien plus court. Renvoie (types, source).
+    """
+    n = len(lats)
+    if n < 2:
+        return ['sentier_large'] * n, 'aucune'
+    lat_a = np.asarray(lats, dtype=float)
+    lon_a = np.asarray(lons, dtype=float)
+    bbox = _bbox_arrondie(float(lat_a.min()) - marge, float(lon_a.min()) - marge,
+                          float(lat_a.max()) + marge, float(lon_a.max()) + marge)
+    points, source = points_terrain_osm(bbox)
+    if not points:
+        return ['sentier_large'] * n, 'aucune'
+
+    arr = np.asarray(points, dtype=float)
+    sud, ouest, nord, est = bbox
+    dedans = (arr[:, 0] >= sud) & (arr[:, 0] <= nord) & (arr[:, 1] >= ouest) & (arr[:, 1] <= est)
+    if dedans.any():
+        arr = arr[dedans]
+    coords = arr[:, :2]
+    codes = arr[:, 2].astype(int)
+
+    step = max(1, int(math.ceil(n / max_points)))
+    echantillon = list(range(0, n, step))
+    types_ech = []
+    for i in echantillon:
+        d2 = (coords[:, 0] - lat_a[i]) ** 2 + (coords[:, 1] - lon_a[i]) ** 2
+        types_ech.append(ORDRE_TERRAIN_TYPES[int(codes[int(np.argmin(d2))])])
+
+    # Lissage : un point isolé d'un autre type entre deux voisins identiques s'aligne
+    lisses = list(types_ech)
+    for i in range(2, len(types_ech) - 2):
+        if (types_ech[i-1] == types_ech[i+1] and types_ech[i-1] == types_ech[i-2]
+                and types_ech[i-1] == types_ech[i+2]):
+            lisses[i] = types_ech[i-1]
+
+    types = [lisses[min(i // step, len(lisses) - 1)] for i in range(n)]
+    return types, source
 
 
 def classifier_trace_via_osm(df, marge=0.005):
     """
     Pour chaque point de la trace, détermine le type de terrain
-    en cherchant le way OSM le plus proche.
-
-    Renvoie une Series avec le type de terrain par point.
+    en cherchant le chemin OSM le plus proche (cache, puis Overpass).
     """
     if len(df) < 10:
         return ['sentier_large'] * len(df)
-
-    # Bounding box avec marge
-    lats = df['lat'].values
-    lons = df['lon'].values
-    bbox = (
-        float(lats.min()) - marge,
-        float(lons.min()) - marge,
-        float(lats.max()) + marge,
-        float(lons.max()) + marge,
-    )
-
-    # Requête Overpass
-    ways = requeter_overpass(bbox)
-
-    if not ways:
-        # Fallback : pas de données OSM
-        return ['sentier_large'] * len(df)
-
-    # Construction d'une structure de recherche rapide
-    # Pour chaque way, on a sa geometry (liste de lat/lon) + ses tags
-    ways_data = []
-    for w in ways:
-        geom = w.get('geometry', [])
-        tags = w.get('tags', {})
-        if len(geom) < 2:
-            continue
-        type_terrain = classifier_osm_way(tags)
-        # Échantillonnage : on garde 1 point sur 2 si geom > 50 points pour perf
-        step = max(1, len(geom) // 50)
-        for pt in geom[::step]:
-            ways_data.append({
-                'lat': pt['lat'],
-                'lon': pt['lon'],
-                'type': type_terrain,
-            })
-
-    if not ways_data:
-        return ['sentier_large'] * len(df)
-
-    # Pour chaque point GPX, trouver le way le plus proche (KDTree pour perf)
-    ways_arr = np.array([(w['lat'], w['lon']) for w in ways_data])
-    ways_types = [w['type'] for w in ways_data]
-
-    types = []
-    # Subsample du GPX si trop dense (1 point tous les ~10m)
-    for i in range(len(df)):
-        lat = float(df['lat'].iloc[i])
-        lon = float(df['lon'].iloc[i])
-        # Distance euclidienne approchée (suffisant pour proximité locale)
-        dist_sq = (ways_arr[:, 0] - lat) ** 2 + (ways_arr[:, 1] - lon) ** 2
-        idx = int(np.argmin(dist_sq))
-        types.append(ways_types[idx])
-
-    # Lissage : on évite les changements brusques en regardant les voisins
-    # Si point isolé d'un type différent entre 2 du même type, on l'aligne
-    smoothed = list(types)
-    for i in range(2, len(types) - 2):
-        # Si les 2 voisins (avant + après) sont du même type, on s'aligne
-        if types[i-1] == types[i+1] and types[i-1] == types[i-2] and types[i-1] == types[i+2]:
-            smoothed[i] = types[i-1]
-
-    return smoothed
+    types, _source = classifier_points_osm(df['lat'].values, df['lon'].values, marge)
+    return types
 
 
 
@@ -2827,12 +2921,474 @@ def delete_bilan(
 
 
 # ══════════════════════════════════════════════════════════════
+#  TERRAIN À LA DEMANDE (affichage de la démo, traces déjà connues)
+# ══════════════════════════════════════════════════════════════
+
+@app.post("/api/terrain")
+async def api_terrain(request: Request):
+    """
+    Type de terrain OSM pour une liste de points [[lat, lon], ...].
+    Sert la démo CCC précalculée : le terrain vient du cache dès qu'une
+    trace de la même zone a été simulée une fois.
+    """
+    try:
+        corps = await request.json()
+    except Exception:
+        raise HTTPException(400, detail="JSON invalide")
+    pts = corps.get('points') if isinstance(corps, dict) else None
+    if not isinstance(pts, list) or not (2 <= len(pts) <= 3000):
+        raise HTTPException(400, detail="Entre 2 et 3 000 points attendus")
+    try:
+        lats = [float(p[0]) for p in pts]
+        lons = [float(p[1]) for p in pts]
+    except Exception:
+        raise HTTPException(400, detail="Points invalides")
+    if not all(-90 <= x <= 90 for x in lats) or not all(-180 <= x <= 180 for x in lons):
+        raise HTTPException(400, detail="Coordonnées hors limites")
+    types, source = classifier_points_osm(lats, lons)
+    return {"types": types, "source": source}
+
+
+# ══════════════════════════════════════════════════════════════
+#  MESURE D'AUDIENCE (anonyme, sans cookie, exemptée de consentement)
+# ══════════════════════════════════════════════════════════════
+# Conditions CNIL respectées : finalité limitée à la mesure d'audience du site,
+# statistiques anonymes pour le seul éditeur, aucun croisement avec d'autres
+# données, aucun suivi entre sites, conservation 25 mois maximum.
+# On ne stocke ni adresse IP, ni navigateur, ni identifiant de compte.
+
+MESURE_EVENEMENTS = {
+    'demo_ccc', 'simulation', 'simulation_express', 'profil_express', 'ravitos_gpx',
+    'pin', 'bilan', 'import_activite', 'pdf', 'avis', 'notification', 'questionnaire',
+}
+MESURE_DETAIL_CLES = {'km', 'dplus', 'heures', 'cat', 'profil', 'nb', 'source_profil'}
+MESURE_CONSERVATION_JOURS = 760   # 25 mois
+_ROBOTS = ('bot', 'crawl', 'spider', 'slurp', 'preview', 'lighthouse', 'headless', 'monitor')
+_RE_PAGE = re.compile(r'^/[a-z0-9/_.\-]{0,58}$')
+_RE_JETON = re.compile(r'[^a-z0-9.\-_]')
+
+
+def _texte_court(v, n):
+    if v is None:
+        return None
+    t = _RE_JETON.sub('', str(v).strip().lower())[:n]
+    return t or None
+
+
+@app.post("/api/mesure")
+async def api_mesure(request: Request, db: Session = Depends(get_db)):
+    """Reçoit un signal de mesure (navigator.sendBeacon, texte JSON). Répond toujours 204."""
+    vide = Response(status_code=204)
+    ua = (request.headers.get('user-agent') or '').lower()
+    if any(r in ua for r in _ROBOTS):
+        return vide
+    brut = await request.body()
+    if not brut or len(brut) > 2000:
+        return vide
+    try:
+        d = json.loads(brut.decode('utf-8'))
+    except Exception:
+        return vide
+    if not isinstance(d, dict):
+        return vide
+
+    type_ = d.get('t')
+    nom = str(d.get('n') or '')[:60]
+    if type_ == 'page':
+        nom = nom.lower()
+        if not _RE_PAGE.match(nom):
+            return vide
+    elif type_ == 'evenement':
+        if nom not in MESURE_EVENEMENTS:
+            return vide
+    else:
+        return vide
+
+    appareil = d.get('a') if d.get('a') in ('telephone', 'tablette', 'ordinateur') else None
+    detail = None
+    if isinstance(d.get('d'), dict):
+        detail = {}
+        for k, v in list(d['d'].items())[:8]:
+            if k not in MESURE_DETAIL_CLES:
+                continue
+            if isinstance(v, bool) or v is None:
+                continue
+            if isinstance(v, (int, float)) and math.isfinite(v):
+                detail[k] = round(float(v), 2)
+            elif isinstance(v, str):
+                detail[k] = v[:30]
+        detail = detail or None
+
+    try:
+        db.add(Mesure(
+            jour=datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+            type=type_,
+            nom=nom,
+            visite=_texte_court(d.get('v'), 16),
+            source=_texte_court(d.get('s'), 80),
+            campagne=_texte_court(d.get('k'), 80),
+            appareil=appareil,
+            connecte=bool(d.get('c')),
+            detail=detail,
+        ))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"⚠️ Mesure non enregistrée : {e}")
+    return vide
+
+
+def purger_mesures():
+    """Supprime les mesures de plus de 25 mois (recommandation CNIL)."""
+    limite = (datetime.now(timezone.utc) - timedelta(days=MESURE_CONSERVATION_JOURS)).strftime('%Y-%m-%d')
+    db = SessionLocal()
+    try:
+        n = db.query(Mesure).filter(Mesure.jour < limite).delete(synchronize_session=False)
+        db.commit()
+        if n:
+            print(f"🧹 {n} mesures de plus de 25 mois supprimées")
+    except Exception as e:
+        db.rollback()
+        print(f"⚠️ Purge des mesures : {e}")
+    finally:
+        db.close()
+
+
+# ══════════════════════════════════════════════════════════════
+#  CHIFFRES D'USAGE (réservé à l'éditeur, clé ADMIN_KEY)
+# ══════════════════════════════════════════════════════════════
+
+def _verifier_admin(request: Request):
+    cle_serveur = os.getenv("ADMIN_KEY", "")
+    if not cle_serveur:
+        raise HTTPException(501, detail="ADMIN_KEY n'est pas définie sur le serveur (variable d'environnement Render).")
+    cle = request.headers.get('x-admin-key', '')
+    if not hmac.compare_digest(cle.encode('utf-8'), cle_serveur.encode('utf-8')):
+        raise HTTPException(403, detail="Clé d'accès incorrecte.")
+
+
+def _en_utc(dt):
+    if dt is None:
+        return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.fromisoformat(dt.replace('Z', '+00:00'))
+        except Exception:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+def _mediane(valeurs):
+    v = sorted(valeurs)
+    if not v:
+        return None
+    m = len(v) // 2
+    return v[m] if len(v) % 2 else (v[m - 1] + v[m]) / 2
+
+
+@app.get("/api/admin/stats")
+def admin_stats(request: Request, jours: int = 30, db: Session = Depends(get_db)):
+    """Comptes, activités, simulations, bilans et audience, pour l'éditeur."""
+    _verifier_admin(request)
+    jours = max(1, min(400, int(jours)))
+    maintenant = datetime.now(timezone.utc)
+    debut = maintenant - timedelta(days=jours)
+
+    # ── Comptes ──
+    users = db.query(User.id, User.created_at, User.last_login, User.strava_athlete_id).all()
+    crees = [(_en_utc(u.created_at), u) for u in users]
+    def depuis(n): return sum(1 for c, _ in crees if c and c >= maintenant - timedelta(days=n))
+    actifs_30 = sum(1 for u in users if _en_utc(u.last_login) and _en_utc(u.last_login) >= maintenant - timedelta(days=30))
+
+    # Inscriptions par semaine (12 dernières semaines, lundi = début)
+    lundi = (maintenant - timedelta(days=maintenant.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    semaines = []
+    for i in range(11, -1, -1):
+        d0 = lundi - timedelta(weeks=i)
+        d1 = d0 + timedelta(weeks=1)
+        semaines.append({"semaine": d0.strftime('%Y-%m-%d'),
+                         "comptes": sum(1 for c, _ in crees if c and d0 <= c < d1)})
+
+    # ── Activités, profils, simulations, bilans ──
+    acts = db.query(Activity.user_id, Activity.source, Activity.type_sortie, Activity.created_at).all()
+    vraies = [a for a in acts if a.source != 'simulation']
+    sims = [a for a in acts if a.source == 'simulation']
+    par_source = {}
+    for a in vraies:
+        par_source[a.source or 'manual'] = par_source.get(a.source or 'manual', 0) + 1
+    profils = db.query(Profile.type, Profile.nb_traces).all()
+    bilans = db.query(BilanResultat.user_id, BilanResultat.bilan_data, BilanResultat.created_at).all()
+
+    ecarts = []
+    for b in bilans:
+        bd = b.bilan_data or {}
+        try:
+            tp = float((bd.get('simulation') or {}).get('temps_predit_s') or 0)
+            tr = float((bd.get('resultat') or {}).get('temps_reel_s') or 0)
+            if tp > 0 and tr > 0:
+                ecarts.append(abs(tr - tp) / tr * 100)
+            elif bd.get('ecart_total_pct') is not None:
+                ecarts.append(abs(float(bd['ecart_total_pct'])))
+        except Exception:
+            pass
+
+    def recents(lignes):
+        return sum(1 for x in lignes if _en_utc(x.created_at) and _en_utc(x.created_at) >= debut)
+
+    # ── Audience ──
+    jour_debut = debut.strftime('%Y-%m-%d')
+    mesures = db.query(Mesure.jour, Mesure.type, Mesure.nom, Mesure.visite, Mesure.source,
+                       Mesure.appareil, Mesure.connecte).filter(Mesure.jour >= jour_debut).all()
+    visites, pages, evenements, sources, appareils = set(), {}, {}, {}, {}
+    par_jour = {}
+    visites_simulation = set()
+    for m in mesures:
+        j = par_jour.setdefault(m.jour, {"visites": set(), "pages": 0})
+        if m.visite:
+            visites.add(m.visite)
+            j["visites"].add(m.visite)
+        if m.type == 'page':
+            pages[m.nom] = pages.get(m.nom, 0) + 1
+            j["pages"] += 1
+            if m.source:
+                sources[m.source] = sources.get(m.source, 0) + 1
+            if m.appareil:
+                appareils[m.appareil] = appareils.get(m.appareil, 0) + 1
+        else:
+            evenements[m.nom] = evenements.get(m.nom, 0) + 1
+            if m.nom in ('simulation', 'demo_ccc', 'simulation_express') and m.visite:
+                visites_simulation.add(m.visite)
+    serie = []
+    for i in range(jours - 1, -1, -1):
+        jj = (maintenant - timedelta(days=i)).strftime('%Y-%m-%d')
+        e = par_jour.get(jj)
+        serie.append({"jour": jj, "visites": len(e["visites"]) if e else 0, "pages": e["pages"] if e else 0})
+
+    def top(d, n=10):
+        return [{"nom": k, "nombre": v} for k, v in sorted(d.items(), key=lambda kv: -kv[1])[:n]]
+
+    return {
+        "genere_le": maintenant.isoformat(),
+        "periode_jours": jours,
+        "comptes": {
+            "total": len(users),
+            "nouveaux_7j": depuis(7),
+            "nouveaux_30j": depuis(30),
+            "actifs_30j": actifs_30,
+            "strava_connecte": sum(1 for u in users if u.strava_athlete_id),
+            "avec_activite": len({a.user_id for a in vraies}),
+            "avec_simulation_epinglee": len({a.user_id for a in sims}),
+            "avec_bilan": len({b.user_id for b in bilans}),
+            "par_semaine": semaines,
+        },
+        "activites": {
+            "total": len(vraies),
+            "periode": recents(vraies),
+            "par_source": par_source,
+            "resultats_de_course": sum(1 for a in vraies if a.type_sortie == 'resultat'),
+        },
+        "profils": {
+            "trail": sum(1 for p in profils if p.type == 'trail' and (p.nb_traces or 0) > 0),
+            "rando": sum(1 for p in profils if p.type == 'rando' and (p.nb_traces or 0) > 0),
+        },
+        "simulations_epinglees": {"total": len(sims), "periode": recents(sims)},
+        "bilans": {
+            "total": len(bilans),
+            "periode": recents(bilans),
+            "precision": {
+                "nombre": len(ecarts),
+                "ecart_median_pct": round(_mediane(ecarts), 1) if ecarts else None,
+                "part_sous_10pct": round(sum(1 for e in ecarts if e <= 10) / len(ecarts) * 100) if ecarts else None,
+            },
+        },
+        "audience": {
+            "visites": len(visites),
+            "pages_vues": sum(pages.values()),
+            "visites_avec_simulation": len(visites_simulation),
+            "par_jour": serie,
+            "pages": top(pages),
+            "evenements": top(evenements, 20),
+            "sources": top(sources),
+            "appareils": appareils,
+        },
+    }
+
+
+# ══════════════════════════════════════════════════════════════
+#  PRÉDICTION EXPRESS (sans compte) : profil estimé depuis un chrono
+# ══════════════════════════════════════════════════════════════
+
+DRAIN_EXPRESS = 0.05   # même valeur que pour une trace sans fréquence cardiaque
+
+
+# Répartition type des pentes d'un trail de montagne (part de la distance), mesurée sur
+# trois parcours réels (CCC, Trail EDF Val Cenis, Mont Fourcat) : ~65 m de D+ par km.
+GABARIT_PENTES = [(-0.30, 0.04), (-0.20, 0.14), (-0.115, 0.15), (-0.055, 0.11),
+                  (0.0, 0.14), (0.055, 0.11), (0.115, 0.15), (0.20, 0.12), (0.30, 0.06)]
+
+def parcours_synthetique(dist_km, dplus_m, dmoins_m=None):
+    """
+    Parcours fictif qui a la distance et le dénivelé du chrono de référence,
+    avec la répartition des pentes d'un vrai trail de montagne (GABARIT_PENTES).
+    Écart mesuré sur trois parcours réels : de -5 % à +3 % sur le temps prédit.
+    Passé par charger_gpx, il subit exactement le même traitement qu'une vraie trace.
+    """
+    dmoins_m = dplus_m if dmoins_m is None else dmoins_m
+    total = dist_km * 1000.0
+    pas = max(50.0, total / 3000.0)
+    mont = [(g, f) for g, f in GABARIT_PENTES if g > 0]
+    desc = [(g, f) for g, f in GABARIT_PENTES if g < 0]
+    m_par_m = sum(g * f for g, f in mont)          # D+ du gabarit par mètre parcouru
+    d_par_m = sum(-g * f for g, f in desc)
+    def ajuste(liste, besoin, par_m):
+        # Trop peu de dénivelé : on garde les pentes et on raccourcit les portions
+        # Trop de dénivelé : on garde les portions et on raidit les pentes
+        if besoin <= 0:
+            return []
+        r = besoin / (par_m * total)
+        if r <= 1:
+            return [(g, f * r) for g, f in liste]
+        return [(g * r, f) for g, f in liste]
+    m_aj = ajuste(mont, dplus_m, m_par_m)
+    d_aj = ajuste(desc, dmoins_m, d_par_m)
+    f_plat = max(0.0, 1.0 - sum(f for _, f in m_aj) - sum(f for _, f in d_aj))
+    cycles = int(max(1, min(14, round(max(dplus_m, dmoins_m) / 600.0))))
+    # Un cycle : plat, montée (pentes douces puis raides), plat, descente (raide puis douce)
+    sections = ([(0.0, f_plat / (2 * cycles))] + [(g, f / cycles) for g, f in sorted(m_aj)]
+                + [(0.0, f_plat / (2 * cycles))] + [(g, f / cycles) for g, f in sorted(d_aj)])
+    bornes, pos, alt0 = [], 0.0, 1000.0
+    for _ in range(cycles):
+        for g, f in sections:
+            lg = f * total
+            if lg <= 0:
+                continue
+            bornes.append((pos, pos + lg, alt0, g))
+            pos += lg
+            alt0 += g * lg
+    n = int(total // pas) + 1
+    pts, k = [], 0
+    for i in range(n + 1):
+        d = min(i * pas, total)
+        while k < len(bornes) - 1 and d > bornes[k][1]:
+            k += 1
+        deb, fin, a0, g = bornes[k] if bornes else (0.0, total, 1000.0, 0.0)
+        alt = a0 + g * (min(d, fin) - deb)
+        lat = 45.0 + d / 111320.0
+        pts.append(f'<trkpt lat="{lat:.7f}" lon="6.0000000"><ele>{alt:.1f}</ele></trkpt>')
+    gpx = ('<?xml version="1.0" encoding="UTF-8"?><gpx version="1.1" creator="SUMIT">'
+           '<trk><trkseg>' + ''.join(pts) + '</trkseg></trk></gpx>')
+    df, _, _ = charger_gpx(gpx.encode('utf-8'))
+    return df
+
+
+def profil_de_niveau(k, profil_type='trail'):
+    """Profil équilibré : la VEP de référence de chaque terrain × le niveau k."""
+    profil = {}
+    for t in ORDRE_TERRAINS:
+        profil[t] = {
+            'vep_norm': round(REF_VEP[t] * k, 2),
+            'vep_std': 0.0,
+            'nb_courses': 0,
+            'f_basse': 0.10,
+            'f_haute': 0.20,
+            'estime': True,
+        }
+    plat = profil['plat']['vep_norm']
+    for t in profil:
+        e = round((profil[t]['vep_norm'] - plat) / plat * 100, 1)
+        profil[t]['ecart_plat_pct'] = e
+        profil[t]['signe'] = '+' if e >= 0 else ''
+    return profil
+
+
+@app.post("/api/profil-express")
+async def api_profil_express(
+    distance_km: float = Form(...),
+    dplus_m:     float = Form(...),
+    temps_s:     float = Form(...),
+    dmoins_m:    Optional[float] = Form(None),
+    profil_type: str = Form("trail"),
+):
+    """
+    Estime un profil de coureur à partir d'un seul chrono récent (distance,
+    dénivelé, temps officiel arrêts compris), sans compte ni fichier.
+    """
+    if profil_type not in ('trail', 'rando'):
+        raise HTTPException(400, detail="Type de profil inconnu")
+    if not (3 <= distance_km <= 250):
+        raise HTTPException(400, detail="La distance doit être comprise entre 3 et 250 km.")
+    if not (0 <= dplus_m <= 12000):
+        raise HTTPException(400, detail="Le dénivelé positif doit être compris entre 0 et 12 000 m.")
+    if dmoins_m is not None and not (0 <= dmoins_m <= 12000):
+        raise HTTPException(400, detail="Le dénivelé négatif doit être compris entre 0 et 12 000 m.")
+    if dplus_m / distance_km > 250 or (dmoins_m or 0) / distance_km > 250:
+        raise HTTPException(400, detail="Plus de 250 m de dénivelé par kilomètre : vérifie les chiffres.")
+    if not (15 * 60 <= temps_s <= 120 * 3600):
+        raise HTTPException(400, detail="Le temps doit être compris entre 15 minutes et 120 heures.")
+
+    try:
+        df = parcours_synthetique(distance_km, dplus_m, dmoins_m)
+    except Exception as e:
+        raise HTTPException(500, detail=f"Parcours de référence impossible : {e}")
+    cat = categorie(float(df['dist_cum'].max()))
+
+    def temps_pour(k):
+        res = simuler(df, profil_de_niveau(k, profil_type), DRAIN_EXPRESS, cat, 1.0)
+        return res[-1]['temps_s'] if res else None
+
+    # Le temps varie à peu près comme 1/k : quelques itérations suffisent
+    k = 1.0
+    t = temps_pour(k)
+    if not t:
+        raise HTTPException(500, detail="Simulation de référence vide")
+    for _ in range(10):
+        k_suivant = k * t / temps_s
+        k_suivant = min(max(k_suivant, 0.15), 4.0)
+        k = k_suivant
+        t = temps_pour(k)
+        if abs(t - temps_s) / temps_s < 0.002:
+            break
+
+    vep_plat = REF_VEP['plat'] * k
+    if not (2.5 <= vep_plat <= 22.0):
+        raise HTTPException(400, detail="Ce chrono paraît incohérent avec la distance et le dénivelé : vérifie les chiffres.")
+
+    dep_km = float(df['dep_cum'].max())
+    return {
+        "status": "ok",
+        "profil": profil_de_niveau(k, profil_type),
+        "drain_moy_h": DRAIN_EXPRESS,
+        "coefficient": 1.0,
+        "archetype": {
+            "key": "express",
+            "nom": "Profil express",
+            "desc": "Estimé à partir d'un seul chrono. Importe tes sorties pour un profil vraiment personnel.",
+        },
+        "vep_globale": round(dep_km / (temps_s / 3600.0), 2),
+        "nb_traces": 0,
+        "profil_type": profil_type,
+        "niveau": round(k, 3),
+        "ecart_calage_pct": round((t - temps_s) / temps_s * 100, 2),
+        "reference": {
+            "distance_km": round(distance_km, 2),
+            "dplus_m": round(dplus_m),
+            "dmoins_m": round(dmoins_m if dmoins_m is not None else dplus_m),
+            "temps_s": round(temps_s),
+            "temps_fmt": fmt(temps_s),
+        },
+    }
+
+
+# ══════════════════════════════════════════════════════════════
 #  INITIALISATION DE LA BASE AU DÉMARRAGE
 # ══════════════════════════════════════════════════════════════
 
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    purger_mesures()
 
 
 # ══════════════════════════════════════════════════════════════

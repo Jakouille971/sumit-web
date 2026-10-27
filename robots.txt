@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sumit-web-nine.vercel.app/sitemap.xml
