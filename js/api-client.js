@@ -15,6 +15,13 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
 const TOKEN_KEY = 'sumit_jwt';
 const USER_KEY  = 'sumit_user';
 
+// Message dans la page (main.js) ; repli silencieux si le module n'est pas chargé
+function signalerSumit(texte, opts) {
+  const go = () => { if (window.sumitMessage) window.sumitMessage(texte, opts); else console.warn(texte); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go, { once: true });
+  else go();
+}
+
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -61,7 +68,7 @@ function capturerTokenURL() {
   // Capture aussi les erreurs OAuth
   const authError = params.get('auth_error');
   if (authError) {
-    alert(`Erreur de connexion : ${authError}`);
+    signalerSumit(`La connexion n'a pas abouti : ${authError}`, { type: 'erreur' });
     const url = new URL(window.location);
     url.searchParams.delete('auth_error');
     window.history.replaceState({}, '', url.toString());
@@ -399,7 +406,7 @@ async function supprimerBilan(bilanId) {
 function loginStrava() {
   const token = getToken();
   if (!token) {
-    alert('Connecte-toi d\'abord avec Google');
+    signalerSumit('Connecte-toi d\'abord avec Google pour relier Strava.', { type: 'info' });
     return;
   }
   window.location.href = `${API_URL}/api/strava/login?token=${token}`;
@@ -504,6 +511,20 @@ async function simulerCourseAPI(fichierGPX, ravitosKm, profil, drainMoyH, coeffi
 }
 
 
+/**
+ * Prédiction express : profil estimé à partir d'un chrono récent, sans compte.
+ * Réessaie si le serveur sort de veille (apiFetch).
+ */
+async function profilExpressAPI(distanceKm, dplusM, tempsS, profilType = 'trail') {
+  const fd = new FormData();
+  fd.append('distance_km', distanceKm);
+  fd.append('dplus_m', dplusM);
+  fd.append('temps_s', tempsS);
+  fd.append('profil_type', profilType);
+  return apiFetch('/api/profil-express', { method: 'POST', body: fd });
+}
+
+
 // ══════════════════════════════════════════════════════════════
 //  HELPERS PROFIL (sessionStorage local pour le simulateur)
 // ══════════════════════════════════════════════════════════════
@@ -586,6 +607,7 @@ if (typeof window !== 'undefined') {
   window.logout                = logout;
   window.loginStrava           = loginStrava;
   window.fetchMe               = fetchMe;
+  window.profilExpressAPI      = profilExpressAPI;
   window.isLoggedIn            = isLoggedIn;
   window.getCachedUser         = getCachedUser;
   window.setCachedUser         = setCachedUser;

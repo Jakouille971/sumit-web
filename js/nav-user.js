@@ -107,7 +107,8 @@ function uniformiserLiens(nav) {
     path.endsWith('bilan.html')      ? 'bilan' :
     path.endsWith('avenir.html')     ? 'avenir' :
     path.endsWith('compte.html')     ? 'compte' :
-    'home';
+    (path.endsWith('/') || path.endsWith('index.html')) ? 'home' :
+    '';
 
   let navLinks = nav.querySelector('.nav-links');
   if (!navLinks) {
@@ -163,7 +164,7 @@ async function uniformiserUserSlot(nav) {
 
 function construireBtnTutoriel() {
   return `
-    <button type="button" class="nav-tuto-btn" onclick="if(typeof demarrerOnboarding==='function'){demarrerOnboarding()}else{alert('Le tutoriel se charge, réessaie dans un instant.');}" title="Voir le tutoriel">
+    <button type="button" class="nav-tuto-btn" onclick="if(typeof demarrerOnboarding==='function'){demarrerOnboarding()}else if(window.sumitMessage){sumitMessage('Le tutoriel se charge, réessaie dans un instant.');}" title="Voir le tutoriel">
       <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
         <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
         <path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
