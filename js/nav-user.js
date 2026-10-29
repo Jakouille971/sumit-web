@@ -33,7 +33,7 @@ function injecterStylesNav() {}
 function poserMomentDePage() {
   if (document.body.dataset.page) return;
   const p = window.location.pathname;
-  const id = ['profil','simulateur','bilan','compte','avenir'].find(n => p.endsWith(n + '.html')) || 'home';
+  const id = ['profil','simulateur','catalogue','evenement','bilan','compte','avenir'].find(n => p.endsWith(n + '.html')) || 'home';
   document.body.dataset.page = id;
 }
 
@@ -96,6 +96,7 @@ function uniformiserLiens(nav) {
     { label: 'Accueil',    href: inPages ? '../' : '/',         id: 'home' },
     { label: 'Mon profil', href: `${prefix}profil.html`,        id: 'profil' },
     { label: 'Simulateur', href: `${prefix}simulateur.html`,    id: 'simulateur' },
+    { label: 'Courses',    href: `${prefix}catalogue.html`,     id: 'catalogue' },
     { label: 'Bilan',      href: `${prefix}bilan.html`,         id: 'bilan' },
     { label: 'Mon compte', href: `${prefix}compte.html`,        id: 'compte' },
     { label: 'À venir',    href: `${prefix}avenir.html`,        id: 'avenir' },
@@ -104,6 +105,7 @@ function uniformiserLiens(nav) {
   const currentId =
     path.endsWith('profil.html')     ? 'profil' :
     path.endsWith('simulateur.html') ? 'simulateur' :
+    (path.endsWith('catalogue.html') || path.endsWith('evenement.html')) ? 'catalogue' :
     path.endsWith('bilan.html')      ? 'bilan' :
     path.endsWith('avenir.html')     ? 'avenir' :
     path.endsWith('compte.html')     ? 'compte' :
