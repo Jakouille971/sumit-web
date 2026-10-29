@@ -20,7 +20,7 @@
   <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/simulateur.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261029">
+  <link rel="stylesheet" href="../css/style.css?v=20261030">
   <style>
     /* ── Simulateur ─────────────────────────────────────────── */
     .sim-layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -375,6 +375,26 @@
     .express-modifier:active { transform: scale(0.97); }
     @media (hover: hover) and (pointer: fine) { .express-modifier:hover { background: #D5DBCE; } }
     .map-indispo { margin: 0; padding: 32px 20px; text-align: center; font-size: 14px; color: var(--muted); }
+
+    /* ── Catalogue des courses ───────────────────────────────────── */
+    .btn-catalogue {
+      width: 100%; margin-top: 10px;
+      display: grid; grid-template-columns: 40px 1fr 16px; gap: 12px; align-items: center;
+      padding: 12px 14px; border-radius: var(--radius-card);
+      background: var(--paper); border: 1px solid var(--border); color: var(--ink);
+      transition: border-color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .btn-catalogue[hidden] { display: none; }
+    .btn-catalogue:active { transform: scale(0.98); }
+    @media (hover: hover) and (pointer: fine) { .btn-catalogue:hover { border-color: var(--ink); } }
+    .btn-catalogue-ico { width: 40px; height: 40px; border-radius: 8px; background: var(--data-soft); display: grid; place-items: center; }
+    .btn-catalogue-ico svg { width: 22px; height: 22px; fill: none; stroke: var(--data); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-catalogue > svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+    .btn-catalogue-texte { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .btn-catalogue-texte strong { font-size: 15px; font-weight: 600; }
+    .btn-catalogue-texte small { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .file-catalogue { margin-top: 8px; font-size: 13px; color: var(--muted); }
+    .file-catalogue a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--control); }
   </style>
 </head>
 <body data-page="simulateur">
@@ -388,6 +408,7 @@
       <a href="../index.html" class="nav-link">Accueil</a>
       <a href="profil.html" class="nav-link">Mon profil</a>
       <a href="simulateur.html" class="nav-link active" aria-current="page">Simulateur</a>
+      <a href="catalogue.html" class="nav-link">Courses</a>
       <a href="bilan.html" class="nav-link">Bilan</a>
       <a href="compte.html" class="nav-link">Mon compte</a>
       <a href="avenir.html" class="nav-link">À venir</a>
@@ -431,6 +452,15 @@
         </div>
         <input type="file" id="fileGPX" accept=".gpx" style="display:none">
 
+        <a class="btn-catalogue" id="btnCatalogue" href="catalogue.html" hidden>
+          <span class="btn-catalogue-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 20 9 9l4 6 3-4 5 9z"/><path d="M4 4h16M4 7.5h9"/></svg></span>
+          <span class="btn-catalogue-texte">
+            <strong>Choisir dans le catalogue</strong>
+            <small id="btnCatalogueInfo">Les grands trails à venir, traces prêtes à simuler</small>
+          </span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4 12.5 8l-4 4"/></svg>
+        </a>
+
         <div class="demo-cta">
           <div class="demo-cta-or"><span>ou</span></div>
           <button type="button" class="btn-demo-ccc" onclick="lancerDemoCCC()">
@@ -451,6 +481,7 @@
             <div><div class="file-meta-val" id="fileDist">—</div><div class="file-meta-label">Distance</div></div>
             <div><div class="file-meta-val" id="fileDplus">—</div><div class="file-meta-label">Dénivelé positif</div></div>
           </div>
+          <p class="file-catalogue" id="fileCatalogue" hidden></p>
         </div>
 
         <div class="input-group">
@@ -732,10 +763,11 @@
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261029"></script>
-  <script src="../js/api-client.js?v=20261029"></script>
-  <script src="../js/nav-user.js?v=20261029"></script>
-  <script src="../js/onboarding.js?v=20261029"></script>
+  <script src="../js/main.js?v=20261030"></script>
+  <script src="../js/api-client.js?v=20261030"></script>
+  <script src="../js/nav-user.js?v=20261030"></script>
+  <script src="../js/onboarding.js?v=20261030"></script>
+  <script src="../js/catalogue.js?v=20261030"></script>
   <script>
 // EmailJS, Leaflet et jsPDF sont chargés à l'usage (js/main.js)
 
@@ -1038,6 +1070,7 @@ async function initSimulateur() {
   // Si connecté → afficher le sélecteur de profil et charger les profils
   if (isLoggedIn()) {
     document.getElementById('profilSelector').style.display = 'block';
+    majBoutonCatalogue();
 
     try {
       const user = await fetchMe();
@@ -1079,6 +1112,12 @@ async function initSimulateur() {
   const simId = params.get('sim_id');
   if (simId && isLoggedIn()) {
     await chargerSimulationEpinglee(parseInt(simId));
+  }
+
+  // Depuis le catalogue (« Simuler cette course ») : la trace s'ouvre directement
+  if (!simId && params.get('catalogue')) {
+    await chargerCourseCatalogue(params.get('catalogue'), params.get('epreuve'));
+    return;
   }
 
   // Depuis l'accueil (« Essayer sur la CCC ») : lancement direct de la démo
@@ -2563,6 +2602,75 @@ window.addEventListener('load', () => {
   const champ = document.getElementById('exDist');
   if (champ) champ.focus({ preventScroll: true });
 });
+// ══ CATALOGUE DES COURSES ═══════════════════════════════════════
+// Bouton « Choisir dans le catalogue » (coureurs connectés) et ouverture directe
+// d'une course du catalogue : simulateur.html?catalogue=<événement>&epreuve=<course>
+async function majBoutonCatalogue() {
+  const btn = document.getElementById('btnCatalogue');
+  if (!btn) return;
+  btn.hidden = false;
+  try {
+    const cat = await window.sumitCatalogue.charger();
+    const evs = window.sumitCatalogue.aVenir(cat);
+    const n = evs.length, nt = evs.reduce((s, ev) => s + window.sumitCatalogue.nbTraces(ev), 0);
+    if (n) document.getElementById('btnCatalogueInfo').textContent = `${n} événement${n > 1 ? 's' : ''} à venir · `
+      + (nt ? `${nt} trace${nt > 1 ? 's' : ''} prête${nt > 1 ? 's' : ''}` : 'traces en préparation');
+  } catch (e) { /* le bouton reste, la page du catalogue dira ce qui ne va pas */ }
+}
+
+async function chargerCourseCatalogue(evId, courseId) {
+  const C = window.sumitCatalogue;
+  const zone = document.getElementById('dropzoneSim');
+  const retour = { label: 'Voir le catalogue', onClick: () => { location.href = 'catalogue.html'; } };
+  let ev, c;
+  try {
+    ({ ev, course: c } = C.trouver(await C.charger(), evId, courseId));
+  } catch (e) {
+    sumitMessage('Le catalogue n\'a pas pu être chargé. Vérifie ta connexion et réessaie.', { type: 'erreur', pres: zone });
+    return;
+  }
+  if (!ev || !c) {
+    sumitMessage('Cette course n\'est plus au catalogue.', { type: 'info', pres: zone, action: retour });
+    return;
+  }
+  if (!c.gpx) {
+    sumitMessage(`La trace de « ${c.nom} » n'est pas encore disponible.`, { type: 'info', pres: zone, action: retour });
+    return;
+  }
+  document.getElementById('fileName').textContent = `${ev.nom} · ${c.nom}`;
+  document.getElementById('fileInfo').classList.add('show');
+  document.getElementById('fileDist').textContent = '…';
+  let file;
+  try {
+    const r = await fetch(C.url(c.gpx));
+    if (!r.ok) throw new Error(String(r.status));
+    file = new File([await r.blob()], c.gpx, { type: 'application/gpx+xml' });
+  } catch (e) {
+    document.getElementById('fileInfo').classList.remove('show');
+    sumitMessage('La trace n\'a pas pu être téléchargée. Vérifie ta connexion et réessaie.', { type: 'erreur', pres: zone });
+    return;
+  }
+  chargerFichier(file);
+  // Nom, heure de départ et lien vers la fiche
+  const annee = ev.date_debut.slice(0, 4);
+  const nom = c.nom === ev.nom ? `${ev.nom} ${annee}` : `${ev.nom} ${annee} · ${c.nom}`;
+  const champ = document.getElementById('nomCourse');
+  if (champ) champ.value = nom.slice(0, 80);
+  const hd = document.getElementById('heureDepart');
+  if (hd && c.heure_depart) hd.value = c.heure_depart;
+  document.getElementById('fileName').textContent = c.nom === ev.nom ? `${ev.nom} · ${C.km(c.distance_km)} km` : `${ev.nom} · ${c.nom}`;
+  document.getElementById('fileCat').textContent = 'Catalogue';
+  const lien = document.getElementById('fileCatalogue');
+  if (lien) {
+    lien.innerHTML = `Course du catalogue · <a href="evenement.html?id=${encodeURIComponent(ev.id)}#c-${encodeURIComponent(c.id)}">voir la fiche</a>`;
+    lien.hidden = false;
+  }
+  if (window.sumitMesure) sumitMesure('catalogue_course', { course: `${ev.id}/${c.id}`.slice(0, 30), km: c.distance_km });
+  const fiche = document.getElementById('fileInfo');
+  const doux = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (fiche && fiche.scrollIntoView) fiche.scrollIntoView({ block: 'center', behavior: doux ? 'smooth' : 'auto' });
+}
+
 </script>
 </body>
 </html>

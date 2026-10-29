@@ -20,7 +20,7 @@
   <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/stats.html">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../css/style.css?v=20261029">
+  <link rel="stylesheet" href="../css/style.css?v=20261030">
   <meta name="robots" content="noindex, nofollow">
   <script>window.SUMIT_PAS_DE_MESURE = true;</script>
   <style>
@@ -70,6 +70,7 @@
       <a href="../index.html" class="nav-link">Accueil</a>
       <a href="profil.html" class="nav-link">Mon profil</a>
       <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="catalogue.html" class="nav-link">Courses</a>
       <a href="bilan.html" class="nav-link">Bilan</a>
       <a href="compte.html" class="nav-link">Mon compte</a>
       <a href="avenir.html" class="nav-link">À venir</a>
@@ -147,10 +148,10 @@
     </div>
   </footer>
 
-  <script src="../js/main.js?v=20261029"></script>
-  <script src="../js/api-client.js?v=20261029"></script>
-  <script src="../js/nav-user.js?v=20261029"></script>
-  <script src="../js/onboarding.js?v=20261029"></script>
+  <script src="../js/main.js?v=20261030"></script>
+  <script src="../js/api-client.js?v=20261030"></script>
+  <script src="../js/nav-user.js?v=20261030"></script>
+  <script src="../js/onboarding.js?v=20261030"></script>
   <script>
   (function () {
     const LIBELLES = {
@@ -158,9 +159,11 @@
       profil_express: 'Profil express estimé', ravitos_gpx: 'Ravitos lus dans un GPX', pin: 'Simulation épinglée',
       bilan: 'Bilan épinglé', import_activite: 'Activité importée', pdf: 'Roadbook PDF téléchargé', avis: 'Avis envoyé',
       notification: 'Inscription aux nouveautés', questionnaire: 'Questionnaire bêta envoyé',
+      catalogue_course: 'Course ouverte depuis le catalogue',
     };
     const PAGES = { '/': 'Accueil', '/index.html': 'Accueil', '/pages/simulateur.html': 'Simulateur', '/pages/profil.html': 'Mon profil',
       '/pages/bilan.html': 'Bilan', '/pages/compte.html': 'Mon compte', '/pages/avenir.html': 'À venir',
+      '/pages/catalogue.html': 'Catalogue des courses', '/pages/evenement.html': 'Fiche course',
       '/pages/mentions-legales.html': 'Mentions légales', '/pages/confidentialite.html': 'Confidentialité' };
     const APPAREILS = { telephone: 'téléphone', tablette: 'tablette', ordinateur: 'ordinateur' };
     const nf = n => Number(n || 0).toLocaleString('fr-FR').replace(/ | /g, ' ');
