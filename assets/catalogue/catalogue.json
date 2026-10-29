@@ -1,0 +1,931 @@
+{
+ "version": 1,
+ "maj": "2026-10-29",
+ "evenements": [
+  {
+   "id": "thp-winter-2026",
+   "statut": "a_verifier",
+   "nom": "THP Winter",
+   "commune": "Saint-Étienne-les-Orgues",
+   "departement": "04",
+   "region": "Provence-Alpes-Côte d'Azur",
+   "date_debut": "2026-11-20",
+   "date_fin": "2026-11-22",
+   "date_confirmee": true,
+   "description": "La version hivernale du Trail de Haute-Provence, au pied de la montagne de Lure. Les parcours passent souvent dans la neige, avec du froid et du vent sur les crêtes. L'épreuve clôt le Challenge des Trails de Provence.",
+   "site_officiel": "https://mythp.fr/thp-winter/",
+   "courses": [
+    {
+     "id": "w100",
+     "nom": "W100",
+     "distance_km": 100,
+     "dplus_m": 4500,
+     "depart": "Saint-Étienne-les-Orgues",
+     "arrivee": "Saint-Étienne-les-Orgues"
+    },
+    {
+     "id": "w70",
+     "nom": "W70",
+     "distance_km": 70,
+     "dplus_m": 3100,
+     "depart": "Saint-Étienne-les-Orgues",
+     "arrivee": "Saint-Étienne-les-Orgues"
+    },
+    {
+     "id": "w45",
+     "nom": "W45",
+     "distance_km": 50,
+     "dplus_m": 2250,
+     "depart": "Saint-Étienne-les-Orgues",
+     "arrivee": "Saint-Étienne-les-Orgues"
+    },
+    {
+     "id": "w30",
+     "nom": "W30",
+     "distance_km": 35,
+     "dplus_m": 1570,
+     "depart": "Saint-Étienne-les-Orgues",
+     "arrivee": "Saint-Étienne-les-Orgues"
+    },
+    {
+     "id": "w15",
+     "nom": "W15",
+     "distance_km": 15,
+     "dplus_m": 580,
+     "depart": "Saint-Étienne-les-Orgues",
+     "arrivee": "Saint-Étienne-les-Orgues"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche THP Winter",
+     "url": "https://gotrail.run/fr/evenement/thp-winter-saint-etienne-les-orgues"
+    },
+    {
+     "titre": "Miles Republic, calendrier ultra-trail",
+     "url": "https://fr.milesrepublic.com/ultra-trail"
+    }
+   ]
+  },
+  {
+   "id": "saintelyon-2026",
+   "statut": "a_verifier",
+   "nom": "SaintéLyon",
+   "commune": "Lyon",
+   "departement": "69",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2026-11-28",
+   "date_fin": "2026-11-29",
+   "date_confirmee": true,
+   "description": "La grande course de nuit entre Saint-Étienne et Lyon, courue depuis 1952 à la fin du mois de novembre, à la frontale et souvent dans le froid. Pour 2026, l'organisation annonce plus de 40 % de parcours nouveau et un 80 km porté à 2 400 m D+. Arrivée à la Halle Tony Garnier.",
+   "site_officiel": "https://www.saintelyon.com/",
+   "inscriptions": "complet",
+   "courses": [
+    {
+     "id": "160k",
+     "nom": "LyonSaintéLyon",
+     "distance_km": 160,
+     "jour": "2026-11-28",
+     "depart": "Lyon, Halle Tony Garnier",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    },
+    {
+     "id": "80k",
+     "nom": "SaintéLyon",
+     "distance_km": 80,
+     "dplus_m": 2400,
+     "jour": "2026-11-28",
+     "depart": "Saint-Étienne",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    },
+    {
+     "id": "45k",
+     "nom": "SaintExpress",
+     "distance_km": 45,
+     "jour": "2026-11-28",
+     "depart": "Sainte-Catherine",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    },
+    {
+     "id": "35k",
+     "nom": "SaintéVia",
+     "distance_km": 35,
+     "dplus_m": 650,
+     "jour": "2026-11-28",
+     "depart": "Mornant",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    },
+    {
+     "id": "24k",
+     "nom": "SaintéSprint",
+     "distance_km": 24,
+     "jour": "2026-11-28",
+     "depart": "Soucieu-en-Jarrest",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    },
+    {
+     "id": "13k",
+     "nom": "SaintéTic",
+     "distance_km": 13,
+     "jour": "2026-11-28",
+     "depart": "Chaponost",
+     "arrivee": "Lyon, Halle Tony Garnier"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Site officiel de la SaintéLyon",
+     "url": "https://www.saintelyon.com/"
+    },
+    {
+     "titre": "Journal du Trail, ouverture des inscriptions 2026",
+     "url": "https://www.journaldutrail.com/news/asics-saintelyon-2026-top-depart-des-inscriptions.html"
+    },
+    {
+     "titre": "Campus, horaires de l'édition 2025",
+     "url": "https://www.campus.coach/blog/saintelyon-2025-distance-denivele-lieu-date-horaire-depart-arrivee"
+    }
+   ]
+  },
+  {
+   "id": "40-bosses-2026",
+   "statut": "a_verifier",
+   "nom": "Les 40 Bosses",
+   "commune": "Saint-Leu-la-Forêt",
+   "departement": "95",
+   "region": "Île-de-France",
+   "date_debut": "2026-12-05",
+   "date_fin": "2026-12-06",
+   "date_confirmee": true,
+   "description": "Un trail de forêt très vallonné, dans la forêt de Montmorency, à une vingtaine de kilomètres de Paris. Les longues distances se courent en boucles, jusqu'aux deux boucles du Monstre. Sixième édition, des formats de 10 à 120 km.",
+   "site_officiel": "https://les40bosses.fr/",
+   "inscriptions": "complet",
+   "gpx_disponible_le": "2026-12-02",
+   "courses": [
+    {
+     "id": "120k",
+     "nom": "Le Monstre",
+     "distance_km": 120,
+     "dplus_m": 4900,
+     "depart": "Saint-Leu-la-Forêt",
+     "arrivee": "Saint-Leu-la-Forêt"
+    },
+    {
+     "id": "75k",
+     "nom": "La Belle",
+     "distance_km": 75,
+     "dplus_m": 3000,
+     "depart": "Saint-Leu-la-Forêt",
+     "arrivee": "Saint-Leu-la-Forêt"
+    },
+    {
+     "id": "45k",
+     "nom": "L'Historique",
+     "distance_km": 45,
+     "dplus_m": 2000,
+     "depart": "Saint-Leu-la-Forêt",
+     "arrivee": "Saint-Leu-la-Forêt"
+    },
+    {
+     "id": "20k",
+     "nom": "La Classique",
+     "distance_km": 20,
+     "dplus_m": 850,
+     "depart": "Saint-Leu-la-Forêt",
+     "arrivee": "Saint-Leu-la-Forêt"
+    },
+    {
+     "id": "10k",
+     "nom": "Le Sprint",
+     "distance_km": 10,
+     "dplus_m": 400,
+     "depart": "Saint-Leu-la-Forêt",
+     "arrivee": "Saint-Leu-la-Forêt"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Les 40 Bosses",
+     "url": "https://gotrail.run/fr/evenement/les-40-bosses-saint-leu-la-foret"
+    }
+   ]
+  },
+  {
+   "id": "sancy-hivernal-2027",
+   "statut": "a_verifier",
+   "nom": "Trail hivernal du Sancy",
+   "commune": "Le Mont-Dore",
+   "departement": "63",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-01-10",
+   "date_fin": "2027-01-10",
+   "date_confirmee": true,
+   "description": "Un trail d'hiver au cœur du massif du Sancy, au départ du Mont-Dore. Deux parcours, de 23 et 33 km, qui se séparent au lac de Guéry. Conditions hivernales probables : neige, givre, vent.",
+   "site_officiel": "https://www.xttr63.com/nos-evenements/trail-hivernal-sancy-mont-dore/",
+   "courses": [
+    {
+     "id": "33k",
+     "nom": "Trail 33 km",
+     "distance_km": 33,
+     "dplus_m": 1600,
+     "jour": "2027-01-10",
+     "depart": "Le Mont-Dore",
+     "arrivee": "Le Mont-Dore"
+    },
+    {
+     "id": "23k",
+     "nom": "Trail 23 km",
+     "distance_km": 23,
+     "dplus_m": 1050,
+     "jour": "2027-01-10",
+     "depart": "Le Mont-Dore",
+     "arrivee": "Le Mont-Dore"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Trail hivernal Sancy Mont-Dore",
+     "url": "https://gotrail.run/fr/evenement/trail-hivernal-sancy-mont-dore"
+    }
+   ]
+  },
+  {
+   "id": "raidlight-winter-trail-2027",
+   "statut": "a_verifier",
+   "nom": "Raidlight Winter Trail",
+   "commune": "Saint-Pierre-de-Chartreuse",
+   "departement": "38",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-01",
+   "date_confirmee": false,
+   "description": "Un trail sur neige en Chartreuse, autour de Saint-Pierre-de-Chartreuse. Des boucles de 10 à 25 km, dont un format en deux boucles de 10 km.",
+   "site_officiel": "https://www.chartreusewintertrail.fr/",
+   "courses": [
+    {
+     "id": "25k",
+     "nom": "Winter Trail",
+     "distance_km": 25,
+     "dplus_m": 1350,
+     "depart": "Saint-Pierre-de-Chartreuse",
+     "arrivee": "Saint-Pierre-de-Chartreuse"
+    },
+    {
+     "id": "20k",
+     "nom": "Solo Winter Trail",
+     "distance_km": 20,
+     "dplus_m": 1000,
+     "depart": "Saint-Pierre-de-Chartreuse",
+     "arrivee": "Saint-Pierre-de-Chartreuse"
+    },
+    {
+     "id": "15k",
+     "nom": "Half Winter Trail",
+     "distance_km": 15,
+     "dplus_m": 680,
+     "depart": "Saint-Pierre-de-Chartreuse",
+     "arrivee": "Saint-Pierre-de-Chartreuse"
+    },
+    {
+     "id": "10k",
+     "nom": "Mini Winter Trail",
+     "distance_km": 10,
+     "dplus_m": 500,
+     "depart": "Saint-Pierre-de-Chartreuse",
+     "arrivee": "Saint-Pierre-de-Chartreuse"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Finishers, fiche Raidlight Winter Trail 2027",
+     "url": "https://www.finishers.com/en/event/raidlight-winter-trail"
+    }
+   ]
+  },
+  {
+   "id": "trace-des-maquisards-2027",
+   "statut": "a_verifier",
+   "nom": "La Trace des Maquisards",
+   "commune": "Oyonnax",
+   "departement": "01",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-02-06",
+   "date_fin": "2027-02-06",
+   "date_confirmee": true,
+   "description": "Un trail de nuit dans le Haut-Bugey, sur les traces du maquis de l'Ain. Les parcours relient Oyonnax, Maillat, Nantua et Dortan, en grande partie à la frontale, à travers des lieux liés à la Résistance.",
+   "inscription_url": "https://in.njuko.com/trace-des-maquisards-20271789129922332",
+   "inscriptions": "ouvertes",
+   "courses": [
+    {
+     "id": "100k",
+     "nom": "100 km",
+     "distance_km": 105,
+     "dplus_m": 3300,
+     "jour": "2027-02-06",
+     "depart": "Oyonnax, centre-ville"
+    },
+    {
+     "id": "65k",
+     "nom": "65 km",
+     "distance_km": 65,
+     "dplus_m": 2300,
+     "jour": "2027-02-06",
+     "depart": "Maillat"
+    },
+    {
+     "id": "42k",
+     "nom": "42 km",
+     "distance_km": 42,
+     "dplus_m": 1600,
+     "jour": "2027-02-06",
+     "depart": "Maillat"
+    },
+    {
+     "id": "30k",
+     "nom": "30 km",
+     "distance_km": 30,
+     "dplus_m": 1350,
+     "jour": "2027-02-06",
+     "depart": "Nantua"
+    },
+    {
+     "id": "18k",
+     "nom": "18 km",
+     "distance_km": 18,
+     "dplus_m": 650,
+     "jour": "2027-02-06",
+     "depart": "Dortan"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche La Trace des Maquisards",
+     "url": "https://gotrail.run/fr/evenement/trace-des-maquisards-de-lain"
+    }
+   ]
+  },
+  {
+   "id": "trail-de-vulcain-2027",
+   "statut": "a_verifier",
+   "nom": "Trail de Vulcain",
+   "commune": "Volvic",
+   "departement": "63",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-03-06",
+   "date_fin": "2027-03-07",
+   "date_confirmee": true,
+   "description": "Un trail de début de saison dans la chaîne des Puys, au départ de Volvic, dans le parc naturel régional des Volcans d'Auvergne. Des parcours de 13 à 77 km entre puys et forêts, à une période où la neige et la boue sont fréquentes.",
+   "site_officiel": "https://www.trail-de-vulcain.fr/",
+   "courses": [
+    {
+     "id": "77k",
+     "nom": "Ultra Volcanique",
+     "distance_km": 77,
+     "dplus_m": 2865,
+     "depart": "Volvic",
+     "arrivee": "Volvic, complexe sportif"
+    },
+    {
+     "id": "48k",
+     "nom": "Marathon Volcanique",
+     "distance_km": 48,
+     "dplus_m": 1850,
+     "depart": "Volvic",
+     "arrivee": "Volvic, complexe sportif"
+    },
+    {
+     "id": "27k",
+     "nom": "Riom Limagne et Volcans",
+     "distance_km": 27,
+     "dplus_m": 860,
+     "arrivee": "Volvic, complexe sportif"
+    },
+    {
+     "id": "14k",
+     "nom": "Volvic Nature",
+     "distance_km": 13.5,
+     "dplus_m": 570,
+     "depart": "Volvic",
+     "arrivee": "Volvic, complexe sportif"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Trail de Vulcain",
+     "url": "https://gotrail.run/fr/evenement/trail-de-vulcain"
+    }
+   ]
+  },
+  {
+   "id": "sainte-baume-2027",
+   "statut": "a_verifier",
+   "nom": "Trail de la Sainte-Baume",
+   "commune": "Cuges-les-Pins",
+   "departement": "13",
+   "region": "Provence-Alpes-Côte d'Azur",
+   "date_debut": "2027-03-06",
+   "date_fin": "2027-03-07",
+   "date_confirmee": true,
+   "description": "Dix-neuvième édition d'un trail provençal exigeant dans le massif de la Sainte-Baume, au départ du village de Cuges-les-Pins. Du court SkyBaume, très raide, à l'Ultra Baume de 100 km et 5 500 m D+.",
+   "site_officiel": "https://www.traildelasaintebaume.fr/",
+   "inscriptions": "ouvertes",
+   "courses": [
+    {
+     "id": "100k",
+     "nom": "Ultra Baume",
+     "distance_km": 100,
+     "dplus_m": 5500,
+     "depart": "Cuges-les-Pins",
+     "arrivee": "Cuges-les-Pins"
+    },
+    {
+     "id": "56k",
+     "nom": "Grande Baume",
+     "distance_km": 55.5,
+     "dplus_m": 3150,
+     "depart": "Cuges-les-Pins",
+     "arrivee": "Cuges-les-Pins"
+    },
+    {
+     "id": "27k",
+     "nom": "Boucle Cugeoise",
+     "distance_km": 26.5,
+     "dplus_m": 1700,
+     "depart": "Cuges-les-Pins",
+     "arrivee": "Cuges-les-Pins"
+    },
+    {
+     "id": "17k",
+     "nom": "Manon des Sources",
+     "distance_km": 17,
+     "dplus_m": 700,
+     "depart": "Cuges-les-Pins",
+     "arrivee": "Cuges-les-Pins"
+    },
+    {
+     "id": "16k",
+     "nom": "SkyBaume",
+     "distance_km": 16,
+     "dplus_m": 930,
+     "depart": "Cuges-les-Pins",
+     "arrivee": "Cuges-les-Pins"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Trail de la Sainte-Baume",
+     "url": "https://gotrail.run/fr/evenement/trail-de-la-sainte-baume"
+    }
+   ]
+  },
+  {
+   "id": "senpereko-trail-2027",
+   "statut": "a_verifier",
+   "nom": "Senpereko Trail",
+   "commune": "Saint-Pée-sur-Nivelle",
+   "departement": "64",
+   "region": "Nouvelle-Aquitaine",
+   "date_debut": "2027-03-13",
+   "date_fin": "2027-03-14",
+   "date_confirmee": true,
+   "description": "Le trail du Pays basque intérieur, organisé depuis 2008 à Saint-Pée-sur-Nivelle. Collines, chemins forestiers, estives et chênaies, avec la Rhune en toile de fond. Le Senpereko Trail de 21,5 km est la course phare du week-end.",
+   "site_officiel": "https://senperekotrail.fr/",
+   "courses": [
+    {
+     "id": "85k",
+     "nom": "Tontorrez Tontor",
+     "distance_km": 85,
+     "depart": "Saint-Pée-sur-Nivelle",
+     "arrivee": "Saint-Pée-sur-Nivelle"
+    },
+    {
+     "id": "42k",
+     "nom": "Gotorlekuen Itzulia",
+     "distance_km": 42,
+     "depart": "Saint-Pée-sur-Nivelle",
+     "arrivee": "Saint-Pée-sur-Nivelle"
+    },
+    {
+     "id": "22k",
+     "nom": "Senpereko Trail",
+     "distance_km": 21.5,
+     "dplus_m": 1050,
+     "jour": "2027-03-14",
+     "depart": "Saint-Pée-sur-Nivelle, fronton d'Ibarron",
+     "arrivee": "Saint-Pée-sur-Nivelle"
+    },
+    {
+     "id": "11k",
+     "nom": "Ibar Run Trail",
+     "distance_km": 11,
+     "depart": "Saint-Pée-sur-Nivelle",
+     "arrivee": "Saint-Pée-sur-Nivelle"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Senpereko Trail",
+     "url": "https://gotrail.run/fr/evenement/senpereko-trail"
+    },
+    {
+     "titre": "Miles Republic, calendrier ultra-trail",
+     "url": "https://fr.milesrepublic.com/ultra-trail"
+    }
+   ]
+  },
+  {
+   "id": "ecotrail-paris-2027",
+   "statut": "a_verifier",
+   "nom": "EcoTrail Paris",
+   "commune": "Paris",
+   "departement": "75",
+   "region": "Île-de-France",
+   "date_debut": "2027-03-20",
+   "date_fin": "2027-03-21",
+   "date_confirmee": true,
+   "description": "Vingtième édition du trail qui traverse les forêts et les parcs de l'ouest parisien jusqu'à Paris. Le 80 km relie la colline d'Élancourt au premier étage de la tour Eiffel, le 45 km part des jardins du château de Versailles. Un trail roulant, avec peu de dénivelé pour la distance.",
+   "site_officiel": "https://www.ecotrailparis.com/",
+   "inscriptions": "ouvertes",
+   "courses": [
+    {
+     "id": "120k",
+     "nom": "EcoTrail 120 km",
+     "distance_km": 120,
+     "jour": "2027-03-20"
+    },
+    {
+     "id": "80k",
+     "nom": "EcoTrail 80 km",
+     "distance_km": 80,
+     "dplus_m": 1200,
+     "jour": "2027-03-20",
+     "heure_depart": "10:30",
+     "depart": "Colline d'Élancourt",
+     "arrivee": "Paris, premier étage de la tour Eiffel"
+    },
+    {
+     "id": "45k",
+     "nom": "EcoTrail 45 km",
+     "distance_km": 45,
+     "jour": "2027-03-20",
+     "depart": "Versailles, jardins du château",
+     "arrivee": "Paris, pont d'Iéna"
+    },
+    {
+     "id": "35k",
+     "nom": "EcoTrail 35 km",
+     "distance_km": 35,
+     "jour": "2027-03-21"
+    },
+    {
+     "id": "30k",
+     "nom": "EcoTrail 30 km",
+     "distance_km": 30,
+     "jour": "2027-03-20"
+    },
+    {
+     "id": "20k",
+     "nom": "EcoTrail 20 km",
+     "distance_km": 20,
+     "jour": "2027-03-21",
+     "depart": "Domaine national de Saint-Cloud",
+     "arrivee": "Domaine national de Saint-Cloud"
+    },
+    {
+     "id": "10k",
+     "nom": "EcoTrail 10 km",
+     "distance_km": 10,
+     "jour": "2027-03-21",
+     "depart": "Domaine national de Saint-Cloud",
+     "arrivee": "Domaine national de Saint-Cloud"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Site officiel, fiche du 80 km",
+     "url": "https://en.ecotrailparis.com/course/trail-80-km"
+    },
+    {
+     "titre": "Référence Trail, inscriptions 2027",
+     "url": "https://reference-trail.fr/ecotrail-paris-2027-les-inscriptions-demarrent-doucement-pour-cette-20e-edition/"
+    }
+   ]
+  },
+  {
+   "id": "trail-du-ventoux-2027",
+   "statut": "a_verifier",
+   "nom": "Trail du Ventoux",
+   "commune": "Bédoin",
+   "departement": "84",
+   "region": "Provence-Alpes-Côte d'Azur",
+   "date_debut": "2027-03-20",
+   "date_fin": "2027-03-21",
+   "date_confirmee": true,
+   "description": "Le trail du mont Ventoux, au départ de Bédoin : crêtes calcaires, vallons, sommets pelés et forêts du « mont Chauve ». Six courses sur deux jours, du sprint de 13 km à l'Ultra Tour du Ventoux de 105 km et 5 000 m D+.",
+   "site_officiel": "https://trailduventoux.fr/",
+   "courses": [
+    {
+     "id": "105k",
+     "nom": "Ultra Tour du Ventoux",
+     "distance_km": 105,
+     "dplus_m": 5000,
+     "jour": "2027-03-20",
+     "heure_depart": "04:00",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    },
+    {
+     "id": "71k",
+     "nom": "Intégrale des Crêtes",
+     "distance_km": 71,
+     "dplus_m": 3400,
+     "jour": "2027-03-20",
+     "heure_depart": "05:15",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    },
+    {
+     "id": "64k",
+     "nom": "Évasion Baronnies Ventoux",
+     "distance_km": 64,
+     "dplus_m": 3350,
+     "jour": "2027-03-20",
+     "heure_depart": "06:15",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    },
+    {
+     "id": "48k",
+     "nom": "L'Origine",
+     "distance_km": 48,
+     "dplus_m": 2300,
+     "jour": "2027-03-21",
+     "heure_depart": "07:55",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    },
+    {
+     "id": "29k",
+     "nom": "Les Balcons du Ventoux",
+     "distance_km": 29,
+     "dplus_m": 1300,
+     "jour": "2027-03-21",
+     "heure_depart": "10:00",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    },
+    {
+     "id": "13k",
+     "nom": "AOC Ventoux Sprint",
+     "distance_km": 13,
+     "dplus_m": 460,
+     "jour": "2027-03-20",
+     "heure_depart": "09:00",
+     "depart": "Bédoin",
+     "arrivee": "Bédoin"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Miles Republic, fiche Trail du Ventoux Au Vieux Campeur",
+     "url": "https://fr.milesrepublic.com/event/ergysport-trail-du-ventoux-1064"
+    }
+   ]
+  },
+  {
+   "id": "trail-des-citadelles-2027",
+   "statut": "a_verifier",
+   "nom": "Trail des Citadelles",
+   "commune": "Lavelanet",
+   "departement": "09",
+   "region": "Occitanie",
+   "date_debut": "2027-03-28",
+   "date_fin": "2027-03-28",
+   "date_confirmee": false,
+   "description": "Le trail du pays d'Olmes, en Ariège, au départ de Lavelanet, au pays des châteaux cathares. Des parcours de 10 à 74 km, avec un dénivelé marqué dès les courtes distances.",
+   "site_officiel": "https://trail-des-citadelles.blogspot.com/",
+   "courses": [
+    {
+     "id": "74k",
+     "nom": "74 km",
+     "distance_km": 74,
+     "dplus_m": 3400,
+     "jour": "2027-03-28",
+     "depart": "Lavelanet",
+     "arrivee": "Lavelanet"
+    },
+    {
+     "id": "59k",
+     "nom": "59 km",
+     "distance_km": 59,
+     "dplus_m": 2900,
+     "jour": "2027-03-28",
+     "depart": "Lavelanet",
+     "arrivee": "Lavelanet"
+    },
+    {
+     "id": "40k",
+     "nom": "40 km",
+     "distance_km": 40,
+     "dplus_m": 2000,
+     "jour": "2027-03-28",
+     "depart": "Lavelanet",
+     "arrivee": "Lavelanet"
+    },
+    {
+     "id": "26k",
+     "nom": "26 km",
+     "distance_km": 26,
+     "dplus_m": 1400,
+     "jour": "2027-03-28",
+     "depart": "Lavelanet",
+     "arrivee": "Lavelanet"
+    },
+    {
+     "id": "10k",
+     "nom": "Le Sanctus",
+     "distance_km": 10,
+     "dplus_m": 490,
+     "jour": "2027-03-28",
+     "depart": "Lavelanet",
+     "arrivee": "Lavelanet"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Trail des Citadelles",
+     "url": "https://gotrail.run/en/event/trail-des-citadelles-lavelanet"
+    },
+    {
+     "titre": "Finishers, fiche Trail des Citadelles 2027",
+     "url": "https://finishers.com/course/trail-des-citadelles"
+    }
+   ]
+  },
+  {
+   "id": "lyon-urban-trail-2027",
+   "statut": "a_verifier",
+   "nom": "Lyon Urban Trail",
+   "commune": "Lyon",
+   "departement": "69",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-04-04",
+   "date_fin": "2027-04-04",
+   "date_confirmee": true,
+   "description": "Un trail urbain dans les collines de Lyon, connu pour ses escaliers, entre Fourvière et la Croix-Rousse. Départ des quais de Saône, quai Fulchiron, pour des parcours de 12 à 35 km.",
+   "site_officiel": "https://www.lyonurbantrail.com/",
+   "courses": [
+    {
+     "id": "35k",
+     "nom": "Trail 35 km",
+     "distance_km": 35,
+     "dplus_m": 1400,
+     "jour": "2027-04-04",
+     "heure_depart": "07:00",
+     "depart": "Lyon, quai Fulchiron",
+     "arrivee": "Lyon, quai Fulchiron"
+    },
+    {
+     "id": "25k",
+     "nom": "Trail 25 km",
+     "distance_km": 25,
+     "dplus_m": 1100,
+     "jour": "2027-04-04",
+     "heure_depart": "09:00",
+     "depart": "Lyon, quai Fulchiron",
+     "arrivee": "Lyon, quai Fulchiron"
+    },
+    {
+     "id": "18k",
+     "nom": "Trail 18 km",
+     "distance_km": 18,
+     "dplus_m": 700,
+     "jour": "2027-04-04",
+     "heure_depart": "11:30",
+     "depart": "Lyon, quai Fulchiron",
+     "arrivee": "Lyon, quai Fulchiron"
+    },
+    {
+     "id": "12k",
+     "nom": "Trail 12 km",
+     "distance_km": 12,
+     "dplus_m": 450,
+     "jour": "2027-04-04",
+     "heure_depart": "13:30",
+     "depart": "Lyon, quai Fulchiron",
+     "arrivee": "Lyon, quai Fulchiron"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Finishers, fiche Lyon Urban Trail",
+     "url": "https://www.finishers.com/en/course/lyon-urban-trail"
+    }
+   ]
+  },
+  {
+   "id": "grand-raid-ventoux-2027",
+   "statut": "a_verifier",
+   "nom": "Grand Raid Ventoux by UTMB",
+   "commune": "Malaucène",
+   "departement": "84",
+   "region": "Provence-Alpes-Côte d'Azur",
+   "date_debut": "2027-04-22",
+   "date_fin": "2027-04-25",
+   "date_confirmee": false,
+   "description": "L'étape provençale des UTMB World Series, au départ de Malaucène, au pied du versant nord du mont Ventoux. Quatre courses qui rapportent des Running Stones pour l'UTMB, du Trail des Coteaux de 26 km à l'Ultra Géant de Provence de 125 km et 5 700 m D+.",
+   "site_officiel": "https://ventoux.utmb.world/fr",
+   "courses": [
+    {
+     "id": "125k",
+     "nom": "Ultra Géant de Provence",
+     "distance_km": 125,
+     "dplus_m": 5700,
+     "depart": "Malaucène",
+     "arrivee": "Malaucène"
+    },
+    {
+     "id": "87k",
+     "nom": "Grande Épopée Ventoux",
+     "distance_km": 87,
+     "dplus_m": 4200,
+     "arrivee": "Malaucène"
+    },
+    {
+     "id": "51k",
+     "nom": "Mistral Marathon Trail",
+     "distance_km": 51,
+     "dplus_m": 2500,
+     "arrivee": "Malaucène"
+    },
+    {
+     "id": "26k",
+     "nom": "Trail des Coteaux",
+     "distance_km": 26,
+     "dplus_m": 1100,
+     "arrivee": "Malaucène"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Gotrail, fiche Grand Raid Ventoux by UTMB",
+     "url": "https://gotrail.run/fr/evenement/grand-raid-du-ventoux"
+    },
+    {
+     "titre": "Finishers, fiche Grand Raid Ventoux 2027",
+     "url": "https://www.finishers.com/course/grand-raid-ventoux"
+    },
+    {
+     "titre": "Campus, fiche Grand Raid Ventoux 2027",
+     "url": "https://www.campus.coach/en/races/grand-raid-ventoux-by-utmb-6a6ea63b53cae9268bf7cce0"
+    }
+   ]
+  },
+  {
+   "id": "trail-drome-2027",
+   "statut": "a_verifier",
+   "nom": "Trail Drôme",
+   "commune": "Buis-les-Baronnies",
+   "departement": "26",
+   "region": "Auvergne-Rhône-Alpes",
+   "date_debut": "2027-04",
+   "date_confirmee": false,
+   "description": "Un trail des Baronnies provençales au départ de Buis-les-Baronnies, dans la vallée de l'Ouvèze. Trois distances, de 10 à 42 km, avec un marathon à 2 400 m D+.",
+   "site_officiel": "https://www.traildrome.com/",
+   "courses": [
+    {
+     "id": "42k",
+     "nom": "Trail 42 km",
+     "distance_km": 42,
+     "dplus_m": 2400,
+     "heure_depart": "07:30",
+     "depart": "Buis-les-Baronnies",
+     "arrivee": "Buis-les-Baronnies"
+    },
+    {
+     "id": "21k",
+     "nom": "Trail 21 km",
+     "distance_km": 20.8,
+     "dplus_m": 1150,
+     "heure_depart": "09:15",
+     "depart": "Buis-les-Baronnies",
+     "arrivee": "Buis-les-Baronnies"
+    },
+    {
+     "id": "10k",
+     "nom": "Trail 10 km",
+     "distance_km": 10,
+     "dplus_m": 400,
+     "heure_depart": "09:55",
+     "depart": "Buis-les-Baronnies",
+     "arrivee": "Buis-les-Baronnies"
+    }
+   ],
+   "sources": [
+    {
+     "titre": "Miles Republic, fiche Trail Drôme",
+     "url": "https://fr.milesrepublic.com/event/trail-drome-4818"
+    }
+   ]
+  }
+ ]
+}
