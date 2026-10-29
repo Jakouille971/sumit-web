@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#133621">
+  <meta name="description" content="Les grands trails de France des six prochains mois : dates, distances, dénivelé, horaires et traces GPX prêtes à simuler.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Catalogue des courses de trail">
+  <meta property="og:description" content="Les grands trails de France des six prochains mois : dates, distances, dénivelé, horaires et traces GPX prêtes à simuler.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/catalogue.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Catalogue des courses de trail">
+  <meta name="twitter:description" content="Les grands trails de France des six prochains mois : dates, distances, dénivelé, horaires et traces GPX prêtes à simuler.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Catalogue des courses de trail</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/catalogue.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261030">
+  <style>
+    .cat-visuel { display: block; width: 100%; height: 100%; }
+    .cat-note { max-width: 72ch; margin-top: 32px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+    .cat-note a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--control); }
+    .cat-chargement { padding: 48px 0; font-size: 15px; color: var(--muted); }
+    .cat-erreur { padding: 20px; border-radius: var(--radius-card); background: var(--negative-bg); color: var(--negative-ink); font-size: 15px; }
+    .cat-erreur button { margin-top: 10px; }
+    .cat-trace-ok, .cat-trace-attente { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; }
+    .cat-trace-ok { color: var(--positive); }
+    .cat-trace-ok::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .cat-trace-attente { color: var(--muted); font-weight: 500; }
+    .cat-trace-attente::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; box-sizing: border-box; }
+
+    .cat-outils { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) auto; align-items: center; gap: 12px 16px; }
+    .cat-recherche { position: relative; }
+    .cat-recherche svg { position: absolute; left: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
+    .cat-recherche input { min-height: 44px; padding-left: 36px; }
+    .cat-segments { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cat-segments button, .cat-mois a {
+      min-height: 36px; padding: 0 12px; border-radius: var(--radius-control); background: var(--paper); border: 1px solid var(--border);
+      font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap;
+      transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease, color var(--t-hover) ease, transform var(--t-press) var(--ease-out);
+    }
+    .cat-segments button:active, .cat-mois a:active { transform: scale(0.97); }
+    .cat-segments button[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--gold); }
+    @media (hover: hover) and (pointer: fine) {
+      .cat-segments button:hover:not([aria-pressed="true"]), .cat-mois a:hover { border-color: var(--ink); }
+    }
+    .cat-case { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; cursor: pointer; }
+    .cat-case input { width: 18px; height: 18px; }
+    .cat-barre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .cat-resume { font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .cat-resume b { font-weight: 700; }
+    .cat-mois { display: flex; flex-wrap: wrap; gap: 6px; }
+    .cat-mois a { display: inline-flex; align-items: center; }
+
+    /* Une seule grille : chaque mois ouvre sur une case-titre, comme un calendrier */
+    .cat-grille { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 20px; margin-top: 28px; }
+    .cat-mois-tete { display: flex; flex-direction: column; gap: 6px; padding: 14px 4px 0; border-top: 3px solid var(--ink); scroll-margin-top: calc(var(--nav-h) + 16px); }
+    .cat-mois-tete h2 { font-size: 40px; font-weight: 700; line-height: 1; letter-spacing: -0.04em; color: var(--ink); }
+    .cat-mois-tete h2 span { display: block; margin-top: 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; color: var(--muted); }
+    .cat-mois-tete p { margin-top: 10px; font-size: 15px; line-height: 1.5; color: var(--ink); }
+    .cat-mois-tete p b { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .cat-carte { display: flex; flex-direction: column; min-width: 0; border-radius: var(--radius-card); background: var(--paper); border: 1px solid var(--border); overflow: hidden; color: var(--ink);
+      transition: border-color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+    .cat-carte:active { transform: scale(0.985); }
+    @media (hover: hover) and (pointer: fine) { .cat-carte:hover { border-color: var(--ink); } .cat-carte:hover h3 { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; } }
+    .cat-media { position: relative; aspect-ratio: 3 / 2; background: var(--green); overflow: hidden; }
+    .cat-media img.cat-photo { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .cat-date { position: absolute; left: 12px; top: 12px; display: grid; justify-items: center; min-width: 64px; padding: 7px 10px 6px; border-radius: 6px; background: var(--paper); color: var(--ink); line-height: 1; }
+    .cat-date b { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .cat-date small { margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .cat-logo { position: absolute; right: 12px; bottom: 12px; display: grid; place-items: center; height: 52px; max-width: 45%; padding: 6px 8px; border-radius: 6px; background: var(--paper); }
+    .cat-logo img { display: block; max-height: 40px; max-width: 100%; width: auto; object-fit: contain; }
+    .cat-corps { display: flex; flex-direction: column; gap: 4px; flex: 1; padding: 14px 16px 16px; }
+    .cat-corps h3 { font-size: 19px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+    .cat-lieu { font-size: 14px; color: var(--muted); }
+    .cat-dist { margin-top: 8px; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .cat-pied { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; margin-top: auto; padding-top: 12px; }
+    .cat-vide { margin-top: 36px; padding: 28px; border-radius: var(--radius-card); background: var(--paper); font-size: 15px; }
+    .cat-vide button { margin-top: 12px; }
+
+    @media (max-width: 1100px) { .cat-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cat-outils { grid-template-columns: minmax(0, 1fr) auto; } .cat-segments { grid-column: 1 / -1; grid-row: 2; } }
+    @media (max-width: 640px) {
+      .cat-outils { grid-template-columns: 1fr; }
+      .cat-segments { grid-row: auto; flex-wrap: nowrap; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 2px var(--pad); scrollbar-width: none; }
+      .cat-segments::-webkit-scrollbar { display: none; }
+      .cat-grille { grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
+      .cat-mois-tete { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 16px; padding-top: 12px; border-top-width: 2px; }
+      .cat-mois-tete:first-child { margin-top: 0; }
+      .cat-mois-tete h2 { font-size: 26px; }
+      .cat-mois-tete h2 span { display: inline; margin: 0 0 0 4px; font-size: 26px; }
+      .cat-mois-tete p { margin: 0; font-size: 14px; color: var(--muted); }
+      .cat-mois { display: none; }
+      /* Téléphone : cases en ligne, vignette à gauche */
+      .cat-carte { flex-direction: row; }
+      .cat-media { flex: 0 0 112px; aspect-ratio: auto; min-height: 152px; }
+      .cat-date { left: 8px; top: 8px; min-width: 50px; padding: 5px 6px 4px; }
+      .cat-date b { font-size: 17px; }
+      .cat-date small { font-size: 12px; }
+      .cat-logo { left: 6px; right: 6px; bottom: 6px; height: 36px; max-width: none; padding: 4px 6px; }
+      .cat-logo img { max-height: 28px; }
+      .cat-corps { padding: 12px 14px 12px; gap: 2px; }
+      .cat-corps h3 { font-size: 17px; }
+      .cat-lieu { font-size: 13px; }
+      .cat-dist { margin-top: 6px; font-size: 15px; }
+      .cat-pied { padding-top: 8px; }
+    }
+  </style>
+</head>
+<body data-page="catalogue">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="catalogue.html" class="nav-link active" aria-current="page">Courses</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head">
+    <div>
+      <h1>Catalogue des courses</h1>
+      <p>Les grands trails de France des six prochains mois, avec leurs traces GPX. Choisis une course : elle s'ouvre dans le simulateur, ravitos compris.</p>
+    </div>
+    <img class="app-head-photo" src="../assets/Photos/brouillard-sommet-960.webp" srcset="../assets/Photos/brouillard-sommet-600.webp 600w, ../assets/Photos/brouillard-sommet-960.webp 960w, ../assets/Photos/brouillard-sommet-1440.webp 1440w" sizes="38vw" width="960" height="1280" alt="Une crête rocheuse émerge du brouillard." style="object-position: 50% 40%">
+  </header>
+
+  <main class="app-main">
+    <form class="cat-outils" role="search" id="catForm" novalidate>
+      <div class="cat-recherche">
+        <label for="catQ" class="sr-only">Chercher une course</label>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="catQ" placeholder="Nom, ville, département" autocomplete="off" enterkeyhint="search">
+      </div>
+      <div class="cat-segments" role="group" aria-label="Distance" id="catDist">
+        <button type="button" data-dist="" aria-pressed="true">Toutes distances</button>
+        <button type="button" data-dist="0-30" aria-pressed="false">Moins de 30 km</button>
+        <button type="button" data-dist="30-60" aria-pressed="false">30 à 60 km</button>
+        <button type="button" data-dist="60-100" aria-pressed="false">60 à 100 km</button>
+        <button type="button" data-dist="100-9999" aria-pressed="false">100 km et plus</button>
+      </div>
+      <label class="cat-case"><input type="checkbox" id="catGpx"> Trace prête</label>
+    </form>
+
+    <div class="cat-barre">
+      <p class="cat-resume" id="catResume" aria-live="polite"></p>
+      <nav class="cat-mois" id="catMois" aria-label="Aller au mois"></nav>
+    </div>
+
+    <div id="catListe"><p class="cat-chargement">Chargement des courses…</p></div>
+
+    <p class="cat-note" id="catNote">Les infos viennent des sites des organisateurs et sont revues chaque mois : en cas de doute, le site officiel fait foi. Une course manque, ou une info a changé ? <a href="../index.html#questionnaire">Écris-nous</a>.</p>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261030"></script>
+  <script src="../js/api-client.js?v=20261030"></script>
+  <script src="../js/nav-user.js?v=20261030"></script>
+  <script src="../js/onboarding.js?v=20261030"></script>
+  <script src="../js/catalogue.js?v=20261030"></script>
+  <script>
+  (function () {
+    const C = window.sumitCatalogue, esc = C.esc;
+    const liste = document.getElementById('catListe'), resume = document.getElementById('catResume'), mois = document.getElementById('catMois');
+    const champ = document.getElementById('catQ'), caseGpx = document.getElementById('catGpx'), dist = document.getElementById('catDist');
+    let tous = [], filtreDist = '';
+    const norm = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    // Filtres gardés dans l'adresse (?q=&d=&gpx=1) : partageables et conservés au retour
+    function lireAdresse() {
+      const p = new URLSearchParams(location.search);
+      champ.value = p.get('q') || '';
+      filtreDist = p.get('d') || '';
+      caseGpx.checked = p.get('gpx') === '1';
+    }
+    function ecrireAdresse() {
+      const p = new URLSearchParams();
+      if (champ.value.trim()) p.set('q', champ.value.trim());
+      if (filtreDist) p.set('d', filtreDist);
+      if (caseGpx.checked) p.set('gpx', '1');
+      const q = p.toString();
+      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    }
+
+    function carte(ev) {
+      const n = C.nbTraces(ev), total = ev.courses.length;
+      const photo = C.photoSrcset(ev);
+      const media = photo
+        ? `<img class="cat-photo" src="${photo.src}" srcset="${photo.srcset}" sizes="(max-width: 640px) 100vw, (max-width: 1100px) 50vw, 400px" alt="" loading="lazy" decoding="async">`
+        : C.visuel(ev);
+      let haut, bas;
+      if (C.moisPrecis(ev)) { haut = C.dates(ev, true).split(' ')[0]; bas = 'date à venir'; }
+      else {
+        const d = ev.date_debut.split('-').map(Number), f = (ev.date_fin || ev.date_debut).split('-').map(Number);
+        const mc = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+        haut = d[1] === f[1] && d[2] !== f[2] ? `${d[2]}–${f[2]}` : String(d[2]);
+        bas = d[1] === f[1] ? mc[d[1] - 1] : `${mc[d[1] - 1]} – ${f[2]} ${mc[f[1] - 1]}`;
+      }
+      const traces = n === total ? `<span class="cat-trace-ok">${n > 1 ? `${n} traces prêtes` : 'Trace prête'}</span>`
+        : n ? `<span class="cat-trace-ok">${n} trace${n > 1 ? 's' : ''} prête${n > 1 ? 's' : ''} sur ${total}</span>`
+        : '<span class="cat-trace-attente">Traces à venir</span>';
+      const ins = ev.inscriptions === 'complet' ? '<span class="tag tag-gold">Complet</span>'
+        : ev.inscriptions === 'ouvertes' ? '<span class="tag tag-green">Inscriptions ouvertes</span>' : '';
+      const date = `${C.dates(ev)}${ev.date_confirmee === false ? ', à confirmer' : ''}`;
+      return `<a class="cat-carte" href="evenement.html?id=${encodeURIComponent(ev.id)}" aria-label="${esc(ev.nom)}, ${esc(date)}, ${esc(ev.commune)}">
+        <div class="cat-media">${media}
+          <span class="cat-date" aria-hidden="true"><b>${esc(haut)}</b><small>${esc(bas)}</small></span>
+          ${ev.logo ? `<span class="cat-logo"><img src="${C.url(ev.logo)}" alt="" loading="lazy"></span>` : ''}
+        </div>
+        <div class="cat-corps">
+          <h3>${esc(ev.nom)}</h3>
+          <p class="cat-lieu">${esc(ev.commune)}${ev.departement ? ` (${esc(ev.departement)})` : ''}${ev.date_confirmee === false ? ' · date à confirmer' : ''}</p>
+          <p class="cat-dist">${esc(C.distancesTexte(ev))}</p>
+          <p class="cat-pied">${traces}${ins}</p>
+        </div>
+      </a>`;
+    }
+
+    function afficher() {
+      const q = norm(champ.value.trim());
+      const [dmin, dmax] = filtreDist ? filtreDist.split('-').map(Number) : [0, Infinity];
+      const res = tous.filter(ev => {
+        if (q && !norm([ev.nom, ev.commune, ev.departement, ev.region, ...ev.courses.map(c => c.nom)].join(' ')).includes(q)) return false;
+        if (filtreDist && !ev.courses.some(c => c.distance_km >= dmin && c.distance_km < dmax)) return false;
+        if (caseGpx.checked && !C.nbTraces(ev)) return false;
+        return true;
+      });
+      // Compte des courses : seulement celles de la tranche de distance choisie
+      const dansTranche = c => !filtreDist || (c.distance_km >= dmin && c.distance_km < dmax);
+      const nbC = res.reduce((s, ev) => s + ev.courses.filter(dansTranche).length, 0);
+      const nbT = res.reduce((s, ev) => s + ev.courses.filter(c => dansTranche(c) && c.gpx).length, 0);
+      resume.innerHTML = res.length
+        ? `<b>${res.length}</b> événement${res.length > 1 ? 's' : ''} · <b>${nbC}</b> course${nbC > 1 ? 's' : ''} · `
+          + (nbT ? `<b>${nbT}</b> trace${nbT > 1 ? 's' : ''} prête${nbT > 1 ? 's' : ''} à simuler` : 'traces en préparation')
+        : '';
+      if (!res.length) {
+        mois.innerHTML = '';
+        liste.innerHTML = `<div class="cat-vide"><p>${tous.length ? 'Aucune course ne correspond à ces filtres.' : 'Aucune course à venir pour l\'instant : le catalogue est mis à jour chaque mois.'}</p>${tous.length ? '<button type="button" class="btn-secondary" id="catEffacer">Effacer les filtres</button>' : ''}</div>`;
+        const b = document.getElementById('catEffacer');
+        if (b) b.addEventListener('click', () => { champ.value = ''; caseGpx.checked = false; choisirDist(''); });
+        return;
+      }
+      const groupes = new Map();
+      res.forEach(ev => { const k = C.cleMois(ev); if (!groupes.has(k)) groupes.set(k, []); groupes.get(k).push(ev); });
+      mois.innerHTML = [...groupes.keys()].map(k => `<a href="#m-${k}">${esc(C.libelleMois(k).replace(/ \d+$/, ''))}</a>`).join('');
+      liste.innerHTML = '<div class="cat-grille">' + [...groupes.entries()].map(([k, evs]) => {
+        const [m, a] = C.libelleMois(k).split(' ');
+        const t = evs.reduce((s, ev) => s + C.nbTraces(ev), 0);
+        return `<div class="cat-mois-tete" id="m-${k}"><h2>${esc(m)} <span>${esc(a)}</span></h2>
+          <p><b>${evs.length}</b> événement${evs.length > 1 ? 's' : ''}${t ? ` · <b>${t}</b> trace${t > 1 ? 's' : ''} prête${t > 1 ? 's' : ''}` : ''}</p></div>`
+          + evs.map(carte).join('');
+      }).join('') + '</div>';
+    }
+
+    function choisirDist(v) {
+      filtreDist = v;
+      dist.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dist === v)));
+      ecrireAdresse(); afficher();
+    }
+
+    async function init() {
+      lireAdresse();
+      dist.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dist === filtreDist)));
+      try {
+        const cat = await C.charger();
+        tous = C.aVenir(cat);
+        afficher();
+        if (location.hash) { const cible = document.querySelector(location.hash); if (cible) cible.scrollIntoView(); }
+      } catch (e) {
+        liste.innerHTML = `<div class="cat-erreur"><p>${esc(e.message)} Vérifie ta connexion.</p><button type="button" class="btn-secondary" id="catReessayer">Réessayer</button></div>`;
+        document.getElementById('catReessayer').addEventListener('click', init);
+      }
+    }
+
+    let minuteur;
+    champ.addEventListener('input', () => { clearTimeout(minuteur); minuteur = setTimeout(() => { ecrireAdresse(); afficher(); }, 120); });
+    document.getElementById('catForm').addEventListener('submit', e => { e.preventDefault(); champ.blur(); });
+    caseGpx.addEventListener('change', () => { ecrireAdresse(); afficher(); });
+    dist.addEventListener('click', e => { const b = e.target.closest('button[data-dist]'); if (b) choisirDist(b.dataset.dist); });
+    init();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#133621">
+  <meta name="description" content="Une course du catalogue SUM'IT : parcours, distances, dénivelé, horaires et trace GPX prête à simuler.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="SUM'IT — Course du catalogue">
+  <meta property="og:description" content="Une course du catalogue SUM'IT : parcours, distances, dénivelé, horaires et trace GPX prête à simuler.">
+  <meta property="og:url" content="https://sumit-web-nine.vercel.app/pages/evenement.html">
+  <meta property="og:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <meta property="og:site_name" content="SUM'IT">
+  <meta property="og:locale" content="fr_FR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SUM'IT — Course du catalogue">
+  <meta name="twitter:description" content="Une course du catalogue SUM'IT : parcours, distances, dénivelé, horaires et trace GPX prête à simuler.">
+  <meta name="twitter:image" content="https://sumit-web-nine.vercel.app/og-image.png">
+  <title>SUM'IT — Course du catalogue</title>
+  <link rel="canonical" href="https://sumit-web-nine.vercel.app/pages/evenement.html">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preload" href="../fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/style.css?v=20261030">
+  <style>
+    .cat-visuel { display: block; width: 100%; height: 100%; }
+    .cat-note { max-width: 72ch; margin-top: 32px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+    .cat-note a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--control); }
+    .cat-chargement { padding: 48px 0; font-size: 15px; color: var(--muted); }
+    .cat-erreur { padding: 20px; border-radius: var(--radius-card); background: var(--negative-bg); color: var(--negative-ink); font-size: 15px; }
+    .cat-erreur button { margin-top: 10px; }
+    .cat-trace-ok, .cat-trace-attente { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; }
+    .cat-trace-ok { color: var(--positive); }
+    .cat-trace-ok::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .cat-trace-attente { color: var(--muted); font-weight: 500; }
+    .cat-trace-attente::before { content: ''; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; box-sizing: border-box; }
+
+    .ev-head { min-height: 232px; }
+    .ev-retour { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin-bottom: 10px; font-size: 14px; font-weight: 600; color: var(--ground); }
+    .ev-retour svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    @media (hover: hover) and (pointer: fine) { .ev-retour:hover { color: var(--gold); text-decoration: underline; text-underline-offset: 4px; } }
+    .ev-titre { display: flex; align-items: center; gap: 16px; }
+    .ev-logo { display: grid; place-items: center; flex-shrink: 0; height: 64px; max-width: 132px; padding: 8px 10px; border-radius: 8px; background: var(--paper); }
+    .ev-logo img { display: block; max-height: 48px; max-width: 100%; width: auto; object-fit: contain; }
+    .ev-head .app-head-actions .btn-primary { background: var(--gold); color: var(--green); }
+    @media (hover: hover) and (pointer: fine) { .ev-head .app-head-actions .btn-primary:hover { background: #FBE58C; } }
+    .ev-head .app-head-actions svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .app-head > .app-head-photo { position: absolute; max-width: none; z-index: 0; overflow: hidden; }
+    .ev-head .app-head-actions { margin-top: 18px; }
+
+    .ev-grille { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 32px; align-items: start; }
+    .ev-apropos { position: sticky; top: calc(var(--nav-h) + 20px); }
+    .ev-texte { font-size: 16px; line-height: 1.6; color: var(--ink); }
+    .ev-infos { margin-top: 20px; border-top: 1px solid var(--border); }
+    .ev-infos div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 15px; }
+    .ev-infos dt { color: var(--muted); }
+    .ev-infos dd { color: var(--ink); font-weight: 600; }
+    .ev-infos dd a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--control); word-break: break-word; }
+
+    .ev-courses h2 { display: flex; align-items: baseline; gap: 12px; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+    .ev-courses h2 span { font-size: 15px; font-weight: 500; letter-spacing: 0; color: var(--muted); }
+    .ev-liste { display: grid; gap: 12px; margin-top: 14px; list-style: none; }
+    .ev-course { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px; padding: 18px 20px; border-radius: var(--radius-card); background: var(--paper); border: 1px solid var(--border); scroll-margin-top: calc(var(--nav-h) + 16px); }
+    .ev-course.sans-trace { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .ev-course h3 { font-size: 19px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; }
+    .ev-chiffres { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+    .ev-chiffres span { font-size: 15px; color: var(--muted); }
+    .ev-chiffres b { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
+    .ev-chiffres i { font-style: normal; font-size: 13px; }
+    .ev-quand, .ev-ou { margin-top: 6px; font-size: 15px; color: var(--ink); }
+    .ev-ou { color: var(--muted); }
+    .ev-action { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 14px; }
+    .ev-action .btn-primary { min-height: 44px; padding: 0 18px; font-size: 15px; }
+    .ev-action .btn-primary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .ev-ravitos { font-size: 14px; color: var(--muted); }
+    .ev-attente { font-size: 14px; color: var(--muted); }
+    .ev-pf { min-width: 0; align-self: center; }
+    .cat-profil { display: block; width: 100%; height: auto; overflow: visible; }
+    .cat-profil text { font-size: 12px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+    .cat-pf-base { stroke: var(--border); stroke-width: 1; }
+    .cat-pf-aire { fill: var(--data-soft); }
+    .cat-pf-ligne { fill: none; stroke: var(--data); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .cat-pf-ravito { stroke: var(--ink); stroke-width: 2; }
+    .ev-pf-legende { margin-top: 4px; font-size: 13px; color: var(--muted); }
+    .ev-absent { max-width: 60ch; padding: 28px; border-radius: var(--radius-card); background: var(--paper); font-size: 16px; }
+    .ev-absent a { margin-top: 14px; }
+
+    @media (max-width: 1100px) {
+      .ev-grille { grid-template-columns: 1fr; gap: 28px; }
+      .ev-apropos { position: static; max-width: 72ch; }
+    }
+    @media (max-width: 760px) {
+      .ev-course, .ev-course.sans-trace { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+      .ev-titre { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .ev-logo { height: 52px; }
+      .ev-logo img { max-height: 36px; }
+      .ev-courses h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body data-page="evenement">
+
+  <nav class="nav" aria-label="Navigation principale">
+    <a href="../index.html" class="nav-logo" aria-label="SUM'IT, accueil">
+      <span class="nav-logo-icon" aria-hidden="true"><svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gNavIcon" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><rect width="44" height="44" rx="10" fill="url(#gNavIcon)"/><path d="M16 17.5 21 35H11Z" fill="#0F1419"/><path d="M27.5 11.5 38.5 35h-22Z" fill="#FFFFFF"/></svg></span>
+      <span class="nav-logo-name" aria-hidden="true"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gNavTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gNavTri)"/></svg><span>IT</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html" class="nav-link">Accueil</a>
+      <a href="profil.html" class="nav-link">Mon profil</a>
+      <a href="simulateur.html" class="nav-link">Simulateur</a>
+      <a href="catalogue.html" class="nav-link active" aria-current="page">Courses</a>
+      <a href="bilan.html" class="nav-link">Bilan</a>
+      <a href="compte.html" class="nav-link">Mon compte</a>
+      <a href="avenir.html" class="nav-link">À venir</a>
+    </div>
+  </nav>
+
+  <header class="app-head ev-head" id="evHead">
+    <div>
+      <a class="ev-retour" href="catalogue.html"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8H4M7.5 4 3.5 8l4 4"/></svg>Toutes les courses</a>
+      <div class="ev-titre" id="evTitre"><h1 id="evNom">Course</h1></div>
+      <p id="evSous"></p>
+      <div class="app-head-actions" id="evActions"></div>
+    </div>
+  </header>
+
+  <main class="app-main" id="evMain">
+    <p class="cat-chargement">Chargement de la course…</p>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand">
+      <span class="footer-logo" aria-label="SUM'IT"><span>SUM</span><svg class="logo-tri" viewBox="0 0 14 17" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="gFootTri" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0" stop-color="#FFC53D"/><stop offset="0.55" stop-color="#2FCB7F"/><stop offset="1" stop-color="#2E7DF6"/></linearGradient></defs><path d="M7 0 14 17H0Z" fill="url(#gFootTri)"/></svg><span>IT</span></span>
+      <span class="footer-sub">Plan your peaks. Trail et randonnée.</span>
+    </div>
+    <div class="footer-links">
+      <a href="avenir.html">À venir</a>
+      <a href="../index.html#questionnaire">Donner mon avis</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <span class="footer-copy">© 2026 SUM'IT · Photos : Jess Meniere</span>
+    </div>
+  </footer>
+
+  <script src="../js/main.js?v=20261030"></script>
+  <script src="../js/api-client.js?v=20261030"></script>
+  <script src="../js/nav-user.js?v=20261030"></script>
+  <script src="../js/onboarding.js?v=20261030"></script>
+  <script src="../js/catalogue.js?v=20261030"></script>
+  <script>
+  (function () {
+    const C = window.sumitCatalogue, esc = C.esc;
+    const id = new URLSearchParams(location.search).get('id') || '';
+    const main = document.getElementById('evMain'), headEl = document.getElementById('evHead');
+    const FLECHE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4 12.5 8l-4 4"/></svg>';
+    const EXTERNE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H3v10h10v-3M9 3h4v4M13 3 7 9"/></svg>';
+
+    function absent(msg) {
+      document.getElementById('evNom').textContent = 'Course introuvable';
+      main.innerHTML = `<div class="ev-absent"><p>${msg}</p><a class="btn-primary" href="catalogue.html">Voir les courses à venir</a></div>`;
+    }
+
+    function quand(ev, c) {
+      const j = c.jour || (!C.moisPrecis(ev) && (!ev.date_fin || ev.date_fin === ev.date_debut) ? ev.date_debut : null);
+      const jour = j ? C.jour(j) : (C.moisPrecis(ev) ? 'Date à venir' : 'Jour à venir');
+      const h = c.heure_depart ? `départ ${C.heure(c.heure_depart)}` : 'horaire à venir';
+      return `${jour.charAt(0).toUpperCase()}${jour.slice(1)} · ${h}`;
+    }
+
+    function course(ev, c) {
+      const d = C.dplus(c);
+      const gros = t => t.replace(/\u202f/g, '\u00a0');   // espace bien visible dans les grands chiffres
+      const chiffres = `<p class="ev-chiffres"><span><b>${gros(C.km(c.distance_km))}</b> km</span>${d
+        ? `<span><b>${gros(C.entier(d.valeur))}</b> m D+${d.trace ? ' <i>(trace)</i>' : ''}</span>` : '<span>D+ à venir</span>'}</p>`;
+      const ou = !(c.depart || c.arrivee) ? ''
+        : c.depart && c.arrivee && c.arrivee !== c.depart ? `<p class="ev-ou">${esc(c.depart)} → ${esc(c.arrivee)}</p>`
+        : c.depart && c.arrivee ? `<p class="ev-ou">Départ et arrivée : ${esc(c.depart)}</p>`
+        : c.depart ? `<p class="ev-ou">Départ : ${esc(c.depart)}</p>` : `<p class="ev-ou">Arrivée : ${esc(c.arrivee)}</p>`;
+      let action;
+      if (c.gpx) {
+        const nr = (c.ravitos || []).length;
+        action = `<div class="ev-action"><a class="btn-primary" href="simulateur.html?catalogue=${encodeURIComponent(ev.id)}&amp;epreuve=${encodeURIComponent(c.id)}">Simuler cette course ${FLECHE}</a>
+          <span class="ev-ravitos">${nr ? `${nr} ravito${nr > 1 ? 's' : ''} dans la trace` : 'Ravitos à saisir dans le simulateur'}</span></div>`;
+      } else {
+        const dispo = ev.gpx_disponible_le ? `, publication annoncée le ${C.jour(ev.gpx_disponible_le)}` : '';
+        action = `<div class="ev-action"><span class="cat-trace-attente">Trace à venir${esc(dispo)}</span></div>`;
+      }
+      const pf = c.gpx ? `<div class="ev-pf">${C.profilSVG(c)}<p class="ev-pf-legende">Altitude (m) selon la distance (km)${(c.ravitos || []).length ? ' · repères : ravitos' : ''}</p></div>` : '';
+      return `<li class="ev-course${c.gpx ? '' : ' sans-trace'}" id="c-${esc(c.id)}">
+        <div><h3>${esc(c.nom)}</h3>${chiffres}<p class="ev-quand">${esc(quand(ev, c))}</p>${ou}${c.gpx ? action : ''}</div>
+        ${c.gpx ? pf : action}
+      </li>`;
+    }
+
+    function metas(ev) {
+      const titre = `${ev.nom} ${ev.date_debut.slice(0, 4)} : parcours, GPX et simulation | SUM'IT`;
+      const desc = `${ev.nom}, ${C.dates(ev)} à ${ev.commune} : ${ev.courses.length} course${ev.courses.length > 1 ? 's' : ''} (${C.distancesTexte(ev)}). Distances, dénivelé, horaires et trace prête à simuler.`;
+      const adresse = `${location.origin}${location.pathname}?id=${encodeURIComponent(ev.id)}`;
+      document.title = titre;
+      const set = (sel, attr, v) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, v); };
+      set('meta[name="description"]', 'content', desc);
+      set('meta[property="og:title"]', 'content', titre);
+      set('meta[property="og:description"]', 'content', desc);
+      set('meta[property="og:url"]', 'content', adresse);
+      set('link[rel="canonical"]', 'href', 'https://sumit-web-nine.vercel.app/pages/evenement.html?id=' + encodeURIComponent(ev.id));
+      const photo = C.photoSrcset(ev);
+      const ld = {
+        '@context': 'https://schema.org', '@type': 'SportsEvent', name: ev.nom, sport: 'Trail running',
+        startDate: ev.date_debut, endDate: ev.date_fin || ev.date_debut, eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode', description: ev.description,
+        location: { '@type': 'Place', name: ev.commune, address: { '@type': 'PostalAddress', addressLocality: ev.commune, addressRegion: ev.region, addressCountry: 'FR' } },
+      };
+      if (ev.site_officiel) ld.url = ev.site_officiel;
+      if (photo) ld.image = new URL(photo.src, location.href).href;
+      const s = document.createElement('script'); s.type = 'application/ld+json'; s.textContent = JSON.stringify(ld);
+      document.head.appendChild(s);
+    }
+
+    function afficher(ev) {
+      metas(ev);
+      document.getElementById('evNom').textContent = ev.nom;
+      if (ev.logo) {
+        document.getElementById('evTitre').insertAdjacentHTML('afterbegin', `<span class="ev-logo"><img src="${C.url(ev.logo)}" alt="Logo ${esc(ev.nom)}"></span>`);
+      }
+      const date = `${C.dates(ev)}${ev.date_confirmee === false ? ' (à confirmer)' : ''}`;
+      document.getElementById('evSous').textContent = `${date} · ${ev.commune}${ev.departement ? ` (${ev.departement})` : ''}`;
+      if (ev.site_officiel || ev.inscription_url) {
+        document.getElementById('evActions').innerHTML = `<a class="btn-primary" href="${esc(ev.site_officiel || ev.inscription_url)}" target="_blank" rel="noopener">${ev.site_officiel ? 'Site officiel' : 'Inscriptions'} ${EXTERNE}</a>`;
+      }
+      const photo = C.photoSrcset(ev);
+      headEl.insertAdjacentHTML('beforeend', photo
+        ? `<img class="app-head-photo" src="${photo.src}" srcset="${photo.srcset}" sizes="38vw" alt="${esc(ev.photo_credit ? `${ev.nom} (photo : ${ev.photo_credit})` : ev.nom)}">`
+        : `<div class="app-head-photo" aria-hidden="true">${C.visuel(ev, { surVert: true })}</div>`);
+
+      const n = ev.courses.length, nt = C.nbTraces(ev);
+      const ja = C.joursAvant(ev);
+      const infos = [
+        ['Dates', `${esc(date)}${ja != null && ja > 0 ? `<br><span style="font-weight:400;color:var(--muted)">dans ${ja} jour${ja > 1 ? 's' : ''}</span>` : ''}`],
+        ['Lieu', `${esc(ev.commune)}${ev.departement ? ` (${esc(ev.departement)})` : ''}${ev.region ? `, ${esc(ev.region)}` : ''}`],
+        ev.inscriptions ? ['Inscriptions', esc(C.INSCRIPTIONS[ev.inscriptions] || ev.inscriptions)] : null,
+        ['Traces', nt ? `${nt} sur ${n} prête${nt > 1 ? 's' : ''} à simuler` : 'À venir'],
+        ev.site_officiel ? ['Site', `<a href="${esc(ev.site_officiel)}" target="_blank" rel="noopener">${esc(ev.site_officiel.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</a>`] : null,
+        ev.inscription_url && ev.inscription_url !== ev.site_officiel ? ['Inscription', `<a href="${esc(ev.inscription_url)}" target="_blank" rel="noopener">page d'inscription</a>`] : null,
+      ].filter(Boolean).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+
+      main.innerHTML = `
+        <div class="ev-grille">
+          <section class="ev-apropos" aria-label="À propos">
+            <p class="ev-texte">${esc(C.typo(ev.description))}</p>
+            <dl class="ev-infos">${infos}</dl>
+          </section>
+          <section class="ev-courses" aria-labelledby="tCourses">
+            <h2 id="tCourses">Les courses <span>${n} course${n > 1 ? 's' : ''}</span></h2>
+            <ol class="ev-liste">${ev.courses.map(c => course(ev, c)).join('')}</ol>
+          </section>
+        </div>
+        <p class="cat-note">Infos reprises du site de l'organisation, revues chaque mois : en cas de doute, le site officiel fait foi.${nt ? ' Traces : organisation de la course.' : ''}${ev.photo_credit ? ` Photo : ${esc(ev.photo_credit)}.` : ''} Une erreur ? <a href="../index.html#questionnaire">Signale-la</a>.</p>`;
+      if (location.hash) { const cible = document.querySelector(location.hash); if (cible) cible.scrollIntoView(); }
+    }
+
+    async function init() {
+      if (!/^[a-z0-9-]{3,80}$/.test(id)) { absent('Cette adresse ne correspond à aucune course du catalogue.'); return; }
+      try {
+        const cat = await C.charger();
+        const { ev } = C.trouver(cat, id);
+        if (!ev) { absent('Cette course n\'est plus au catalogue : elle est peut-être passée, ou son adresse a changé.'); return; }
+        if (C.fin(ev) < C.aujourdhui()) { absent(`${esc(ev.nom)} a eu lieu le ${esc(C.dates(ev))}. Elle n'est plus au catalogue des courses à venir.`); return; }
+        afficher(ev);
+      } catch (e) {
+        main.innerHTML = `<div class="cat-erreur"><p>${esc(e.message)} Vérifie ta connexion.</p><button type="button" class="btn-secondary" id="evReessayer">Réessayer</button></div>`;
+        document.getElementById('evReessayer').addEventListener('click', init);
+      }
+    }
+    init();
+  })();
+  </script>
+</body>
+</html>
