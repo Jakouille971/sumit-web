@@ -45,10 +45,18 @@ Les nouvelles tables (`mesures`, `terrain_cache`) sont créées automatiquement 
 python outils/generer_demo.py
 ```
 
+### Catalogue des courses
+
+`pages/catalogue.html` et `pages/evenement.html` lisent `assets/catalogue/catalogue.json`. Mise à jour mensuelle, manuelle et vérifiée : voir `outils/catalogue/LISEZMOI.md`. Intégration d'un lot (contrôle des GPX, images, sitemap, rapport) :
+
+```bash
+python3 outils/integrer_catalogue.py --lot outils/catalogue/lots/AAAA-MM.json
+```
+
 ### Fichiers
 
 Pousser l'ensemble des fichiers, y compris `fonts/`, `assets/Photos/`, `assets/demo-ccc.json`, `js/pictos.js`, `favicon.svg`, `og-image.png`, `robots.txt` et `sitemap.xml`.
 
 Photos : Jess Meniere. Le crédit figure dans le pied de chaque page.
 
-Les fichiers CSS et JS sont versionnés par `?v=20261029` : changer ce numéro à chaque mise en production force le rechargement chez les visiteurs.
+Les fichiers CSS et JS sont versionnés par `?v=20261030` : changer ce numéro à chaque mise en production force le rechargement chez les visiteurs.

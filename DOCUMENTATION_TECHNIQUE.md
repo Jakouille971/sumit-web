@@ -364,6 +364,15 @@ Génération entièrement côté client via **jsPDF + html2canvas** :
 - **Statistiques** : `pages/stats.html` (non référencée), lit `GET /api/admin/stats` avec la clé `ADMIN_KEY`.
 - **Référencement** : `robots.txt`, `sitemap.xml`, adresse canonique sur chaque page, données structurées `WebApplication` et `FAQPage` sur l'accueil.
 
+### 6.6 Catalogue des courses (29 octobre 2026)
+
+- **Pages** : `pages/catalogue.html` (cases par événement, rangées par mois ; filtres par nom, ville ou département, distance, trace disponible, gardés dans l'adresse) et `pages/evenement.html?id=<événement>` (description, informations pratiques, une ligne par course avec distance, D+, jour, horaire, départ et arrivée, profil d'altitude et bouton « Simuler cette course »). Titre, description, adresse canonique et données structurées `SportsEvent` sont posés par le script de la page. Sources : `build_catalogue.py`.
+- **Données** : `assets/catalogue/catalogue.json`, plus `<événement>__<course>.gpx`, `<événement>__photo-<largeur>.webp` et `<événement>__logo.*` dans le même dossier. Les événements terminés sont masqués à l'affichage et retirés par le script 7 jours après.
+- **Script partagé** : `js/catalogue.js` (`window.sumitCatalogue`) : chargement, formats de date et de nombre, visuel de repli (profil réel de la plus longue course quand sa trace existe, sinon ligne de crêtes décorative propre à l'événement), profil d'altitude.
+- **Simulateur** : bouton « Choisir dans le catalogue » pour les coureurs connectés ; `simulateur.html?catalogue=<événement>&epreuve=<course>` télécharge la trace, la charge comme un fichier importé (ravitos lus dans les `<wpt>`), remplit le nom et l'heure de départ, et compte l'événement anonyme `catalogue_course`.
+- **Mise à jour** : `outils/integrer_catalogue.py` applique le lot du mois, contrôle chaque GPX (distance et D+ recalculés comme `charger_gpx`, écarts aux chiffres annoncés, altitudes, sauts GPS), lit les ravitos, convertit les images, met à jour `sitemap.xml` et écrit un rapport. Procédure complète, seuils et droits sur les images : `outils/catalogue/LISEZMOI.md`. Le lot est préparé chaque mois par une tâche programmée (consigne : `outils/catalogue/consigne-agent-mensuel.md`).
+- **Navigation** : lien « Courses » entre « Simulateur » et « Bilan » (`skeleton.py`, `js/nav-user.js`, accueil).
+
 ---
 
 ## 7. Endpoints API

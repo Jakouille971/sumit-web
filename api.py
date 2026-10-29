@@ -2960,8 +2960,9 @@ async def api_terrain(request: Request):
 MESURE_EVENEMENTS = {
     'demo_ccc', 'simulation', 'simulation_express', 'profil_express', 'ravitos_gpx',
     'pin', 'bilan', 'import_activite', 'pdf', 'avis', 'notification', 'questionnaire',
+    'catalogue_course',
 }
-MESURE_DETAIL_CLES = {'km', 'dplus', 'heures', 'cat', 'profil', 'nb', 'source_profil'}
+MESURE_DETAIL_CLES = {'km', 'dplus', 'heures', 'cat', 'profil', 'nb', 'source_profil', 'course'}
 MESURE_CONSERVATION_JOURS = 760   # 25 mois
 _ROBOTS = ('bot', 'crawl', 'spider', 'slurp', 'preview', 'lighthouse', 'headless', 'monitor')
 _RE_PAGE = re.compile(r'^/[a-z0-9/_.\-]{0,58}$')
